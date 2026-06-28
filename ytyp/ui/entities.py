@@ -189,7 +189,6 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
 
         row = layout.row()
         row.alignment = "RIGHT"
-        row.enabled = not has_multiple_selection
         SOLLUMZ_PT_mlo_entity_presets.draw_panel_header(row)
 
         row = layout.row()

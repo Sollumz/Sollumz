@@ -5,10 +5,14 @@ from .properties.map import (
     MapCarGenSelectionAccess,
     MapData,
     MapEntity,
+    MapEntitySelectionAccess,
     MapGrassBatch,
+    MapGrassBatchSelectionAccess,
     MapGrassTemplate,
+    MapGrassTemplateSelectionAccess,
     MapGroup,
     MapTimecycleModifier,
+    MapTimecycleModifierSelectionAccess,
     get_maps,
 )
 
@@ -24,6 +28,13 @@ def active_map(context) -> MapData | None:
     group = active_group(context)
     if group and (m := group.maps):
         return m.active_item
+    return None
+
+
+def active_entities_collection(context) -> MultiSelectCollection[MapEntity, MapEntitySelectionAccess] | None:
+    group = active_group(context)
+    if group and (e := group.entities):
+        return e
     return None
 
 
@@ -76,6 +87,15 @@ def active_cargen_from_active_object(context) -> tuple[MapGroup, MapCarGen] | ob
     return result
 
 
+def active_grass_batches_collection(
+    context,
+) -> MultiSelectCollection[MapGrassBatch, MapGrassBatchSelectionAccess] | None:
+    group = active_group(context)
+    if group and (b := group.grass_batches):
+        return b
+    return None
+
+
 def active_grass_batch(context) -> MapGrassBatch | None:
     group = active_group(context)
     if group and (b := group.grass_batches):
@@ -83,10 +103,28 @@ def active_grass_batch(context) -> MapGrassBatch | None:
     return None
 
 
+def active_grass_templates_collection(
+    context,
+) -> MultiSelectCollection[MapGrassTemplate, MapGrassTemplateSelectionAccess] | None:
+    batch = active_grass_batch(context)
+    if batch and (t := batch.templates):
+        return t
+    return None
+
+
 def active_grass_template(context) -> MapGrassTemplate | None:
     batch = active_grass_batch(context)
     if batch and (t := batch.templates):
         return t.active_item
+    return None
+
+
+def active_tcms_collection(
+    context,
+) -> MultiSelectCollection[MapTimecycleModifier, MapTimecycleModifierSelectionAccess] | None:
+    group = active_group(context)
+    if group and (t := group.timecycle_modifiers):
+        return t
     return None
 
 

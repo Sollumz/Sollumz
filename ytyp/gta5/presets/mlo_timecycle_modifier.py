@@ -8,9 +8,10 @@ from ....shared.presets import (
     PresetLoadOperatorBase,
     PresetDeleteOperatorBase,
     PresetPanel,
+    make_get_targets_from_collection,
 )
 from ....ymap_next.gta5.presets.timecycle_modifier import TIMECYCLE_MODIFIER_PRESET_CATEGORY
-from ...utils import get_selected_tcm
+from ...utils import get_selected_tcm, get_selected_tcms_collection
 
 
 class SOLLUMZ_OT_save_mlo_timecycle_modifier_preset(PresetSaveOperatorBase, bpy.types.Operator):
@@ -34,6 +35,7 @@ class SOLLUMZ_OT_load_mlo_timecycle_modifier_preset(PresetLoadOperatorBase, bpy.
     bl_description = "Apply a saved timecycle modifier preset"
     category = TIMECYCLE_MODIFIER_PRESET_CATEGORY
     get_target = get_selected_tcm
+    get_targets = make_get_targets_from_collection(get_selected_tcms_collection)
 
     @classmethod
     def poll(cls, context):

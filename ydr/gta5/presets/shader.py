@@ -33,6 +33,7 @@ from szio.gta5.shader import (
 from ....shared.presets import (
     PresetCategory,
     register_preset_category,
+    make_get_targets_from_objects,
     PresetSaveOperatorBase,
     PresetLoadOperatorBase,
     PresetDeleteOperatorBase,
@@ -125,14 +126,17 @@ def shader_preset_apply_dict(material, data, apply_textures=True):
                 node.image = img
 
 
-def _get_target(context):
-    obj = context.active_object
+def _target_from_obj(obj):
     if obj is None:
         return None
     mat = obj.active_material
     if mat is None or mat.sollum_type != MaterialType.SHADER:
         return None
     return mat
+
+
+def _get_target(context):
+    return _target_from_obj(context.active_object)
 
 
 def _poll(context):
@@ -151,6 +155,7 @@ SHADER_PRESET_CATEGORY = PresetCategory(
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "shader_presets.json",
     get_target=_get_target,
+    get_targets=make_get_targets_from_objects(_target_from_obj),
     poll=_poll,
     capture_fn=shader_preset_capture_dict,
     apply_fn=shader_preset_apply_dict,

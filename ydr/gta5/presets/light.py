@@ -14,6 +14,7 @@ from ....shared.presets import (
     register_preset_category,
     struct_to_dict,
     dict_to_struct,
+    make_get_targets_from_objects,
     PresetSaveOperatorBase,
     PresetLoadOperatorBase,
     PresetDeleteOperatorBase,
@@ -90,13 +91,16 @@ def _apply(target, data, **opts):
         dict_to_struct(light.light_properties, light_props_section, skip=_LIGHT_PROPERTIES_SKIP)
 
 
-def _get_target(context):
-    obj = context.active_object
+def _target_from_obj(obj):
     if obj is None or obj.type != "LIGHT":
         return None
     if getattr(obj, "sollum_type", None) != SollumType.LIGHT:
         return None
     return obj.data
+
+
+def _get_target(context):
+    return _target_from_obj(context.active_object)
 
 
 def _poll(context):
@@ -124,6 +128,7 @@ LIGHT_PRESET_CATEGORY = PresetCategory(
         }
     ),
     get_target=_get_target,
+    get_targets=make_get_targets_from_objects(_target_from_obj),
     poll=_poll,
     capture_fn=_capture,
     apply_fn=_apply,

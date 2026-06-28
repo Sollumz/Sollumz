@@ -14,6 +14,7 @@ from pathlib import Path
 from ....shared.presets import (
     PresetCategory,
     register_preset_category,
+    make_get_targets_from_objects,
     PresetSaveOperatorBase,
     PresetLoadOperatorBase,
     PresetDeleteOperatorBase,
@@ -46,11 +47,14 @@ def _apply(target, data, **opts):
         setattr(obj.composite_flags2, n, bool(f2.get(n, False)))
 
 
-def _get_target(context):
-    obj = context.active_object
+def _target_from_obj(obj):
     if obj is None or obj.sollum_type not in BOUND_TYPES:
         return None
     return obj
+
+
+def _get_target(context):
+    return _target_from_obj(context.active_object)
 
 
 def _poll(context):
@@ -77,6 +81,7 @@ FLAG_PRESET_CATEGORY = PresetCategory(
         }
     ),
     get_target=_get_target,
+    get_targets=make_get_targets_from_objects(_target_from_obj),
     poll=_poll,
     capture_fn=_capture,
     apply_fn=_apply,

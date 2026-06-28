@@ -16,10 +16,13 @@ Public API:
                                     - operator mix-ins; subclass alongside bpy.types.Operator
     PresetPanel                     - Panel mix-in
 """
+
 from .core import (
     PresetCategory,
     PRESET_CATEGORIES,
     register_preset_category,
+    make_get_targets_from_objects,
+    make_get_targets_from_collection,
 )
 from .serializer import struct_to_dict, dict_to_struct
 from .operators import (

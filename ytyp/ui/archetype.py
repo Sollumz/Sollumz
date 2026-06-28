@@ -62,7 +62,6 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(ArchetypeChildTabPanel, bpy.types.Panel):
 
         row = layout.row()
         row.alignment = "RIGHT"
-        row.enabled = not ytyp.archetypes.has_multiple_selection
         SOLLUMZ_PT_archetype_presets.draw_panel_header(row)
 
         layout.prop(selection.owner, selection.propnames.type)
@@ -100,10 +99,8 @@ class SOLLUMZ_PT_ARCHETYPE_FLAGS_PANEL(ArchetypeChildTabPanel, MultiSelectUIFlag
         return selected_ytyp.archetypes.selection.flags
 
     def draw(self, context):
-        ytyp = get_selected_ytyp(context)
         row = self.layout.row()
         row.alignment = "RIGHT"
-        row.enabled = not ytyp.archetypes.has_multiple_selection
         SOLLUMZ_PT_archetype_presets.draw_panel_header(row)
 
         super().draw(context)

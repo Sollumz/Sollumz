@@ -10,9 +10,10 @@ from ....shared.presets import (
     PresetLoadOperatorBase,
     PresetPanel,
     PresetSaveOperatorBase,
+    make_get_targets_from_collection,
     register_preset_category,
 )
-from ...context import active_cargen
+from ...context import active_cargen, active_cargens_collection
 
 # Per-instance / display fields skipped from templating.
 _SKIP_FIELDS = (
@@ -40,6 +41,7 @@ CARGEN_PRESET_CATEGORY = PresetCategory(
     bundled_defaults_path=Path(__file__).parent / "cargen_presets.json",
     skip=_SKIP_FIELDS,
     get_target=active_cargen,
+    get_targets=make_get_targets_from_collection(active_cargens_collection),
     poll=_poll,
 )
 

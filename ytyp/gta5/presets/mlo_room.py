@@ -5,12 +5,13 @@ from pathlib import Path
 from ....shared.presets import (
     PresetCategory,
     register_preset_category,
+    make_get_targets_from_collection,
     PresetSaveOperatorBase,
     PresetLoadOperatorBase,
     PresetDeleteOperatorBase,
     PresetPanel,
 )
-from ...utils import get_selected_room
+from ...utils import get_selected_room, get_selected_rooms_collection
 
 
 def _poll(context):
@@ -25,6 +26,7 @@ MLO_ROOM_PRESET_CATEGORY = PresetCategory(
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "mlo_room_presets.json",
     get_target=get_selected_room,
+    get_targets=make_get_targets_from_collection(get_selected_rooms_collection),
     poll=_poll,
 )
 

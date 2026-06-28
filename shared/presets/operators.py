@@ -56,13 +56,14 @@ class PresetSaveOperatorBase:
 
 
 class PresetLoadOperatorBase:
-    """Apply a named preset to the current target. Triggered by clicking the
-    preset name in the popover."""
+    """Apply a named preset to every selected target. Triggered by
+    clicking the preset name in the popover."""
 
     bl_options = {"REGISTER", "UNDO"}
 
     category: PresetCategory = None
     get_target = None  # optional classvar override; if set, replaces category.get_target
+    get_targets = None  # optional classvar override; if set, replaces category.get_targets
 
     name: StringProperty(name="Preset", description="Preset name to apply")
 
@@ -82,16 +83,24 @@ class PresetLoadOperatorBase:
             self.report({"WARNING"}, f"{category.label} preset '{self.name}' not found.")
             return {"CANCELLED"}
 
-        getter = type(self).get_target or category.get_target
-        target = getter(context)
-        if target is None:
+        targets = category.iter_targets(
+            context,
+            get_target_override=type(self).get_target,
+            get_targets_override=type(self).get_targets,
+        )
+        if not targets:
             self.report({"WARNING"}, f"No {category.label.lower()} target available.")
             return {"CANCELLED"}
 
         # Subclasses may extend by passing extra apply options as kwargs.
         opts = self._apply_options(context)
-        category.apply(target, preset.get("data", {}), **opts)
-        self.report({"INFO"}, f"Applied {category.label.lower()} preset '{self.name}'.")
+        data = preset.get("data", {})
+        for target in targets:
+            category.apply(target, data, **opts)
+
+        count = len(targets)
+        suffix = f" to {count} targets." if count > 1 else "."
+        self.report({"INFO"}, f"Applied {category.label.lower()} preset '{self.name}'{suffix}")
         _tag_redraw(context)
         return {"FINISHED"}
 

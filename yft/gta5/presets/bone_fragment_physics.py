@@ -14,14 +14,43 @@ from ....shared.presets import (
 from ....sollumz_properties import SollumType
 
 
-def _get_target(context):
-    bone = getattr(context, "active_bone", None)
+def _is_fragment(context):
     obj = context.active_object
-    if bone is None or obj is None:
-        return None
-    if obj.sollum_type != SollumType.FRAGMENT:
+    return obj is not None and obj.sollum_type == SollumType.FRAGMENT
+
+
+def _get_target(context):
+    bone = context.active_bone
+    if bone is None or not _is_fragment(context):
         return None
     return bone.group_properties
+
+
+def _get_targets(context):
+    """All selected bones' group properties. In pose mode this is every selected
+    pose bone, otherwise it falls back to the active bone (there doesn't seem to
+    be a way to get all bones selected in the outliner while in object mode).
+    """
+    if not _is_fragment(context):
+        return []
+
+    pose_bones = context.selected_pose_bones
+    if pose_bones:
+        bones = [pb.bone for pb in pose_bones]
+    else:
+        active = context.active_bone
+        bones = [active] if active is not None else []
+
+    seen = set()
+    out = []
+    for bone in bones:
+        props = bone.group_properties
+        key = id(props)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(props)
+    return out
 
 
 def _poll(context):
@@ -36,6 +65,7 @@ BONE_FRAGMENT_PHYSICS_PRESET_CATEGORY = PresetCategory(
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "bone_fragment_physics_presets.json",
     get_target=_get_target,
+    get_targets=_get_targets,
     poll=_poll,
 )
 

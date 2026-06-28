@@ -8,9 +8,10 @@ from ....shared.presets import (
     PresetLoadOperatorBase,
     PresetDeleteOperatorBase,
     PresetPanel,
+    make_get_targets_from_collection,
 )
 from ....ymap_next.gta5.presets.entity import ENTITY_PRESET_CATEGORY
-from ...utils import get_selected_entity
+from ...utils import get_selected_entity, get_selected_mlo_entities_collection
 
 
 class SOLLUMZ_OT_save_mlo_entity_preset(PresetSaveOperatorBase, bpy.types.Operator):
@@ -34,6 +35,7 @@ class SOLLUMZ_OT_load_mlo_entity_preset(PresetLoadOperatorBase, bpy.types.Operat
     bl_description = "Apply a saved entity preset to the active MLO entity"
     category = ENTITY_PRESET_CATEGORY
     get_target = get_selected_entity
+    get_targets = make_get_targets_from_collection(get_selected_mlo_entities_collection)
 
     @classmethod
     def poll(cls, context):

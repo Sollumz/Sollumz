@@ -12,10 +12,11 @@ from ....shared.presets import (
     PresetLoadOperatorBase,
     PresetPanel,
     PresetSaveOperatorBase,
+    make_get_targets_from_collection,
     register_preset_category,
 )
 from ....shared.presets.serializer import dict_to_struct, struct_to_dict
-from ...context import active_entity
+from ...context import active_entities_collection, active_entity
 
 _LOD_LEVEL_TO_MLO = {
     "HD": "sollumz_lodtypes_depth_hd",
@@ -85,6 +86,7 @@ ENTITY_PRESET_CATEGORY = PresetCategory(
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "entity_presets.json",
     get_target=active_entity,
+    get_targets=make_get_targets_from_collection(active_entities_collection),
     poll=_poll,
     capture_fn=_entity_capture,
     apply_fn=_entity_apply,

@@ -13,9 +13,10 @@ from ....shared.presets import (
     PresetLoadOperatorBase,
     PresetPanel,
     PresetSaveOperatorBase,
+    make_get_targets_from_collection,
     register_preset_category,
 )
-from ...context import active_grass_batch
+from ...context import active_grass_batch, active_grass_batches_collection
 
 
 def _poll(context):
@@ -30,6 +31,7 @@ GRASS_BATCH_PRESET_CATEGORY = PresetCategory(
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "grass_batch_presets.json",
     get_target=active_grass_batch,
+    get_targets=make_get_targets_from_collection(active_grass_batches_collection),
     poll=_poll,
 )
 

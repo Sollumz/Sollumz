@@ -10,9 +10,10 @@ from ....shared.presets import (
     PresetLoadOperatorBase,
     PresetPanel,
     PresetSaveOperatorBase,
+    make_get_targets_from_collection,
     register_preset_category,
 )
-from ...context import active_tcm
+from ...context import active_tcm, active_tcms_collection
 
 
 def _poll(context):
@@ -27,6 +28,7 @@ TIMECYCLE_MODIFIER_PRESET_CATEGORY = PresetCategory(
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "timecycle_modifier_presets.json",
     get_target=active_tcm,
+    get_targets=make_get_targets_from_collection(active_tcms_collection),
     poll=_poll,
 )
 

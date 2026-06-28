@@ -6,6 +6,7 @@ from pathlib import Path
 from ....shared.presets import (
     PresetCategory,
     register_preset_category,
+    make_get_targets_from_objects,
     PresetSaveOperatorBase,
     PresetLoadOperatorBase,
     PresetDeleteOperatorBase,
@@ -41,14 +42,17 @@ def _apply(target, data, **opts):
         setattr(flags, n, bool(data_flags.get(n, False)))
 
 
-def _get_target(context):
-    obj = context.active_object
+def _target_from_obj(obj):
     if obj is None:
         return None
     mat = obj.active_material
     if mat is None or mat.sollum_type != MaterialType.COLLISION:
         return None
     return mat
+
+
+def _get_target(context):
+    return _target_from_obj(context.active_object)
 
 
 def _poll(context):
@@ -67,6 +71,7 @@ COLLISION_MATERIAL_PRESET_CATEGORY = PresetCategory(
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "collision_material_presets.json",
     get_target=_get_target,
+    get_targets=make_get_targets_from_objects(_target_from_obj),
     poll=_poll,
     capture_fn=_capture,
     apply_fn=_apply,
