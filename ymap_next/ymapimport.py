@@ -50,7 +50,7 @@ from .properties.map import (
     MapTimecycleModifier,
     get_maps,
 )
-from .instancing import batch_add_map_entity, batch_instance_map_entities
+from .instancing import InstancingBatch, batch_add_map_entity, batch_instance_map_entities
 from .occluders.box import box_occluder_world_geometry
 
 _import_maps = []
@@ -426,13 +426,11 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
         map_group.scripted = any(MapFlags.SCRIPTED in lod_hierarchy.get_map(map_key).flags for map_key in all_maps)
         # Lock the group if any of its maps has an incomplete LOD hierarchy, so its hierarchy values
         # are preserved as-is on export instead of being recomputed from the partial in-memory graph.
-        map_group.incomplete_lod_hierarchy_lock = any(
-            map_key in lod_hierarchy.incomplete_maps for map_key in all_maps
-        )
+        map_group.incomplete_lod_hierarchy_lock = any(map_key in lod_hierarchy.incomplete_maps for map_key in all_maps)
 
         map_data_ids = {map_key: map_group.new_map().uuid for map_key in all_maps}
 
-        entities_to_instance = defaultdict(list)
+        entities_to_instance = InstancingBatch()
         entities_to_parent = []
         entities_ids = {}
         for map_key in all_maps:
@@ -498,12 +496,7 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
                 entity = map_group.find_entity(entity_id)
                 entity.parent_uuid = parent_entity_id
 
-        # Link game assets from the shared asset library, if configured
-        from ..sollumz_preferences import get_addon_preferences
-
-        prefs = get_addon_preferences(bpy.context)
-        if _import_instance_entities and prefs.shared_assets_directories:
-            batch_instance_map_entities(map_group, entities_to_instance)
+        batch_instance_map_entities(map_group, entities_to_instance, _import_instance_entities)
 
         _organize_map_in_collections(map_group)
 

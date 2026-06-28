@@ -155,7 +155,7 @@ def link_objects_from_library(object_names: list[str]) -> tuple[list[BlendData],
     datas = []
     for blend_file, names in results.items():
         if blend_file is None:
-            logger.info(f"Missing: {names=}")
+            # logger.info(f"Missing: {names=}")
             num_missing += len(names)
             continue
 
