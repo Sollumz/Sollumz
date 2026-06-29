@@ -151,6 +151,7 @@ def import_interiors_from_ytyp(typ_file: Path, catalog_id: str):
                 "bb_min": tuple(arch.bb_min),
                 "bb_max": tuple(arch.bb_max),
                 "num_extensions": len(arch.extensions) if arch.extensions else 0,
+                "mlo_num_exit_portals": arch.calc_num_exit_portals(),
             },
             separators=(",", ":"),
             indent=None,

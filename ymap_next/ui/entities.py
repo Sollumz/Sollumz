@@ -177,6 +177,10 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
 
         layout.separator()
 
+        layout.prop(selection.owner, selection.propnames.archetype_name)
+        layout.prop(selection.owner, selection.propnames.is_mlo)
+        layout.separator()
+
         if active.is_mlo:
             # On MLO instances we hide the following properties because they are unused:
             #  - priority_level (MLO instances are always REQUIRED)
@@ -186,7 +190,6 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
             #  - artificial_ambient_occlusion
             #  - tint_value
             #  - mlo_floor_id
-            layout.prop(selection.owner, selection.propnames.archetype_name)
             if active_group.incomplete_lod_hierarchy_lock:
                 layout.prop(selection.owner, selection.propnames.parent_index)
             else:
@@ -200,12 +203,10 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
             col.prop(selection.owner, selection.propnames.mlo_cap_entities_alpha)
             col.prop(selection.owner, selection.propnames.mlo_short_fade_distance)
 
-            # TODO: these probably will be removed from the UI (or at least when we can compute them)
-            layout.separator()
-            layout.prop(selection.owner, selection.propnames.mlo_num_exit_portals)
+            row = layout.row()
+            row.prop(selection.owner, selection.propnames.mlo_num_exit_portals)
+            row.operator(map_ops.SOLLUMZ_OT_map_mlo_instance_calc_num_exit_portals.bl_idname, text="", icon="FILE_REFRESH")
         else:
-            layout.prop(selection.owner, selection.propnames.archetype_name)
-            layout.separator()
             if active_group.incomplete_lod_hierarchy_lock:
                 layout.prop(selection.owner, selection.propnames.parent_index)
                 layout.prop(selection.owner, selection.propnames.num_children)
@@ -396,6 +397,7 @@ class SOLLUMZ_PT_map_object_entity_properties(Panel):
         layout.separator()
 
         # See SOLLUMZ_PT_map_entities
+        layout.prop(entity, "is_mlo")
         if entity.is_mlo:
             if map_group.incomplete_lod_hierarchy_lock:
                 layout.prop(entity, "parent_index")

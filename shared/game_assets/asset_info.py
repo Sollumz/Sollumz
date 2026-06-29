@@ -20,6 +20,7 @@ class AssetArchetypeInfo:
     bb_min: Vector
     bb_max: Vector
     num_extensions: int
+    mlo_num_exit_portals: int
 
 
 @dataclass(slots=True)
@@ -129,6 +130,7 @@ def _parse_archetype_info(info_str: str) -> AssetArchetypeInfo:
         bb_min=Vector(info_dict.get("bb_min", (0.0, 0.0, 0.0))),
         bb_max=Vector(info_dict.get("bb_max", (0.0, 0.0, 0.0))),
         num_extensions=info_dict.get("num_extensions", 0),
+        mlo_num_exit_portals=info_dict.get("mlo_num_exit_portals", 0),
     )
 
 
@@ -171,6 +173,7 @@ def _resolve_archetype_by_name(
             bb_min=Vector(archetype.bb_min),
             bb_max=Vector(archetype.bb_max),
             num_extensions=len(archetype.extensions),
+            mlo_num_exit_portals=archetype.calc_num_exit_portals(),
         )
         result = (info, archetype.asset)
 

@@ -16,12 +16,14 @@ from ..context import (
     active_grass_batch,
     active_group,
     active_map,
+    active_entities_collection,
 )
 from ..map_index import (
     MAP_INDEX,
     CacheObjectData,
 )
 from ..properties.map import MapPartitionMode, get_maps
+from ...shared.game_assets.asset_info import AssetInfoCache, try_get_asset_metadata_archetype_info, try_get_archetype_info_by_name
 
 
 class SOLLUMZ_OT_maps_new_group(Operator):
@@ -560,6 +562,7 @@ class SOLLUMZ_OT_map_add_obj_as_entity(Operator):
 
         first_new_entity_index = len(group.entities)
 
+        cache = AssetInfoCache()
         for obj in context.selected_objects:
             existing_entity = self._get_entity_using_obj(obj, group)
 
@@ -571,7 +574,21 @@ class SOLLUMZ_OT_map_add_obj_as_entity(Operator):
                 continue
 
             entity = group.new_entity()
-            entity.archetype_name = remove_number_suffix(obj.name)
+            entity.archetype_name = remove_number_suffix(obj.name).lower()
+
+            transform = obj.matrix_world
+            location, rotation, scale = transform.decompose()
+            entity.position = location
+            entity.rotation = rotation
+            entity.scale_xy = scale.x
+            entity.scale_z = scale.z
+
+
+            archetype_info = try_get_asset_metadata_archetype_info(obj, cache=cache) if obj is not None else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+            if archetype_info and archetype_info.type == "MLO":
+                entity.is_mlo = True
+                entity.mlo_num_exit_portals = archetype_info.mlo_num_exit_portals
+
             entity.linked_object = obj
 
         last_new_entity_index = len(group.entities) - 1
@@ -586,6 +603,31 @@ class SOLLUMZ_OT_map_add_obj_as_entity(Operator):
             if entity.linked_object == obj:
                 return entity
         return None
+
+
+class SOLLUMZ_OT_map_mlo_instance_calc_num_exit_portals(Operator):
+    bl_idname = "sollumz.map_mlo_instance_calc_num_exit_portals"
+    bl_label = "Calculate Number of Exit Portals"
+    bl_description = "Calculate the number of exit portals of this MLO instance"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return active_entities_collection(context)
+
+    def execute(self, context):
+        entities = active_entities_collection(context)
+        cache = AssetInfoCache()
+        for entity in entities.iter_selected_items():
+            if not entity.is_mlo:
+                continue
+
+            obj = entity.linked_object
+            archetype_info = try_get_asset_metadata_archetype_info(obj, cache=cache) if obj is not None else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+            if archetype_info:
+                entity.mlo_num_exit_portals = archetype_info.mlo_num_exit_portals
+
+        return {"FINISHED"}
 
 
 class SOLLUMZ_OT_map_highlight_map_data_entities(Operator):

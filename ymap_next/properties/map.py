@@ -777,7 +777,7 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
     parent_index: IntProperty(name="LOD Parent Index", default=-1)
     num_children: IntProperty(name="Number of LOD Children", default=0)
 
-    is_mlo: BoolProperty()
+    is_mlo: BoolProperty(name="MLO", description="This entity is a MLO instance", default=False)
     mlo_group_id: IntProperty(name="Group ID", default=0, min=0)
     mlo_floor_id: IntProperty(name="Floor ID", default=0, min=0)  # always 0, hidden from the UI
     mlo_default_entity_sets: StringProperty(
@@ -918,6 +918,7 @@ class MapEntitySelectionAccess(MultiSelectAccess):
     flags: MultiSelectPointerProperty(MapEntityFlagsSelectionAccess)
     is_critical: MultiSelectProperty()
 
+    is_mlo: MultiSelectProperty()
     mlo_group_id: MultiSelectProperty()
     mlo_floor_id: MultiSelectProperty()  # always 0, hidden from the UI
     mlo_default_entity_sets: MultiSelectProperty()

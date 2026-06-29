@@ -565,6 +565,18 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         if archetype_uuid in ArchetypeProperties.__entity_set_enum_items_cache:
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
 
+    def calc_num_exit_portals(self) -> int | None:
+        if self.type != ArchetypeType.MLO:
+            return None
+
+        num_exit_portals = 0
+        for p in self.portals:
+            link_interiors = p.flags.flag2
+            if (not link_interiors and (p.room_to_index == 0 or p.room_from_index == 0)):
+                num_exit_portals += 1
+
+        return num_exit_portals
+
 
 class ArchetypeFlagsSelectionAccess(MultiSelectNestedAccess):
     total: MultiSelectProperty()
