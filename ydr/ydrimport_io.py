@@ -427,14 +427,15 @@ def create_drawable_skel(armature_obj: Object, skeleton: Skeleton):
     # Need to go into edit mode to modify edit bones
     bpy.ops.object.mode_set(mode="EDIT")
 
+    bone_names = []
     for b in bones:
-        add_bone(armature_obj.data, b)
+        bone_names.append(add_bone(armature_obj.data, b))
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    for b in bones:
-        set_bone_properties(armature_obj.data, b)
-        add_bone_constraints(armature_obj, b)
+    for b, bone_name in zip(bones, bone_names):
+        set_bone_properties(armature_obj.data, b, bone_name)
+        add_bone_constraints(armature_obj, b, bone_name)
 
     return armature_obj
 
@@ -456,9 +457,11 @@ def add_bone(armature: Armature, bone: SkelBone):
     if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
+    return edit_bone.name
 
-def set_bone_properties(armature: Armature, bone: SkelBone):
-    bl_bone = armature.bones[bone.name]
+
+def set_bone_properties(armature: Armature, bone: SkelBone, bone_name: str):
+    bl_bone = armature.bones[bone_name]
     bl_bone.bone_properties.tag = bone.tag
 
     for _flag in bone.flags:
@@ -472,8 +475,8 @@ def set_bone_properties(armature: Armature, bone: SkelBone):
         flag.name = CW_BONE_FLAGS_INVERSE_MAP[_flag]
 
 
-def add_bone_constraints(armature_obj: Object, bone: SkelBone):
-    pose_bone = armature_obj.pose.bones[bone.name]
+def add_bone_constraints(armature_obj: Object, bone: SkelBone, bone_name: str):
+    pose_bone = armature_obj.pose.bones[bone_name]
 
     if bone.translation_limit:
         add_bone_constraint_translation_limit(pose_bone, bone.translation_limit)

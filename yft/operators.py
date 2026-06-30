@@ -71,8 +71,10 @@ class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
         else:
             parent = None
 
+        bone_names = []
         for obj in selected:
             edit_bone = armature.edit_bones.new(obj.name)
+            bone_names.append(edit_bone.name)
 
             edit_bone.head = (0, 0, 0)
             edit_bone.tail = (0, 0.05, 0)
@@ -84,10 +86,10 @@ class SOLLUMZ_OT_CREATE_BONES_AT_OBJECTS(bpy.types.Operator):
 
         bpy.ops.object.mode_set(mode="OBJECT")
 
-        for obj in selected:
-            armature.bones[obj.name].sollumz_use_physics = True
+        for obj, bone_name in zip(selected, bone_names):
+            armature.bones[bone_name].sollumz_use_physics = True
 
-            add_child_of_bone_constraint(obj, armature_obj, obj.name)
+            add_child_of_bone_constraint(obj, armature_obj, bone_name)
             obj.location = Vector()
 
         return {"FINISHED"}
