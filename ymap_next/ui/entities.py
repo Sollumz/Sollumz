@@ -90,6 +90,8 @@ class SOLLUMZ_PT_map_entities(MapChildTabPanel, Panel):
             row.prop(flt, "lod_level", text="")
         elif flt.filter_type == "kind":
             row.prop(flt, "kind", text="")
+        elif flt.filter_type == "container":
+            row.prop(flt, "container_name", text="", icon_value=icon("map_container"))
 
         list_col.separator(factor=2)
 

@@ -844,6 +844,8 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
                     return self.is_orphan_hd
                 else:  # "regular"
                     return not self.is_mlo
+            case "container":
+                return self.map_data_name == flt.container_name
             case _:  # "all"
                 return True
 
