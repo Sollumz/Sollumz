@@ -94,13 +94,14 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
             return
 
         if groups and (active_group := groups.active_item):
-            if active_group.incomplete_lod_hierarchy_lock:
+            if active_group.has_incomplete_lod_hierarchy:
                 box = layout.box()
                 box.alert = True
                 col = box.column(align=True)
                 col.label(text="Incomplete LOD hierarchy", icon="ERROR")
-                col.label(text="Some related YMAP files were not imported. Hierarchy")
-                col.label(text="values are kept as-is on export; editing is limited.")
+                col.label(text="Some containers were imported without related YMAP")
+                col.label(text="files. Their hierarchy values are kept as-is on export")
+                col.label(text="and editing them is limited.")
 
             layout.prop(active_group, "scripted")
 
@@ -131,15 +132,30 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
                 selection = maps.selection
                 active = maps.active_item
 
-                body.prop(selection.owner, selection.propnames.parent_name, icon_value=icon("map_container"))
-                if active.is_auto_generated:
+                active_locked = active.incomplete_lod_hierarchy_lock
+                any_selected_locked = any(
+                    m.incomplete_lod_hierarchy_lock for m in maps.iter_selected_items()
+                )
+
+                row = body.row()
+                # A locked container cannot be re-linked: its entities' parent_index values are
+                # relative to the original parent map's entity list (the setter is also guarded).
+                row.enabled = not active_locked
+                row.prop(selection.owner, selection.propnames.parent_name, icon_value=icon("map_container"))
+                if active_locked:
+                    col = body.column(align=True)
+                    col.alert = True
+                    col.label(text="Incomplete LOD hierarchy (locked)", icon="LOCKED")
+                    body.operator(map_ops.SOLLUMZ_OT_map_data_unlock_lod_hierarchy.bl_idname, icon="UNLOCKED")
+                elif active.is_auto_generated:
                     body.label(text="Auto-generated")
-                elif not active_group.incomplete_lod_hierarchy_lock:
+                elif not any_selected_locked:
+                    # partition_mode propagates to the whole selection, which may include locked maps
                     row = body.row()
                     row.prop(selection.owner, selection.propnames.partition_mode, expand=True)
 
                 # Partitioning mutates the LOD hierarchy, so it is disabled for incomplete (locked) maps.
-                if not active_group.incomplete_lod_hierarchy_lock:
+                if not active_locked:
                     if active.partition_mode == MapPartitionMode.AUTO.name:
                         row = body.row(align=True)
                         row.operator(map_ops.SOLLUMZ_OT_map_generate_partitions.bl_idname, icon="FILE_REFRESH")
@@ -512,7 +528,9 @@ class SOLLUMZ_UL_map_group_map_data_list(MultiSelectUIListMixin, UIList):
     name_prop = "ui_label"
 
     def get_item_icon(self, item) -> str | int:
-        if item.partition_mode == MapPartitionMode.AUTO.name:
+        if item.incomplete_lod_hierarchy_lock:
+            item_icon = "LOCKED"
+        elif item.partition_mode == MapPartitionMode.AUTO.name:
             item_icon = icon("map_container_auto")
         elif item.is_auto_generated:
             item_icon = icon("map_container_auto_generated")

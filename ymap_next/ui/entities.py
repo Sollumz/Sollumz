@@ -181,6 +181,7 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
         layout.prop(selection.owner, selection.propnames.is_mlo)
         layout.separator()
 
+        active_map_locked = active_group.is_map_locked(active.map_data_uuid)
         if active.is_mlo:
             # On MLO instances we hide the following properties because they are unused:
             #  - priority_level (MLO instances are always REQUIRED)
@@ -190,7 +191,7 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
             #  - artificial_ambient_occlusion
             #  - tint_value
             #  - mlo_floor_id
-            if active_group.incomplete_lod_hierarchy_lock:
+            if active_map_locked:
                 layout.prop(selection.owner, selection.propnames.parent_index)
             else:
                 layout.prop(selection.owner, selection.propnames.parent_name)
@@ -207,9 +208,9 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
             row.prop(selection.owner, selection.propnames.mlo_num_exit_portals)
             row.operator(map_ops.SOLLUMZ_OT_map_mlo_instance_calc_num_exit_portals.bl_idname, text="", icon="FILE_REFRESH")
         else:
-            if active_group.incomplete_lod_hierarchy_lock:
+            if active_map_locked:
                 layout.prop(selection.owner, selection.propnames.parent_index)
-                layout.prop(selection.owner, selection.propnames.num_children)
+                layout.prop(selection.owner, selection.propnames.num_children_missing)
             else:
                 layout.prop(selection.owner, selection.propnames.parent_name)
             layout.prop(selection.owner, selection.propnames.lod_level, expand=True)
@@ -397,9 +398,10 @@ class SOLLUMZ_PT_map_object_entity_properties(Panel):
         layout.separator()
 
         # See SOLLUMZ_PT_map_entities
+        entity_map_locked = map_group.is_map_locked(entity.map_data_uuid)
         layout.prop(entity, "is_mlo")
         if entity.is_mlo:
-            if map_group.incomplete_lod_hierarchy_lock:
+            if entity_map_locked:
                 layout.prop(entity, "parent_index")
             else:
                 layout.prop(entity, "parent_name")
@@ -412,13 +414,14 @@ class SOLLUMZ_PT_map_object_entity_properties(Panel):
             col.prop(entity, "mlo_cap_entities_alpha")
             col.prop(entity, "mlo_short_fade_distance")
 
-            # TODO: these probably will be removed from the UI (or at least when we can compute them)
-            layout.separator()
-            layout.prop(entity, "mlo_num_exit_portals")
+            row = layout.row()
+            row.prop(entity, "mlo_num_exit_portals")
+            # TODO(ymap): this operator doesn't work on the active object
+            # row.operator(map_ops.SOLLUMZ_OT_map_mlo_instance_calc_num_exit_portals.bl_idname, text="", icon="FILE_REFRESH")
         else:
-            if map_group.incomplete_lod_hierarchy_lock:
+            if entity_map_locked:
                 layout.prop(entity, "parent_index")
-                layout.prop(entity, "num_children")
+                layout.prop(entity, "num_children_missing")
             else:
                 layout.prop(entity, "parent_name")
             layout.prop(entity, "lod_level", expand=True)

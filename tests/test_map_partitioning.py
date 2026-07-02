@@ -103,7 +103,6 @@ def _make_map_group_with_mixed_entities():
     lod.lod_level = "LOD"
     lod.lod_dist = 500
     lod.child_lod_dist = 100
-    lod.num_children = 2
     lod.position = (100, 100, 50)
     lod.map_data_uuid = logical_uuid
     lod_uuid = lod.uuid
@@ -454,6 +453,8 @@ if is_tmp_dir_available():
         # All should be NONE (manual)
         for m in map_group.maps:
             assert m.partition_mode == MapPartitionMode.NONE.name
+        # A complete import must not lock any container
+        assert not any(m.incomplete_lod_hierarchy_lock for m in map_group.maps)
 
         out_dir = tmp_path("roundtrip")
         out_dir.mkdir(parents=True, exist_ok=True)

@@ -104,7 +104,8 @@ class LodHierarchy:
 
         # Maps whose LOD hierarchy could not be fully reconstructed because related .ymap files
         # were not imported (missing parent map, missing parent entity, or child-count mismatch).
-        # Their groups are locked so their hierarchy values are preserved as-is on export.
+        # Their containers are locked so their hierarchy values are preserved as-is on export;
+        # other containers in the group remain editable.
         self.incomplete_maps: set[MapKey] = set()
 
     def get_entity(self, key: EntityKey) -> Entity:
@@ -424,9 +425,6 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
             map_group_name = lod_hierarchy.get_map_name(root_map_key)
         map_group.name = map_group_name
         map_group.scripted = any(MapFlags.SCRIPTED in lod_hierarchy.get_map(map_key).flags for map_key in all_maps)
-        # Lock the group if any of its maps has an incomplete LOD hierarchy, so its hierarchy values
-        # are preserved as-is on export instead of being recomputed from the partial in-memory graph.
-        map_group.incomplete_lod_hierarchy_lock = any(map_key in lod_hierarchy.incomplete_maps for map_key in all_maps)
 
         map_data_ids = {map_key: map_group.new_map().uuid for map_key in all_maps}
 
@@ -438,6 +436,11 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
             name = lod_hierarchy.get_map_name(map_key)
             map_data = map_group.find_map(map_data_ids[map_key])
             map_data.name = name
+            # Lock this container if its LOD hierarchy could not be fully reconstructed, so its
+            # hierarchy values are preserved as-is on export instead of being recomputed from the
+            # partial in-blend hierarchy data. Other containers in the group remain editable.
+            incomplete_map = map_key in lod_hierarchy.incomplete_maps
+            map_data.incomplete_lod_hierarchy_lock = incomplete_map
             # Preserve the original map header <parent> string so a map whose parent .ymap was not
             # imported can re-emit it on export (parent_uuid stays empty in that case).
             map_data.orig_parent_name = m.parent_name
@@ -464,6 +467,14 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
                 entity_key = EntityKey(map_key, entity_idx)
                 e = _create_map_entity(map_group, map_data, entity, is_critical)
                 entities_ids[entity_key] = e.uuid
+
+                if incomplete_map:
+                    # Children in .ymap files that were not imported. Export re-adds them on top of the
+                    # children found via parent_uuid links, so editing the imported subtree keeps the
+                    # exported numChildren correct.
+                    missing_children = entity.num_children - len(lod_hierarchy.children_entities_by_entity[entity_key])
+                    if missing_children > 0:
+                        e.num_children_missing = missing_children
 
                 if parent_entity_key := lod_hierarchy.get_entity_parent(entity_key):
                     entities_to_parent.append((entity_key, parent_entity_key))
@@ -521,10 +532,10 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
 
     if lod_hierarchy.incomplete_maps:
         logger.warning(
-            "Imported an incomplete LOD hierarchy: some related .ymap files (parent or child maps) "
-            "were not imported. The affected map group(s) have been locked - their LOD hierarchy "
+            "Imported an incomplete LOD hierarchy: some related YMAP files (parent or child maps) "
+            "were not imported. The affected map container(s) have been locked: their LOD hierarchy "
             "values (parent index, number of children, parent map) are preserved as-is on export "
-            "and some editing is disabled."
+            "and editing them is limited. Other containers in the group remain editable."
         )
 
     from .map_index import MAP_INDEX
@@ -547,7 +558,6 @@ def _create_map_entity(map_group: MapGroup, map_data: MapData, entity: Entity, i
     e.child_lod_dist = entity.child_lod_dist
     e.lod_level = "HD" if entity.lod_level == EntityLodLevel.ORPHANHD else entity.lod_level.name
     e.priority_level = entity.priority_level.name
-    e.num_children = entity.num_children
     e.ambient_occlusion_multiplier = entity.ambient_occlusion_multiplier
     e.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
     e.tint_value = entity.tint_value

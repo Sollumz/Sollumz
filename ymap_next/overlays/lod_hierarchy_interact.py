@@ -317,17 +317,19 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
         if group is None:
             return
 
-        if group.incomplete_lod_hierarchy_lock:
-            # Hierarchy is frozen: linking is disabled (selection via click still works).
-            return
-
         handler = self._handler
         parent_uuid = group.entities[handler.entities[parent_idx][E_COL_IDX]].uuid
 
         linked_col_indices = []
         for child_idx in child_indices:
             col_idx = handler.entities[child_idx][E_COL_IDX]
-            group.set_entity_parent(group.entities[col_idx], parent_uuid)
+            child = group.entities[col_idx]
+            if group.is_map_locked(child.map_data_uuid):
+                # The child's container is frozen: it cannot be relinked (and the overlay cache
+                # must not be patched for links that didn't happen). Parents in locked containers
+                # are fine, only the child's container matters.
+                continue
+            group.set_entity_parent(child, parent_uuid)
             handler.patch_link(child_idx, parent_uuid)
             linked_col_indices.append(col_idx)
 
@@ -347,8 +349,8 @@ class SOLLUMZ_OT_map_lod_overlay_unlink(Operator):
         if entity is None or not entity.parent_uuid:
             return False
         group = active_group(context)
-        if group is not None and group.incomplete_lod_hierarchy_lock:
-            cls.poll_message_set("LOD hierarchy is incomplete. Cannot unlink entities!")
+        if group is not None and group.is_map_locked(entity.map_data_uuid):
+            cls.poll_message_set("Entity's container has an incomplete LOD hierarchy. Cannot unlink it!")
             return False
         return True
 

@@ -61,10 +61,7 @@ from .properties.map import (
 
 
 def export_ymap(map_group: MapGroup) -> list[ExportBundle]:
-    if not map_group.incomplete_lod_hierarchy_lock:
-        # Skip when locked: regenerating partitions mints new map UUIDs and re-buckets entities,
-        # which would break the frozen hierarchy the locked export preserves as-is.
-        _ensure_auto_partitions_generated(map_group)
+    _ensure_auto_partitions_generated(map_group)
     return create_map_data_assets(map_group)
 
 
@@ -83,6 +80,11 @@ def _ensure_auto_partitions_generated(map_group: MapGroup):
     pending_auto_uuids = []
     for map_data in map_group.maps:
         if map_data.partition_mode != MapPartitionMode.AUTO.name:
+            continue
+
+        if map_data.incomplete_lod_hierarchy_lock:
+            # Just in case, locked maps cannot be switched to AUTO via the UI. Regenerating partitions creates new
+            # map UUIDs and re-buckets entities, breaking the frozen hierarchy.
             continue
 
         # Check if there are any non-LOD/SLOD items still assigned to the AUTO parent
@@ -121,6 +123,10 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
     for map_data in map_group.maps:
         if map_data.parent_uuid:
             parent_map_uuids.add(map_data.parent_uuid)
+
+    # Maps with an incomplete LOD hierarchy: their entities' unresolved parent_index values are
+    # exported verbatim instead of recomputed (see _export_entity)
+    locked_map_uuids = {m.uuid for m in map_group.maps if m.incomplete_lod_hierarchy_lock}
 
     # Group entities, cargens, tcms, and grass batches by map_data_uuid
     entities_by_map: dict[bytes, list[MapEntity]] = defaultdict(list)
@@ -251,7 +257,7 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
         # Entities
         if map_entities := entities_by_map[map_uuid]:
             map_data_asset.entities = [
-                _export_entity(map_group, e, entity_index_in_map, entity_map_data_uuid, entity_num_children)
+                _export_entity(e, entity_index_in_map, entity_map_data_uuid, entity_num_children, locked_map_uuids)
                 for e in map_entities
             ]
 
@@ -335,40 +341,43 @@ def calc_map_entity_transforms(entity: MapEntity) -> tuple[Vector, Quaternion, f
 
 
 def _export_entity(
-    g: MapGroup,
     e: MapEntity,
     entity_index_in_map: dict[bytes, int],
     entity_map_data_uuid: dict[bytes, bytes],
     entity_num_children: dict[bytes, int],
+    locked_map_uuids: set[bytes],
 ) -> Entity | EntityMloInstance:
     entity_flags = EntityFlags(int(e.flags.total))
 
-    parent_index = -1
-    num_children = 0
-    if g.incomplete_lod_hierarchy_lock:
-        # LOD hierarchy is incomplete, take values as-is
-        parent_index = e.parent_index
-        num_children = e.num_children
-        # ORPHANHD is keyed off the preserved parent_index (the source of truth under the lock),
-        # not the parent_uuid links, which are only partially populated for an incomplete hierarchy.
-        # An entity is ORPHANHD iff it has no parent (parent_index == -1) and is an HD entity.
-        lod_level = (
-            EntityLodLevel.ORPHANHD if (e.parent_index == -1 and e.lod_level == "HD") else EntityLodLevel[e.lod_level]
-        )
-    else:
-        # Recompute parent_index and num_children
-        num_children = entity_num_children.get(e.uuid, 0)
-        if e.parent_uuid:
-            parent_index = entity_index_in_map.get(e.parent_uuid, -1)
+    # Children found via parent_uuid links (tracks edits in unlocked containers)
+    num_children = entity_num_children.get(e.uuid, 0)
+    if e.map_data_uuid in locked_map_uuids:
+        # ...plus children known to be in non-imported .ymap files.
+        num_children += e.num_children_missing
 
-            parent_map_uuid = entity_map_data_uuid.get(e.parent_uuid, None)
-            if parent_map_uuid is not None and parent_map_uuid != e.map_data_uuid:
-                # Parent is in a different map data (cross-map LOD reference)
-                entity_flags |= EntityFlags.LOD_IN_PARENT_MAP
-            else:
-                # Parent is in the same map data, ensure flag is not set
-                entity_flags &= ~EntityFlags.LOD_IN_PARENT_MAP
-        lod_level = EntityLodLevel.ORPHANHD if e.is_orphan_hd else EntityLodLevel[e.lod_level]
+    if e.parent_uuid:
+        # Resolved parent: always recompute, even in locked containers. The parent may live in an
+        # unlocked, editable container; when nothing was edited this equals the imported values
+        # because a locked container's own entity list is frozen.
+        parent_index = entity_index_in_map.get(e.parent_uuid, -1)
+
+        parent_map_uuid = entity_map_data_uuid.get(e.parent_uuid, None)
+        if parent_map_uuid is not None and parent_map_uuid != e.map_data_uuid:
+            # Parent is in a different map data (cross-map LOD reference)
+            entity_flags |= EntityFlags.LOD_IN_PARENT_MAP
+        else:
+            # Parent is in the same map data, ensure flag is not set
+            entity_flags &= ~EntityFlags.LOD_IN_PARENT_MAP
+        lod_level = EntityLodLevel[e.lod_level]
+    elif e.map_data_uuid in locked_map_uuids and e.parent_index != -1:
+        # Unresolvable parent in a non-imported .ymap: preserve parent_index verbatim, flags
+        # untouched so LOD_IN_PARENT_MAP round-trips.
+        parent_index = e.parent_index
+        lod_level = EntityLodLevel[e.lod_level]
+    else:
+        # No parent. An HD entity without a parent is ORPHANHD.
+        parent_index = -1
+        lod_level = EntityLodLevel.ORPHANHD if e.lod_level == "HD" else EntityLodLevel[e.lod_level]
 
     if e.linked_object is not None:
         archetype_name = remove_number_suffix(e.linked_object.name).lower()

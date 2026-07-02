@@ -764,12 +764,6 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
         for map_group_index in ymap_indices:
             op_log.clear_log_counts()
             map_group = maps.groups[map_group_index]
-            if map_group.incomplete_lod_hierarchy_lock:
-                logger.warning(
-                    f"Map group '{map_group.name}' has an incomplete LOD hierarchy: its LOD "
-                    f"hierarchy values (parent index, number of children, parent map) are exported "
-                    f"as-is instead of being recomputed."
-                )
             try:
                 asset_name = map_group.name.lower()
                 with export_context_scope(ExportContext(asset_name, export_settings)):

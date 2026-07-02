@@ -134,6 +134,14 @@ class MapData(PropertyGroup):
         default=MapPartitionMode.NONE.name,
     )
     is_auto_generated: BoolProperty(name="Auto-Generated", default=False)
+    incomplete_lod_hierarchy_lock: BoolProperty(
+        name="Incomplete LOD Hierarchy",
+        description=(
+            "This container was imported without some related YMAP files. Its entity list and LOD hierarchy "
+            "values are preserved as-is on export and editing is limited"
+        ),
+        default=False,
+    )
 
     streaming_extents_min: FloatVectorProperty(name="Streaming Extents Min", default=(0, 0, 0), size=3, subtype="XYZ")
     streaming_extents_max: FloatVectorProperty(name="Streaming Extents Max", default=(0, 0, 0), size=3, subtype="XYZ")
@@ -192,6 +200,11 @@ class MapData(PropertyGroup):
         return map_data.name
 
     def set_parent_by_name(self, map_data_name: str):
+        if self.incomplete_lod_hierarchy_lock:
+            # This map's entities keep their imported parent_index values, which are relative to
+            # the original parent map's entity list, so it cannot be re-linked elsewhere.
+            return
+
         group = get_maps().find_group(self.map_group_uuid)
         if group:
             map_data_name = map_data_name.strip()
@@ -284,18 +297,27 @@ class MapItemMixin:
 
         return map_data.name
 
+    def _allow_map_data_change(self, _group: "MapGroup", _new_map_data_uuid: bytes) -> bool:
+        # NOTE: the map_data_name set= callback uses this function, so subclasses customize behavior by overriding this
+        # function, not the setter.
+        return True
+
     def set_map_data_by_name(self, map_data_name: str):
         group = get_maps().find_group(self.map_group_uuid)
+        new_uuid = b""
         if group:
             map_data_name = map_data_name.strip()
             for m in group.maps:
                 if m.name == map_data_name:
-                    self.map_data_uuid = m.uuid
-                    return
+                    new_uuid = m.uuid
+                    break
 
-        self.map_data_uuid = b""
+            if not self._allow_map_data_change(group, new_uuid):
+                return
 
-    def search_map_datas(self, context: Context, edit_text: str) -> Iterator[str]:
+        self.map_data_uuid = new_uuid
+
+    def search_map_datas(self, context: Context, _edit_text: str) -> Iterator[str]:
         group = get_maps(context).find_group(self.map_group_uuid)
         if group:
             for m in sorted(group.maps, key=lambda m: m.ui_tree_sort_id):
@@ -775,7 +797,17 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
     parent_uuid: UUIDProperty(name="LOD Parent UUID", description="LOD parent of this entity")
     # Only used with incomplete LOD hierarchies, otherwise, recalculated on export
     parent_index: IntProperty(name="LOD Parent Index", default=-1)
-    num_children: IntProperty(name="Number of LOD Children", default=0)
+    # Number of LOD children living in .ymap files that were not imported (incomplete hierarchy).
+    # Export computes numChildren = children found via parent_uuid links + this value.
+    num_children_missing: IntProperty(
+        name="Number of Missing LOD Children",
+        description=(
+            "Number of LOD children in YMAP files that were not imported. Added to the number of children "
+            "found in the imported containers when exporting"
+        ),
+        default=0,
+        min=0,
+    )
 
     is_mlo: BoolProperty(name="MLO", description="This entity is a MLO instance", default=False)
     mlo_group_id: IntProperty(name="Group ID", default=0, min=0)
@@ -793,6 +825,11 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
     @property
     def is_orphan_hd(self) -> bool:
         return not self.parent_uuid and self.lod_level == MapLodLevel.HD.name
+
+    def _allow_map_data_change(self, group: "MapGroup", new_map_data_uuid: bytes) -> bool:
+        # Entities cannot move into or out of a locked container: its entity list order defines
+        # the exported indices that non-imported .ymap files reference.
+        return not (group.is_map_locked(self.map_data_uuid) or group.is_map_locked(new_map_data_uuid))
 
     def is_filtered(self) -> bool:
         """Returns true if this entity should be shown on the UI list; false, otherwise."""
@@ -824,6 +861,11 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
         return parent_entity.archetype_name
 
     def set_parent_by_archetype_name(self, archetype_name: str):
+        group = get_maps().find_group(self.map_group_uuid)
+        if group is not None and group.is_map_locked(self.map_data_uuid):
+            # This entity's container is locked: its parent link is frozen.
+            return
+
         if " | " in archetype_name:
             # User selected one of the entries from the search below, we have the UUID directly
             _, entity_uuid_str = archetype_name.split(" | ", maxsplit=1)
@@ -833,13 +875,11 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
         else:
             # Only have the archetype name, find the first entity with this archetype_name
             archetype_name = archetype_name.strip().lower()
-            if archetype_name:
-                group = get_maps().find_group(self.map_group_uuid)
-                if group:
-                    for e in group.entities:
-                        if e.archetype_name.lower() == archetype_name:
-                            self.parent_uuid = e.uuid
-                            return
+            if archetype_name and group:
+                for e in group.entities:
+                    if e.archetype_name.lower() == archetype_name:
+                        self.parent_uuid = e.uuid
+                        return
 
         # No parent found
         self.parent_uuid = b""
@@ -910,7 +950,7 @@ class MapEntitySelectionAccess(MultiSelectAccess):
     lod_dist: MultiSelectProperty()
     child_lod_dist: MultiSelectProperty()
     lod_level: MultiSelectProperty()
-    num_children: MultiSelectProperty()
+    num_children_missing: MultiSelectProperty()
     priority_level: MultiSelectProperty()
     ambient_occlusion_multiplier: MultiSelectProperty()
     artificial_ambient_occlusion: MultiSelectProperty()
@@ -940,8 +980,6 @@ class MapGroup(PropertyGroup):
 
     uuid: UUIDProperty()
     name: StringProperty(name="Name")
-
-    incomplete_lod_hierarchy_lock: BoolProperty(name="Incomplete LOD Hierarchy", default=False)
 
     scripted: BoolProperty(name="Scripted", default=False)
 
@@ -983,6 +1021,16 @@ class MapGroup(PropertyGroup):
 
         return None
 
+    @property
+    def has_incomplete_lod_hierarchy(self) -> bool:
+        return any(m.incomplete_lod_hierarchy_lock for m in self.maps)
+
+    def is_map_locked(self, map_data_uuid: bytes) -> bool:
+        if not map_data_uuid:
+            return False
+        m = self.find_map(map_data_uuid)
+        return m is not None and m.incomplete_lod_hierarchy_lock
+
     def new_entity(self) -> MapEntity:
         from ..map_index import MAP_INDEX
 
@@ -1011,24 +1059,15 @@ class MapGroup(PropertyGroup):
         return None
 
     def set_entity_parent(self, entity: MapEntity, new_parent_uuid: bytes):
-        """Reparent `entity`, keeping the old and new parents' `num_children` in sync."""
-        if self.incomplete_lod_hierarchy_lock:
-            # Hierarchy is frozen: parent_index/num_children are the source of truth and the
-            # parent_uuid links are only partially populated, so reparenting must be a no-op.
+        """Reparent `entity`, unless its container is locked."""
+        if self.is_map_locked(entity.map_data_uuid):
+            # The entity's container is frozen: its parent link may be unresolvable (parent in a
+            # non-imported .ymap) and parent_index is the source of truth, so reparenting must be
+            # a no-op. Only the child's container matters; entities in unlocked containers may
+            # link to parents in locked ones (export counts them via found children + missing).
             return
 
-        old_parent_uuid = entity.parent_uuid
-        if old_parent_uuid:
-            old_parent = self.find_entity(old_parent_uuid)
-            if old_parent is not None:
-                old_parent.num_children = max(0, old_parent.num_children - 1)
-
         entity.parent_uuid = new_parent_uuid
-
-        if new_parent_uuid:
-            new_parent = self.find_entity(new_parent_uuid)
-            if new_parent is not None:
-                new_parent.num_children += 1
 
     def find_grass_batch(self, uuid: bytes) -> MapGrassBatch | None:
         for gb in self.grass_batches:

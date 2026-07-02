@@ -299,9 +299,12 @@ def convert_to_manual(map_group: MapGroup, map_data: MapData):
 
 def auto_assign_unassigned(map_group: MapGroup):
     """Assign items without a map_data_uuid to the nearest existing leaf map data by extents."""
-    # Find leaf map datas (those that are not parents of any other map data)
+    # Find leaf map datas (those that are not parents of any other map data). Locked containers
+    # are excluded: their entity list is frozen because non-imported .ymap files reference their
+    # exported indices, and an unassigned entity earlier in the entities collection order would
+    # land mid-list and shift them.
     parent_uuids = {m.parent_uuid for m in map_group.maps if m.parent_uuid}
-    leaf_maps = [m for m in map_group.maps if m.uuid not in parent_uuids]
+    leaf_maps = [m for m in map_group.maps if m.uuid not in parent_uuids and not m.incomplete_lod_hierarchy_lock]
 
     if not leaf_maps:
         return

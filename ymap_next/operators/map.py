@@ -26,6 +26,18 @@ from ..properties.map import MapPartitionMode, get_maps
 from ...shared.game_assets.asset_info import AssetInfoCache, try_get_asset_metadata_archetype_info, try_get_archetype_info_by_name
 
 
+def _parents_locked_map_entities(group, entity_uuids: set[bytes]) -> bool:
+    """True if any entity in a locked container has its LOD parent in `entity_uuids`.
+
+    Removing such parents would leave dangling parent_uuid links in a frozen container, whose
+    hierarchy must round-trip as imported.
+    """
+    locked = {m.uuid for m in group.maps if m.incomplete_lod_hierarchy_lock}
+    if not locked:
+        return False
+    return any(e.parent_uuid in entity_uuids and e.map_data_uuid in locked for e in group.entities)
+
+
 class SOLLUMZ_OT_maps_new_group(Operator):
     bl_idname = "sollumz.maps_new_group"
     bl_label = "Create Map Group"
@@ -122,11 +134,11 @@ class SOLLUMZ_OT_map_group_delete_map_data(Operator):
 
     @classmethod
     def poll(cls, context):
-        if active_map(context) is None:
+        md = active_map(context)
+        if md is None:
             return False
-        group = active_group(context)
-        if group is not None and group.incomplete_lod_hierarchy_lock:
-            cls.poll_message_set("LOD hierarchy is incomplete. Cannot delete containers!")
+        if md.incomplete_lod_hierarchy_lock:
+            cls.poll_message_set("Container's LOD hierarchy is incomplete. Cannot delete it!")
             return False
         return True
 
@@ -134,6 +146,22 @@ class SOLLUMZ_OT_map_group_delete_map_data(Operator):
         group = active_group(context)
 
         md_uuids = {md.uuid for md in group.maps.iter_selected_items()}
+
+        # The multiselection may include locked containers beyond the active one checked in poll
+        if any(md.incomplete_lod_hierarchy_lock for md in group.maps.iter_selected_items()):
+            self.report({"ERROR"}, "A selected container has an incomplete LOD hierarchy. Cannot delete it!")
+            return {"CANCELLED"}
+
+        # Deleting these containers unassigns their entities; entities in locked containers must
+        # not be left with dangling LOD parent links
+        deleted_entity_uuids = {e.uuid for e in group.entities if e.map_data_uuid in md_uuids}
+        if _parents_locked_map_entities(group, deleted_entity_uuids):
+            self.report(
+                {"ERROR"},
+                "Entities in a container with an incomplete LOD hierarchy have their LOD parent in the "
+                "selected container(s). Cannot delete them!",
+            )
+            return {"CANCELLED"}
 
         # Clear map_data_uuid on items that reference this map data
         for entity in group.entities:
@@ -160,6 +188,34 @@ class SOLLUMZ_OT_map_group_delete_map_data(Operator):
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
+
+
+class SOLLUMZ_OT_map_data_unlock_lod_hierarchy(Operator):
+    bl_idname = "sollumz.map_data_unlock_lod_hierarchy"
+    bl_label = "Unlock Incomplete LOD Hierarchy"
+    bl_description = (
+        "Unlock the selected container(s) so their entities can be edited again.\n\nThis can cause data loss. LOD "
+        "hierarchy values are recomputed on export: entities whose LOD parent is in a YMAP file that was not imported"
+        "become orphans.\n\nOnly unlock if the related YMAP files are no longer needed"
+    )
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        md = active_map(context)
+        return md is not None and md.incomplete_lod_hierarchy_lock
+
+    def execute(self, context):
+        group = active_group(context)
+        for md in group.maps.iter_selected_items():
+            md.incomplete_lod_hierarchy_lock = False
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        if bpy.app.version >= (4, 1, 0):
+            return context.window_manager.invoke_confirm(self, event, message=self.bl_description)
+        else:
+            return context.window_manager.invoke_confirm(self, event)
 
 
 class SOLLUMZ_OT_map_group_new_entity(Operator):
@@ -191,15 +247,32 @@ class SOLLUMZ_OT_map_group_delete_entity(Operator):
         if group is None or not group.entities:
             return False
 
-        if group.incomplete_lod_hierarchy_lock:
-            cls.poll_message_set("LOD hierarchy is incomplete. Cannot delete entities!")
+        entity = group.entities.active_item
+        if entity is not None and group.is_map_locked(entity.map_data_uuid):
+            cls.poll_message_set("Entity's container has an incomplete LOD hierarchy. Cannot delete it!")
             return False
 
         return True
 
     def execute(self, context):
+        group = active_group(context)
+
+        selected = list(group.entities.iter_selected_items())
+        if any(group.is_map_locked(e.map_data_uuid) for e in selected):
+            self.report({"ERROR"}, "A selected entity's container has an incomplete LOD hierarchy. Cannot delete it!")
+            return {"CANCELLED"}
+
+        # Entities in locked containers must not be left with dangling LOD parent links
+        if _parents_locked_map_entities(group, {e.uuid for e in selected}):
+            self.report(
+                {"ERROR"},
+                "Entities in a container with an incomplete LOD hierarchy have their LOD parent in the "
+                "selection. Cannot delete it!",
+            )
+            return {"CANCELLED"}
+
         # TODO(ymap): delete entity should delete linked objects
-        active_group(context).entities.remove_selected()
+        group.entities.remove_selected()
         MAP_INDEX.invalidate_and_rebuild()
         return {"FINISHED"}
 
@@ -431,9 +504,8 @@ class SOLLUMZ_OT_map_generate_partitions(Operator):
         md = active_map(context)
         if md is None or md.partition_mode != MapPartitionMode.AUTO.name:
             return False
-        group = active_group(context)
-        if group is not None and group.incomplete_lod_hierarchy_lock:
-            cls.poll_message_set("LOD hierarchy is incomplete. Partitioning is disabled!")
+        if md.incomplete_lod_hierarchy_lock:
+            cls.poll_message_set("Container's LOD hierarchy is incomplete. Partitioning is disabled!")
             return False
         return True
 
@@ -458,10 +530,19 @@ class SOLLUMZ_OT_map_collapse_to_auto(Operator):
         md = active_map(context)
         if md is None or md.partition_mode != MapPartitionMode.NONE.name:
             return False
-        group = active_group(context)
-        if group is not None and group.incomplete_lod_hierarchy_lock:
-            cls.poll_message_set("LOD hierarchy is incomplete. Partitioning is disabled!")
+        if md.incomplete_lod_hierarchy_lock:
+            cls.poll_message_set("Container's LOD hierarchy is incomplete. Partitioning is disabled!")
             return False
+        group = active_group(context)
+        if group is not None:
+            # collapse_to_auto removes ALL leaf children (not just auto-generated ones) and moves
+            # their items into this container, so no leaf child may be locked
+            parent_uuids = {m.parent_uuid for m in group.maps if m.parent_uuid}
+            md_uuid = md.uuid
+            for m in group.maps:
+                if m.parent_uuid == md_uuid and m.uuid not in parent_uuids and m.incomplete_lod_hierarchy_lock:
+                    cls.poll_message_set(f"Container '{m.name}' has an incomplete LOD hierarchy. Cannot collapse it!")
+                    return False
         return True
 
     def execute(self, context):
@@ -484,9 +565,8 @@ class SOLLUMZ_OT_map_convert_to_manual(Operator):
         md = active_map(context)
         if md is None or md.partition_mode != MapPartitionMode.AUTO.name:
             return False
-        group = active_group(context)
-        if group is not None and group.incomplete_lod_hierarchy_lock:
-            cls.poll_message_set("LOD hierarchy is incomplete. Partitioning is disabled!")
+        if md.incomplete_lod_hierarchy_lock:
+            cls.poll_message_set("Container's LOD hierarchy is incomplete. Partitioning is disabled!")
             return False
         return True
 
@@ -508,13 +588,10 @@ class SOLLUMZ_OT_map_auto_assign_unassigned(Operator):
 
     @classmethod
     def poll(cls, context):
+        # Locked containers are excluded as assignment targets in auto_assign_unassigned, so the
+        # operator itself is safe to run on groups with an incomplete LOD hierarchy
         group = active_group(context)
-        if group is None or not group.maps:
-            return False
-        if group.incomplete_lod_hierarchy_lock:
-            cls.poll_message_set("LOD hierarchy is incomplete. Partitioning is disabled!")
-            return False
-        return True
+        return group is not None and bool(group.maps)
 
     def execute(self, context):
         from ..partitioning import auto_assign_unassigned

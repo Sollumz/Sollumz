@@ -637,14 +637,28 @@ def test_ymap_box_shaped_model_stays_model_occluder(tmp_path: Path):
 
 # Incomplete LOD hierarchy
 #
-# These tests import a SUBSET of a related .ymap set (missing parent and/or child maps, or an
-# out-of-range parent index). The map group must be locked (incomplete_lod_hierarchy_lock) and its
-# LOD hierarchy values preserved as-is on re-export. The four detection branches log warnings (not
-# errors), so these tests assert on the captured warnings instead of using @assert_logs_no_errors.
+# These tests import a subset of a related .ymap set (missing parent and/or child maps, or an
+# out-of-range parent index). The affected map data containers must be locked
+# (MapData.incomplete_lod_hierarchy_lock) and their LOD hierarchy values preserved as-is on
+# re-export, while complete containers in the same group stay unlocked and editable.
+
+
+def _find_group_map(group, name: str):
+    for m in group.maps:
+        if m.name == name:
+            return m
+    raise AssertionError(f"Map data '{name}' not found in group '{group.name}'")
+
+
+def _find_group_entity(group, archetype_name: str):
+    for e in group.entities:
+        if e.archetype_name == archetype_name:
+            return e
+    raise AssertionError(f"Entity '{archetype_name}' not found in group '{group.name}'")
 
 
 def test_ymap_export_incomplete_missing_parent(tmp_path: Path):
-    """Importing an HD map without its parent LOD map locks the group and preserves the hierarchy."""
+    """Importing an HD map without its parent LOD map locks the container and preserves the hierarchy."""
     # test_partition_strm references <parent>test_partition_lod</parent>, which is not imported.
     with log_capture() as logs:
         _import_ymaps("test_partition_strm.ymap.xml")
@@ -653,7 +667,8 @@ def test_ymap_export_incomplete_missing_parent(tmp_path: Path):
     assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
 
     group = _last_map_group()
-    assert group.incomplete_lod_hierarchy_lock, "Group with a missing parent map should be locked"
+    assert group.maps[0].incomplete_lod_hierarchy_lock, "Container with a missing parent map should be locked"
+    assert all(e.num_children_missing == 0 for e in group.entities), "HD entities have no missing children"
 
     _export_last_map_group(tmp_path)
 
@@ -665,7 +680,7 @@ def test_ymap_export_incomplete_missing_parent(tmp_path: Path):
 
 
 def test_ymap_export_incomplete_missing_children(tmp_path: Path):
-    """Importing a LOD map without its HD children locks the group and preserves numChildren."""
+    """Importing a LOD map without its HD children locks the container and preserves numChildren."""
     # test_partition_lod entities expect 3 and 1 children; none are imported -> count mismatch.
     with log_capture() as logs:
         _import_ymaps("test_partition_lod.ymap.xml")
@@ -674,7 +689,10 @@ def test_ymap_export_incomplete_missing_children(tmp_path: Path):
     assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
 
     group = _last_map_group()
-    assert group.incomplete_lod_hierarchy_lock, "Group with missing children should be locked"
+    assert group.maps[0].incomplete_lod_hierarchy_lock, "Container with missing children should be locked"
+    # No children were imported, so all expected children are missing.
+    assert _find_group_entity(group, "test_sector_lod_a").num_children_missing == 3
+    assert _find_group_entity(group, "test_sector_lod_b").num_children_missing == 1
 
     _export_last_map_group(tmp_path)
 
@@ -684,7 +702,7 @@ def test_ymap_export_incomplete_missing_children(tmp_path: Path):
 
 
 def test_ymap_export_incomplete_bad_parent_index(tmp_path: Path):
-    """A map with an out-of-range parentIndex locks the group and preserves the value as-is."""
+    """A map with an out-of-range parentIndex locks the container and preserves the value as-is."""
     with log_capture() as logs:
         _import_ymaps("test_partial_bad_parent_index.ymap.xml")
 
@@ -692,7 +710,9 @@ def test_ymap_export_incomplete_bad_parent_index(tmp_path: Path):
     assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
 
     group = _last_map_group()
-    assert group.incomplete_lod_hierarchy_lock, "Group with an out-of-range parent index should be locked"
+    assert group.maps[0].incomplete_lod_hierarchy_lock, (
+        "Container with an out-of-range parent index should be locked"
+    )
 
     _export_last_map_group(tmp_path)
 
@@ -708,7 +728,7 @@ def test_ymap_export_complete_hierarchy_not_locked(tmp_path: Path):
     _import_ymaps("test_hd_lod_pair.ymap.xml", "test_hd_lod_pair_lod.ymap.xml")
 
     group = _last_map_group()
-    assert not group.incomplete_lod_hierarchy_lock, "A complete hierarchy must NOT be locked"
+    assert not any(m.incomplete_lod_hierarchy_lock for m in group.maps), "A complete hierarchy must NOT be locked"
 
     _export_last_map_group(tmp_path)
 
@@ -716,3 +736,143 @@ def test_ymap_export_complete_hierarchy_not_locked(tmp_path: Path):
         exported = tmp_path / name
         assert exported.exists(), f"Expected exported file: {exported}"
         _assert_ymap_entities_match(YMAP_ASSETS_DIR / name, exported)
+
+
+# Partial subtree imports: test_partition_lod is the root (test_sector_lod_a expects 3 children,
+# test_sector_lod_b expects 1), test_partition_strm holds 2 children of lod_a + the child of lod_b,
+# test_partition_long holds lod_a's 3rd child. Importing lod+strm WITHOUT long must lock only the
+# lod container (one child missing) while the fully-resolved strm container stays editable.
+
+
+def _import_partial_subtree():
+    with log_capture() as logs:
+        _import_ymaps("test_partition_lod.ymap.xml", "test_partition_strm.ymap.xml")
+
+    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
+    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+
+    group = _last_map_group()
+    lod_map = _find_group_map(group, "test_partition_lod")
+    strm_map = _find_group_map(group, "test_partition_strm")
+    assert lod_map.incomplete_lod_hierarchy_lock, "Root container with a missing child map should be locked"
+    assert not strm_map.incomplete_lod_hierarchy_lock, "Fully resolved subtree container must NOT be locked"
+    return group
+
+
+def test_ymap_export_incomplete_partial_subtree(tmp_path: Path):
+    """Only the container with missing children locks; an unedited re-export matches the originals."""
+    group = _import_partial_subtree()
+
+    lod_a = _find_group_entity(group, "test_sector_lod_a")
+    lod_b = _find_group_entity(group, "test_sector_lod_b")
+    assert lod_a.num_children_missing == 1, "One of lod_a's 3 children lives in the non-imported map"
+    assert lod_b.num_children_missing == 0, "lod_b's child was imported"
+    for name in ("test_hd_building_a", "test_hd_building_b", "test_hd_building_c"):
+        assert _find_group_entity(group, name).parent_uuid, f"{name} should have a resolved parent"
+
+    _export_last_map_group(tmp_path)
+
+    for name in ("test_partition_lod.ymap.xml", "test_partition_strm.ymap.xml"):
+        exported = tmp_path / name
+        assert exported.exists(), f"Expected exported file: {exported}"
+        # lod: numChildren reconstructed as found (via parent_uuid) + missing; strm: parentIndex
+        # and LOD_IN_PARENT_MAP recomputed to the original values.
+        _assert_ymap_hierarchy_preserved(YMAP_ASSETS_DIR / name, exported)
+        _assert_ymap_entities_match(YMAP_ASSETS_DIR / name, exported)
+
+
+def test_ymap_export_incomplete_partial_subtree_edit_unlocked(tmp_path: Path):
+    """Deleting an entity in the unlocked subtree updates the locked parent's exported numChildren."""
+    group = _import_partial_subtree()
+
+    building_b_idx = next(i for i, e in enumerate(group.entities) if e.archetype_name == "test_hd_building_b")
+    group.entities.remove(building_b_idx)
+    from ..ymap_next.map_index import MAP_INDEX
+
+    MAP_INDEX.invalidate_and_rebuild()
+
+    _export_last_map_group(tmp_path)
+
+    lod_root = _parse_xml(tmp_path / "test_partition_lod.ymap.xml")
+    lod_entities = lod_root.findall("./entities/Item")
+    assert len(lod_entities) == 2, "The locked container's entity list must be unchanged"
+    assert _get_value(lod_entities[0], "numChildren") == "2", "lod_a: 1 found child + 1 missing child"
+    assert _get_value(lod_entities[0], "parentIndex") == "-1"
+    assert _get_value(lod_entities[1], "numChildren") == "1", "lod_b: 1 found child"
+
+    strm_root = _parse_xml(tmp_path / "test_partition_strm.ymap.xml")
+    strm_entities = strm_root.findall("./entities/Item")
+    assert [_get_text(e, "archetypeName") for e in strm_entities] == ["test_hd_building_a", "test_hd_building_c"]
+    assert _get_value(strm_entities[0], "parentIndex") == "0"
+    assert _get_value(strm_entities[1], "parentIndex") == "1"
+
+
+def test_ymap_export_incomplete_partial_subtree_reparent(tmp_path: Path):
+    """Reparenting an unlocked entity onto a locked container's entity updates both parents' counts."""
+    group = _import_partial_subtree()
+
+    lod_a = _find_group_entity(group, "test_sector_lod_a")
+    building_c = _find_group_entity(group, "test_hd_building_c")
+    group.set_entity_parent(building_c, lod_a.uuid)
+    assert building_c.parent_uuid == lod_a.uuid, "Reparenting an entity in an unlocked container must work"
+
+    _export_last_map_group(tmp_path)
+
+    lod_root = _parse_xml(tmp_path / "test_partition_lod.ymap.xml")
+    lod_entities = lod_root.findall("./entities/Item")
+    assert _get_value(lod_entities[0], "numChildren") == "4", "lod_a: 3 found children + 1 missing child"
+    assert _get_value(lod_entities[1], "numChildren") == "0", "lod_b: its child was reparented away"
+
+    strm_root = _parse_xml(tmp_path / "test_partition_strm.ymap.xml")
+    strm_entities = strm_root.findall("./entities/Item")
+    assert [_get_value(e, "parentIndex") for e in strm_entities] == ["0", "0", "0"]
+
+
+def test_ymap_incomplete_locked_container_edits_blocked():
+    """Edits that would break a locked container's frozen entity list must be no-ops."""
+    group = _import_partial_subtree()
+
+    lod_map = _find_group_map(group, "test_partition_lod")
+    lod_a = _find_group_entity(group, "test_sector_lod_a")
+    lod_b = _find_group_entity(group, "test_sector_lod_b")
+    building_a = _find_group_entity(group, "test_hd_building_a")
+
+    # Reparenting an entity in a locked container is a no-op
+    group.set_entity_parent(lod_a, lod_b.uuid)
+    assert not lod_a.parent_uuid
+    # ...also through the parent_name property setter (bypasses set_entity_parent)
+    lod_a.parent_name = "test_sector_lod_b"
+    assert not lod_a.parent_uuid
+
+    # Moving an entity into or out of a locked container is a no-op
+    strm_map_uuid = building_a.map_data_uuid
+    building_a.map_data_name = "test_partition_lod"
+    assert building_a.map_data_uuid == strm_map_uuid, "Cannot move an entity INTO a locked container"
+    lod_map_uuid = lod_a.map_data_uuid
+    lod_a.map_data_name = "test_partition_strm"
+    assert lod_a.map_data_uuid == lod_map_uuid, "Cannot move an entity OUT of a locked container"
+
+    # Re-linking a locked container to another parent is a no-op
+    lod_map.parent_name = "test_partition_strm"
+    assert not lod_map.parent_uuid
+
+
+def test_ymap_incomplete_unlock_recomputes_but_keeps_missing_children(tmp_path: Path):
+    """Unlocking a container re-enables editing; missing children count is lost and not included in numChildren."""
+    group = _import_partial_subtree()
+
+    lod_map = _find_group_map(group, "test_partition_lod")
+    lod_map.incomplete_lod_hierarchy_lock = False
+
+    _export_last_map_group(tmp_path)
+
+    lod_root = _parse_xml(tmp_path / "test_partition_lod.ymap.xml")
+    lod_entities = lod_root.findall("./entities/Item")
+    assert _get_value(lod_entities[0], "numChildren") == "2", "lod_a: 2 found children, lost the 1 missing child"
+    assert _get_value(lod_entities[1], "numChildren") == "1"
+
+    # Editing the previously locked container's entities is possible again
+    lod_a = _find_group_entity(group, "test_sector_lod_a")
+    lod_b = _find_group_entity(group, "test_sector_lod_b")
+    group.set_entity_parent(lod_a, lod_b.uuid)
+    assert lod_a.parent_uuid == lod_b.uuid
