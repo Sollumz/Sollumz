@@ -1,18 +1,19 @@
 from collections.abc import Iterator
+
 import bpy
-from bpy.types import (
-    PropertyGroup,
-    Scene,
-    Context,
-)
 from bpy.props import (
     EnumProperty,
     PointerProperty,
     StringProperty,
 )
+from bpy.types import (
+    Context,
+    PropertyGroup,
+    Scene,
+)
 
-from .map import MapLodLevelEnumItems
 from ..context import active_group
+from .map import MapLodLevelEnumItems
 
 
 class MapEntityFilterProperties(PropertyGroup):

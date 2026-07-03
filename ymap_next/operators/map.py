@@ -1,29 +1,33 @@
 import bpy
 from bpy.props import (
-    StringProperty,
     FloatVectorProperty,
+    StringProperty,
 )
 from bpy.types import (
     Operator,
 )
 from mathutils import Vector
 
+from ...shared.game_assets.asset_info import (
+    AssetInfoCache,
+    try_get_archetype_info_by_name,
+    try_get_asset_metadata_archetype_info,
+)
 from ...shared.multiselection import SelectMode
 from ...tools.blenderhelper import remove_number_suffix, tag_redraw
 from ..context import (
+    active_entities_collection,
     active_entity,
     active_entity_extension,
     active_grass_batch,
     active_group,
     active_map,
-    active_entities_collection,
 )
 from ..map_index import (
     MAP_INDEX,
     CacheObjectData,
 )
 from ..properties.map import MapPartitionMode, get_maps
-from ...shared.game_assets.asset_info import AssetInfoCache, try_get_asset_metadata_archetype_info, try_get_archetype_info_by_name
 
 
 def _parents_locked_map_entities(group, entity_uuids: set[bytes]) -> bool:
@@ -510,7 +514,8 @@ class SOLLUMZ_OT_map_generate_partitions(Operator):
         return True
 
     def execute(self, context):
-        from ..partitioning import generate_partitions, PartitioningSettings
+        from ..partitioning import PartitioningSettings, generate_partitions
+
         settings = PartitioningSettings()
 
         group = active_group(context)
@@ -604,9 +609,7 @@ class SOLLUMZ_OT_map_auto_assign_unassigned(Operator):
 class SOLLUMZ_OT_map_calculate_extents(Operator):
     bl_idname = "sollumz.map_calculate_extents"
     bl_label = "Calculate Extents"
-    bl_description = (
-        "Recalculate entities and streaming extents of the selected container(s) from their assigned items"
-    )
+    bl_description = "Recalculate entities and streaming extents of the selected container(s) from their assigned items"
     bl_options = {"UNDO"}
 
     @classmethod
@@ -660,8 +663,11 @@ class SOLLUMZ_OT_map_add_obj_as_entity(Operator):
             entity.scale_xy = scale.x
             entity.scale_z = scale.z
 
-
-            archetype_info = try_get_asset_metadata_archetype_info(obj, cache=cache) if obj is not None else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+            archetype_info = (
+                try_get_asset_metadata_archetype_info(obj, cache=cache)
+                if obj is not None
+                else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+            )
             if archetype_info and archetype_info.type == "MLO":
                 entity.is_mlo = True
                 entity.mlo_num_exit_portals = archetype_info.mlo_num_exit_portals
@@ -700,7 +706,11 @@ class SOLLUMZ_OT_map_mlo_instance_calc_num_exit_portals(Operator):
                 continue
 
             obj = entity.linked_object
-            archetype_info = try_get_asset_metadata_archetype_info(obj, cache=cache) if obj is not None else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+            archetype_info = (
+                try_get_asset_metadata_archetype_info(obj, cache=cache)
+                if obj is not None
+                else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+            )
             if archetype_info:
                 entity.mlo_num_exit_portals = archetype_info.mlo_num_exit_portals
 

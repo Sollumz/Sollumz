@@ -9,8 +9,8 @@ from bpy.types import (
 )
 from mathutils import Matrix, Vector
 
-from ..properties.map import get_maps
 from ..context import active_tcm
+from ..properties.map import get_maps
 from ..ui.map import SOLLUMZ_PT_map_tcms
 
 

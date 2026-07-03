@@ -43,9 +43,9 @@ from ..iecontext import ExportBundle, export_context
 from ..shared.game_assets.asset_info import AssetInfoCache
 from ..tools.blenderhelper import remove_number_suffix
 from .extents import calc_map_data_extents
-from .occluders.box import recover_box_occluder, box_island_is_valid
 from .grass import evaluated_grass_batch_instances_from_object, partition_grass_batch_instances
 from .grass.geonodes import disable_grass_batch_modifier_preview
+from .occluders.box import box_island_is_valid, recover_box_occluder
 from .properties.map import (
     MAP_CARGEN_FLAG_PROPS,
     MapCarGen,
@@ -71,7 +71,7 @@ def _ensure_auto_partitions_generated(map_group: MapGroup):
     This handles the case where the user added new items to an AUTO parent but didn't
     explicitly run "Generate Partitions" before exporting.
     """
-    from .partitioning import generate_partitions, PartitioningSettings
+    from .partitioning import PartitioningSettings, generate_partitions
 
     settings = PartitioningSettings()
 
@@ -569,7 +569,9 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
                 continue
 
             island_tris = np.array([lt.vertices[:] for lt in island], dtype=np.int32)
-            tri_flags = np.fromiter((face_flags[tri.polygon_index] for tri in island), dtype=np.int32, count=len(island))
+            tri_flags = np.fromiter(
+                (face_flags[tri.polygon_index] for tri in island), dtype=np.int32, count=len(island)
+            )
             uniq_vert_indices_in_island_tris, uniq_inverse = np.unique(island_tris, return_inverse=True)
 
             # A box occluder is a cube (8 verts) or a plane (4 verts).

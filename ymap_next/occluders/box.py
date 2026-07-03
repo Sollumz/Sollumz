@@ -1,6 +1,7 @@
+from typing import TypeAlias
+
 import numpy as np
 from mathutils import Vector
-from typing import TypeAlias
 
 # Unit cube corners and quad faces for solid box occluders.
 _CUBE_VERTS = np.array(

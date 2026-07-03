@@ -6,6 +6,7 @@ from bpy.types import (
     UIList,
 )
 
+from ...icons import icon
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -28,7 +29,6 @@ from ..properties.map import (
 )
 from .common import draw_cache_result
 from .map import MapChildTabPanel
-from ...icons import icon
 
 
 class SOLLUMZ_PT_map_cargens(MapChildTabPanel, Panel):

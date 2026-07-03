@@ -39,6 +39,8 @@ from szio.gta5 import (
 from .. import logger
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import create_blender_object
+from .instancing import InstancingBatch, batch_add_map_entity, batch_instance_map_entities
+from .occluders.box import box_occluder_world_geometry
 from .properties.map import (
     MAP_CARGEN_FLAG_PROPS,
     MapCarGen,
@@ -50,8 +52,6 @@ from .properties.map import (
     MapTimecycleModifier,
     get_maps,
 )
-from .instancing import InstancingBatch, batch_add_map_entity, batch_instance_map_entities
-from .occluders.box import box_occluder_world_geometry
 
 _import_maps = []
 _import_instance_entities = None

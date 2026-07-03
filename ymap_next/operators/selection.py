@@ -67,6 +67,7 @@ class MapGroupEntitiesSelectMixin:
 
     def _filter_items_impl(self, context) -> tuple[list[int], list[int]]:
         from ..ui.entities import map_entities_filter_items
+
         return map_entities_filter_items(
             self.get_collection(context),
             self.filter_name,

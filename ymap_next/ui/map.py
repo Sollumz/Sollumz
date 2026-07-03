@@ -1,16 +1,17 @@
 import bpy
+from bpy.props import (
+    CollectionProperty,
+    IntProperty,
+)
 from bpy.types import (
+    ID,
     Menu,
     Panel,
     UIList,
     WindowManager,
-    ID,
-)
-from bpy.props import (
-    IntProperty,
-    CollectionProperty,
 )
 
+from ...icons import icon
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -34,7 +35,6 @@ from ..properties.map import (
     MapPartitionMode,
     get_maps,
 )
-from ...icons import icon
 
 
 class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
@@ -60,6 +60,7 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
         if not maps:
             wm = context.window_manager
             from ...sollumz_ui import draw_list_with_add_remove
+
             # fake list just so the UI stays consistent with no maps
             list_col, _ = draw_list_with_add_remove(
                 layout,
@@ -67,8 +68,10 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
                 map_ops.SOLLUMZ_OT_maps_delete_group.bl_idname,
                 SOLLUMZ_UL_maps_group_list.bl_idname,
                 "",
-                wm, "sz_ui_map_groups_fake_list",
-                wm, "sz_ui_map_groups_fake_list_index",
+                wm,
+                "sz_ui_map_groups_fake_list",
+                wm,
+                "sz_ui_map_groups_fake_list_index",
                 rows=3,
             )
         else:
@@ -133,9 +136,7 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
                 active = maps.active_item
 
                 active_locked = active.incomplete_lod_hierarchy_lock
-                any_selected_locked = any(
-                    m.incomplete_lod_hierarchy_lock for m in maps.iter_selected_items()
-                )
+                any_selected_locked = any(m.incomplete_lod_hierarchy_lock for m in maps.iter_selected_items())
 
                 row = body.row()
                 # A locked container cannot be re-linked: its entities' parent_index values are
@@ -163,7 +164,9 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
                     elif not active.is_auto_generated:
                         row = body.row(align=True)
                         row.operator(map_ops.SOLLUMZ_OT_map_collapse_to_auto.bl_idname)
-                        row.operator(map_ops.SOLLUMZ_OT_map_auto_assign_unassigned.bl_idname, text="", icon="BRUSH_DATA")
+                        row.operator(
+                            map_ops.SOLLUMZ_OT_map_auto_assign_unassigned.bl_idname, text="", icon="BRUSH_DATA"
+                        )
 
                 body.separator()
 

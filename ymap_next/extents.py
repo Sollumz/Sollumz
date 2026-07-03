@@ -11,7 +11,11 @@ import numpy as np
 from bpy.types import Depsgraph
 from mathutils import Matrix, Quaternion, Vector
 
-from ..shared.game_assets.asset_info import AssetInfoCache, try_get_asset_metadata_archetype_info, try_get_archetype_info_by_name
+from ..shared.game_assets.asset_info import (
+    AssetInfoCache,
+    try_get_archetype_info_by_name,
+    try_get_asset_metadata_archetype_info,
+)
 from ..tools.meshhelper import get_combined_bound_box
 from .grass import evaluated_grass_batch_instances_from_object
 from .grass.geonodes import disable_grass_batch_modifier_preview
@@ -24,6 +28,7 @@ from .properties.map import (
     MapOccluder,
     MapTimecycleModifier,
 )
+
 
 def resolve_entity_lod_dist(entity: MapEntity, map_group: MapGroup, cache: AssetInfoCache) -> float:
     """Effective LOD distance used by an entity, matching how the game derives it: a LOD parent's
@@ -124,7 +129,11 @@ def _entity_world_aabb(entity: MapEntity, map_group: MapGroup, cache: AssetInfoC
             Vector((entity.scale_xy, entity.scale_xy, entity.scale_z)),
         )
 
-    archetype_info = try_get_asset_metadata_archetype_info(obj, cache=cache) if obj is not None else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+    archetype_info = (
+        try_get_asset_metadata_archetype_info(obj, cache=cache)
+        if obj is not None
+        else try_get_archetype_info_by_name(entity.archetype_name, cache=cache)
+    )
     if archetype_info is not None and archetype_info.bb_min != archetype_info.bb_max:
         bb_min, bb_max = _transform_aabb(world_matrix, archetype_info.bb_min, archetype_info.bb_max)
     elif obj is not None and any(c.type == "MESH" for c in (obj, *obj.children_recursive)):

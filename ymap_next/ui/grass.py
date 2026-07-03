@@ -4,6 +4,7 @@ from bpy.types import (
     UIList,
 )
 
+from ...icons import icon
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -21,7 +22,6 @@ from ..properties.map import (
     get_maps,
 )
 from .map import MapChildTabPanel
-from ...icons import icon
 
 
 class SOLLUMZ_PT_map_grass_batches(MapChildTabPanel, Panel):

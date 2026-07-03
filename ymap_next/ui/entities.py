@@ -4,6 +4,7 @@ from bpy.types import (
     UIList,
 )
 
+from ...icons import icon
 from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
     MultiSelectUIListMixin,
@@ -37,7 +38,6 @@ from ..properties.map import (
 )
 from .common import draw_cache_result
 from .map import MapChildTabPanel
-from ...icons import icon
 
 
 class SOLLUMZ_PT_map_entities(MapChildTabPanel, Panel):
@@ -208,7 +208,9 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
 
             row = layout.row()
             row.prop(selection.owner, selection.propnames.mlo_num_exit_portals)
-            row.operator(map_ops.SOLLUMZ_OT_map_mlo_instance_calc_num_exit_portals.bl_idname, text="", icon="FILE_REFRESH")
+            row.operator(
+                map_ops.SOLLUMZ_OT_map_mlo_instance_calc_num_exit_portals.bl_idname, text="", icon="FILE_REFRESH"
+            )
         else:
             if active_map_locked:
                 layout.prop(selection.owner, selection.propnames.parent_index)
@@ -305,7 +307,8 @@ def map_entities_filter_items(
     use_filter_sort_reverse: bool,
     use_filter_sort_alpha: bool,
 ) -> tuple[list[int], list[int]]:
-    from ...shared.multiselection import _default_filter_items, _BITFLAG_FILTER_ITEM
+    from ...shared.multiselection import _BITFLAG_FILTER_ITEM, _default_filter_items
+
     filter_flags, filter_order = _default_filter_items(
         entities,
         filter_name,

@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from uuid import uuid4
 from dataclasses import dataclass
+from uuid import uuid4
 
 import numpy as np
 from mathutils import Vector
 
 from ..shared.game_assets.asset_info import AssetInfoCache
 from ..shared.geometry import KDTreeSplitStrategy, kdtree_build, kdtree_merge_leaves
+from .extents import resolve_entity_lod_dist
 from .properties.map import (
     MapCarGen,
     MapData,
@@ -20,10 +21,10 @@ from .properties.map import (
     MapPartitionMode,
     MapTimecycleModifier,
 )
-from .extents import resolve_entity_lod_dist
 
 # Bucket key for items that stay in the logical (AUTO) map data itself
 SELF = "SELF"
+
 
 @dataclass(slots=True)
 class PartitioningSettings:
@@ -171,7 +172,9 @@ def generate_partitions(map_group: MapGroup, map_data: MapData, settings: Partit
             strm_entities = [item for item in bucket_items if isinstance(item, MapEntity)]
             strm_cargens = [item for item in bucket_items if isinstance(item, MapCarGen)]
             if strm_entities:
-                entity_chunks = spatial_partition_by_position(strm_entities, _get_entity_position, settings.max_per_chunk)
+                entity_chunks = spatial_partition_by_position(
+                    strm_entities, _get_entity_position, settings.max_per_chunk
+                )
                 for i, chunk in enumerate(entity_chunks):
                     numbered_buckets[f"strm_{i}"] = chunk
                 # Distribute cargens into the chunks by proximity
