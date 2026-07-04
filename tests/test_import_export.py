@@ -248,7 +248,8 @@ DEFAULT_EXPORT_SETTINGS = {
 DEFAULT_IMPORT_SETTINGS = {
     "import_as_asset": False,
     "split_by_group": True,
-    "import_ext_skeleton": False,
+    "dwd_import_external_skeleton": "NO",
+    "dwd_import_external_skeleton_saved_path": "",
     "frag_import_vehicle_windows": False,
     "ymap_skip_missing_entities": True,
     "ymap_exclude_entities": False,

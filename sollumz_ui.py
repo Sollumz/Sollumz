@@ -211,7 +211,24 @@ class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_order = 3
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
-        layout.prop(settings, "import_ext_skeleton")
+        col = layout.column(align=True)
+        col.row(align=True).prop(settings, "dwd_import_external_skeleton", expand=True)
+
+        if settings.dwd_import_external_skeleton == "SAVED":
+            prefs = get_addon_preferences(bpy.context)
+            if prefs.external_skeleton_paths:
+                col.prop_search(
+                    settings, "dwd_import_external_skeleton_saved_path",
+                    prefs, "external_skeleton_paths",
+                    text=" ", icon="ARMATURE_DATA",
+                )
+            else:
+                split = col.split(factor=0.4)
+                row = split.row()
+                row = split.row()
+                row.alert = True
+                row.label(text="No external skeletons saved in preferences.", icon="ERROR")
+
 
 
 class _SollumzImportYtypPanel(SollumzImportSettingsPanel):

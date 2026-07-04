@@ -8,6 +8,7 @@ from bpy.types import (
     UIList,
     UILayout,
     AddonPreferences,
+    Menu,
 )
 from bpy.props import (
     StringProperty,
@@ -241,10 +242,21 @@ class ImportSettingsBase:
         update=_on_update_thunk,
     )
 
-    import_ext_skeleton: BoolProperty(
+    dwd_import_external_skeleton: EnumProperty(
         name="Import External Skeleton",
-        description="Imports the first found yft skeleton in the same folder as the selected file",
-        default=False,
+        description="Import external YFT to use as skeleton when importing a YDD",
+        items=(
+            ("NO", "No", "Do not import any external skeleton"),
+            ("FROM_DIR", "Auto", "Automatically use the first YFT found in the same directory as the imported file"),
+            ("SAVED", "Saved", "Use YFT saved in preferences"),
+        ),
+        default="NO",
+        update=_on_update_thunk,
+    )
+
+    dwd_import_external_skeleton_saved_path: StringProperty(
+        name="Import External Skeleton Selection",
+        description="The external skeleton YFT to use, from the ones saved in the preferences",
         update=_on_update_thunk,
     )
 
@@ -333,7 +345,7 @@ class ImportSettingsBase:
     )
 
     def to_import_context_settings(self) -> "ImportSettings":
-        from .iecontext import ImportSettings, ImportTexturesMode
+        from .iecontext import ImportSettings, ImportTexturesMode, ImportExternalSkeletonMode
 
         textures_mode = ImportTexturesMode[self.textures_mode]
         textures_extract_custom_dir=(
@@ -345,11 +357,19 @@ class ImportSettingsBase:
             # If there is no custom directory set, fallback to the import directory.
             textures_mode = ImportTexturesMode.IMPORT_DIR
 
+        dwd_import_external_skeleton = ImportExternalSkeletonMode[self.dwd_import_external_skeleton]
+        dwd_import_external_skeleton_saved_path = (
+            Path(bpy.path.abspath(self.dwd_import_external_skeleton_saved_path))
+            if dwd_import_external_skeleton == ImportExternalSkeletonMode.SAVED and self.dwd_import_external_skeleton_saved_path
+            else None
+        )
+
         return ImportSettings(
             import_as_asset=self.import_as_asset,
             split_by_group=self.split_by_group,
             mlo_instance_entities=self.ytyp_mlo_instance_entities,
-            import_external_skeleton=self.import_ext_skeleton,
+            dwd_import_external_skeleton=dwd_import_external_skeleton,
+            dwd_import_external_skeleton_saved_path=dwd_import_external_skeleton_saved_path,
             frag_import_vehicle_windows=self.frag_import_vehicle_windows,
             map_instance_entities=self.ymap_instance_entities,
             textures_mode=textures_mode,
@@ -735,6 +755,150 @@ class SOLLUMZ_OT_prefs_name_table_path_remove(Operator):
         return {"FINISHED"}
 
 
+class SzExternalSkeletonPath(PropertyGroup):
+    # Named `name` so it can be used with `prop_search`, its `item_search_property` parameter was not added until 5.0
+    # and we still support older versions
+    name: StringProperty(
+        name="Path",
+        description="Path to a YFT file",
+        subtype="FILE_PATH",
+        update=_save_preferences_on_update,
+    )
+
+
+class SOLLUMZ_UL_prefs_external_skeleton_paths(UIList):
+    bl_idname = "SOLLUMZ_UL_prefs_external_skeleton_paths"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        layout.prop(item, "name", text="", emboss=False)
+
+
+class SOLLUMZ_OT_prefs_external_skeleton_path_add(Operator, ImportHelper):
+    bl_idname = "sollumz.prefs_external_skeleton_path_add"
+    bl_label = "Add External Skeleton"
+    bl_description = "Add new external skeleton"
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
+    files: bpy.props.CollectionProperty(
+        name="File Path",
+        type=bpy.types.OperatorFileListElement,
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
+
+    filter_glob: bpy.props.StringProperty(
+        default="".join(f"*{ext};" for ext in (".yft", ".yft.xml")),
+        options={"HIDDEN", "SKIP_SAVE"},
+        maxlen=255,
+    )
+
+    def execute(self, context):
+        if not self.directory or len(self.files) == 0 or self.files[0].name == "":
+            # logger.info("No file selected for import!")
+            return {"CANCELLED"}
+
+        self.directory = bpy.path.abspath(self.directory)
+
+        from pathlib import Path
+        prefs = get_addon_preferences(context)
+        filenames = [f.name for f in self.files]
+        directory = Path(self.directory)
+        for filename in filenames:
+            filepath = (directory / filename).absolute()
+
+            d = prefs.external_skeleton_paths.add()
+            d.name = str(filepath)
+
+        prefs.external_skeleton_paths_index = len(prefs.external_skeleton_paths) - 1
+        _save_preferences()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_external_skeleton_path_remove(Operator):
+    bl_idname = "sollumz.prefs_external_skeleton_path_remove"
+    bl_label = "Remove External Skeleton Path"
+    bl_description = "Remove the selected external skeleton"
+
+    @classmethod
+    def poll(cls, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.external_skeleton_paths_index < len(prefs.external_skeleton_paths)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        prefs.external_skeleton_paths.remove(prefs.external_skeleton_paths_index)
+        prefs.external_skeleton_paths_index = max(prefs.external_skeleton_paths_index - 1, 0)
+        _save_preferences()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode(Operator):
+    bl_idname = "sollumz.prefs_external_skeleton_path_add_mp_freemode"
+    bl_label = "Choose Game Installation"
+    bl_description = "Add MP freemode skeletons from game files"
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
+
+    @classmethod
+    def poll(cls, context):
+        if not IS_SZIO_NATIVE_AVAILABLE:
+            cls.poll_message_set(PYMATERIA_REQUIRED_MSG)
+            return False
+
+        return True
+
+    def draw(self, context):
+        pass
+
+    def execute(self, context):
+        from . import logger
+        with logger.use_operator_logger(self):
+            if not self.directory:
+                return {"CANCELLED"}
+
+            directory = Path(bpy.path.abspath(self.directory))
+            if not directory.is_dir():
+                return {"CANCELLED"}
+
+            from .shared.game_assets.game_files import GameFiles
+            gf = GameFiles(directory)
+            if not gf.is_game_installation():
+                logger.warning("The selected directory is not the GTA5 installation directory")
+                return {"CANCELLED"}
+
+
+            prefs = get_addon_preferences(context)
+            for subpath in (
+                "x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_m_freemode_01.yft",
+                "x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_f_freemode_01.yft",
+            ):
+                filepath = (directory / subpath).absolute()
+
+                d = prefs.external_skeleton_paths.add()
+                d.name = str(filepath)
+
+            prefs.external_skeleton_paths_index = len(prefs.external_skeleton_paths) - 1
+
+            return {"FINISHED"}
+
+    def invoke(self, context, event):
+        if self.directory:
+            return self.execute(context)
+
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+
+class SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu(Menu):
+    bl_label = "External Skeleton Paths Specials"
+    bl_idname = "SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+        layout.operator(SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode.bl_idname, text="Add MP Freemode Skeletons from Game Files")
+
+
 class SzFavoriteEntry(PropertyGroup):
     name: StringProperty(
         name="Name",
@@ -854,6 +1018,15 @@ class SollumzAddonPreferences(AddonPreferences):
     )
     name_table_paths_index: IntProperty(
         name="Selected Name Table",
+        min=0
+    )
+
+    external_skeleton_paths: CollectionProperty(
+        name="External Skeletons",
+        type=SzExternalSkeletonPath,
+    )
+    external_skeleton_paths_index: IntProperty(
+        name="Selected External Skeleton",
         min=0
     )
 
@@ -1086,6 +1259,27 @@ class SollumzAddonPreferences(AddonPreferences):
         )
 
         layout.separator()
+        layout.label(text="External Skeletons")
+        row = layout.row()
+        self._draw_help_text(
+            context, row,
+            "YFT files available as external skeletons when importing drawable dictionaries that do not include "
+            "their own skeleton, such as ped component models. Used when the 'Import External Skeleton' import "
+            "setting is set to 'Saved'."
+        )
+        _, side_col = draw_list_with_add_remove(
+            layout,
+            SOLLUMZ_OT_prefs_external_skeleton_path_add.bl_idname,
+            SOLLUMZ_OT_prefs_external_skeleton_path_remove.bl_idname,
+            SOLLUMZ_UL_prefs_external_skeleton_paths.bl_idname, "",
+            self, "external_skeleton_paths",
+            self, "external_skeleton_paths_index",
+            rows=4
+        )
+        side_col.separator()
+        side_col.menu(SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
+
+        layout.separator()
         if bpy.app.version >= (4, 1, 0):
             header, body = layout.panel("prefs_general_advanced", default_closed=True)
         else:
@@ -1129,11 +1323,25 @@ class SollumzAddonPreferences(AddonPreferences):
                 row.label(icon="ERROR", text="No directory set")
             split.row().prop(settings, "textures_extract_custom_directory", text="")
 
-        _section_header(box, text="Fragment")
+        _section_header(box, "Fragment")
         box.prop(settings, "split_by_group")
         box.prop(settings, "frag_import_vehicle_windows")
         _section_header(box, "Drawable Dictionary")
-        box.prop(settings, "import_ext_skeleton")  # Drawable Dictionary
+        col = box.column(align=True)
+        col.row(align=True).prop(settings, "dwd_import_external_skeleton", expand=True)
+        if settings.dwd_import_external_skeleton == "SAVED":
+            if self.external_skeleton_paths:
+                col.prop_search(
+                    settings, "dwd_import_external_skeleton_saved_path",
+                    self, "external_skeleton_paths",
+                    text=" ", icon="ARMATURE_DATA",
+                )
+            else:
+                split = col.split(factor=0.4)
+                row = split.row()
+                row = split.row()
+                row.alert = True
+                row.label(text="No external skeletons saved in preferences.", icon="ERROR")
 
         _section_header(box, "Archetype Definitions")
         box.prop(settings, "ytyp_mlo_instance_entities")

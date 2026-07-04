@@ -17,6 +17,12 @@ class ImportTexturesMode(Enum):
     CUSTOM_DIR = auto()
 
 
+class ImportExternalSkeletonMode(Enum):
+    NO = auto()
+    FROM_DIR = auto()
+    SAVED = auto()
+
+
 @dataclass(slots=True, frozen=True)
 class ImportSettings:
     import_as_asset: bool
@@ -27,8 +33,9 @@ class ImportSettings:
     """Instance MLO entities when importing a YTYP."""
     map_instance_entities: bool
     """Instance map entities when importing a YMAP."""
-    import_external_skeleton: bool
-    """Look for a YFT to use as skeleton when importing a YDD."""
+    dwd_import_external_skeleton: ImportExternalSkeletonMode = ImportExternalSkeletonMode.NO
+    """How to look for a YFT to use as skeleton when importing a YDD."""
+    dwd_import_external_skeleton_saved_path: Path | None = None
     frag_import_vehicle_windows: bool = False
     """Whether to import vehicle windows when importing a YFT."""
     textures_mode: ImportTexturesMode = ImportTexturesMode.PACK
