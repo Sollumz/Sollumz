@@ -870,8 +870,8 @@ class SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode(Operator):
 
             prefs = get_addon_preferences(context)
             for subpath in (
-                "x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_m_freemode_01.yft",
-                "x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_f_freemode_01.yft",
+                r"x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_m_freemode_01.yft",
+                r"x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_f_freemode_01.yft",
             ):
                 filepath = (directory / subpath).absolute()
 
