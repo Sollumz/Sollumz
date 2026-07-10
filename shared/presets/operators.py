@@ -59,7 +59,7 @@ class PresetLoadOperatorBase:
     """Apply a named preset to every selected target. Triggered by
     clicking the preset name in the popover."""
 
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"UNDO"}
 
     category: PresetCategory = None
     get_target = None  # optional classvar override; if set, replaces category.get_target
@@ -113,7 +113,7 @@ class PresetLoadOperatorBase:
 class PresetDeleteOperatorBase:
     """Delete a named preset. Triggered by the `x` button next to each row."""
 
-    bl_options = {"REGISTER", "INTERNAL"}
+    bl_options = {"INTERNAL"}
 
     category: PresetCategory = None
 
