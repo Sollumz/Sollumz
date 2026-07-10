@@ -27,8 +27,9 @@ def create_grass_batch_geonodes(grass_batch: MapGrassBatch):
 
     res = link_objects_from_library(archetype_names)
     if res is None:
-        return
-    archetype_datas, num_missing = res
+        archetype_datas, num_missing = [], len(archetype_names)
+    else:
+        archetype_datas, num_missing = res
     # TODO: properly report this to the user
     if num_missing:
         logger.info("num missing grass archetypes: " + str(num_missing))
@@ -172,8 +173,12 @@ def add_grass_batch_modifier(obj: Object, grass_batch: MapGrassBatch) -> NodesMo
 
     mod: NodesModifier = obj.modifiers.new("GrassBatchGen", "NODES")
     mod.node_group = modifier_ng
-    mod["Socket_7_use_attribute"] = False
-    mod["Socket_14_use_attribute"] = False
+    if bpy.app.version >= (5, 2, 0):
+        mod.properties.inputs.Socket_7.type = "VALUE"
+        mod.properties.inputs.Socket_14.type = "VALUE"
+    else:
+        mod["Socket_7_use_attribute"] = False
+        mod["Socket_14_use_attribute"] = False
     mod.show_group_selector = False
     if bpy.app.version >= (5, 0, 0):
         mod.show_manage_panel = False
@@ -189,6 +194,11 @@ def disable_grass_batch_modifier_preview(obj: Object, grass_batch: MapGrassBatch
         if not isinstance(mod, NodesModifier) or mod.node_group != modifier_ng:
             continue
 
-        if mod["Socket_6"] != 0:
-            mod["Socket_6"] = 0  # Socket_6 = 'Preview Grass': 0 = Off, 1 = Simplified, 2 = Full
-            obj.update_tag()
+        if bpy.app.version >= (5, 2, 0):
+            if mod.properties.inputs.Socket_6.value != "Off":
+                mod.properties.inputs.Socket_6.value = "Off"
+                obj.update_tag()
+        else:
+            if mod["Socket_6"] != 0:
+                mod["Socket_6"] = 0  # Socket_6 = 'Preview Grass': 0 = Off, 1 = Simplified, 2 = Full
+                obj.update_tag()

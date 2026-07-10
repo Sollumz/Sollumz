@@ -1,3 +1,4 @@
+import traceback
 import bpy
 from bpy.types import (
     Material,

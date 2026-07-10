@@ -214,7 +214,10 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
                 if tint_node is not None:
                     output_id = mod.node_group.interface.items_tree.get("Tint Color")
                     if output_id:
-                        attr_name = mod[output_id.identifier + "_attribute_name"]
+                        if bpy.app.version >= (5, 2, 0):
+                            attr_name = getattr(mod.properties.outputs, output_id.identifier).attribute_name
+                        else:
+                            attr_name = mod[output_id.identifier + "_attribute_name"]
                         if attr_name and attr_name in obj.data.attributes:
                             attribute_to_remove.append(attr_name)
 
@@ -269,14 +272,21 @@ def create_tint_geom_modifier(
 
     # set input / output variables
     input_id = tnt_ng.interface.items_tree["Color Attribute"].identifier
-    mod[input_id] = input_color_attr_name if input_color_attr_name is not None else ""
-
     input_palette_id = tnt_ng.interface.items_tree["Palette Texture"].identifier
-    mod[input_palette_id] = palette_img
-
     output_id = tnt_ng.interface.items_tree["Tint Color"].identifier
-    mod[output_id + "_attribute_name"] = tint_color_attr_name
-    mod[output_id + "_use_attribute"] = True
+
+    input_color_attr_name = input_color_attr_name if input_color_attr_name is not None else ""
+
+    if bpy.app.version >= (5, 2, 0):
+        getattr(mod.properties.inputs, input_id).value = input_color_attr_name
+        getattr(mod.properties.inputs, input_palette_id).value = palette_img
+        getattr(mod.properties.outputs, output_id).attribute_name = tint_color_attr_name
+    else:
+        mod[input_id] = input_color_attr_name
+        mod[input_palette_id] = palette_img
+        mod[output_id + "_attribute_name"] = tint_color_attr_name
+        mod[output_id + "_use_attribute"] = True
+
 
     return mod
 
