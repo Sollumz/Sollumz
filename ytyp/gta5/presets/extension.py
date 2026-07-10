@@ -172,9 +172,6 @@ def _make_archetype_classes(edef: _ExtDef):
         (PresetPanel, bpy.types.Panel),
         {
             "bl_label": f"{label} Extension Presets",
-            "bl_space_type": "VIEW_3D",
-            "bl_region_type": "UI",
-            "bl_options": {"INSTANCED"},
             "category": category,
             "save_operator": save_cls.bl_idname,
             "load_operator": load_cls.bl_idname,
@@ -255,9 +252,6 @@ def _make_entity_classes(edef: _ExtDef):
             (PresetPanel, bpy.types.Panel),
             {
                 "bl_label": f"{label} Extension Presets",
-                "bl_space_type": "VIEW_3D",
-                "bl_region_type": "UI",
-                "bl_options": {"INSTANCED"},
                 "category": category,
                 "save_operator": save_cls.bl_idname,
                 "load_operator": load_cls.bl_idname,

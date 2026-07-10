@@ -57,9 +57,6 @@ class SOLLUMZ_OT_delete_mlo_portal_preset(PresetDeleteOperatorBase, bpy.types.Op
 
 class SOLLUMZ_PT_mlo_portal_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Portal Presets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"INSTANCED"}
 
     category = MLO_PORTAL_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_mlo_portal_preset.bl_idname

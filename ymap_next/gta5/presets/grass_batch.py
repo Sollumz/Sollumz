@@ -62,9 +62,6 @@ class SOLLUMZ_OT_delete_grass_batch_preset(PresetDeleteOperatorBase, bpy.types.O
 
 class SOLLUMZ_PT_grass_batch_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Grass Batch Presets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"INSTANCED"}
 
     category = GRASS_BATCH_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_grass_batch_preset.bl_idname

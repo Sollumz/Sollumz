@@ -237,10 +237,6 @@ class SOLLUMZ_OT_delete_light_preset(PresetDeleteOperatorBase, bpy.types.Operato
 
 class SOLLUMZ_PT_light_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Light Presets"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "data"
-    bl_options = {"INSTANCED"}
 
     category = LIGHT_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_light_preset.bl_idname

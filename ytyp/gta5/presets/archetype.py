@@ -57,9 +57,6 @@ class SOLLUMZ_OT_delete_archetype_preset(PresetDeleteOperatorBase, bpy.types.Ope
 
 class SOLLUMZ_PT_archetype_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Archetype Presets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"INSTANCED"}
 
     category = ARCHETYPE_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_archetype_preset.bl_idname

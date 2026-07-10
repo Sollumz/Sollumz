@@ -103,9 +103,6 @@ class SOLLUMZ_OT_delete_collision_material_preset(PresetDeleteOperatorBase, bpy.
 
 class SOLLUMZ_PT_collision_material_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Collision Material Presets"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"INSTANCED"}
 
     category = COLLISION_MATERIAL_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_collision_material_preset.bl_idname

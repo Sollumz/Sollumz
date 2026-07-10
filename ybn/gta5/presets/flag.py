@@ -149,9 +149,6 @@ class SOLLUMZ_OT_delete_flag_preset(PresetDeleteOperatorBase, bpy.types.Operator
 
 class SOLLUMZ_PT_flag_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Flag Presets"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"INSTANCED"}
 
     category = FLAG_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_flag_preset.bl_idname

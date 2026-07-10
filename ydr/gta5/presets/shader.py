@@ -222,9 +222,6 @@ class SOLLUMZ_OT_delete_shader_preset(PresetDeleteOperatorBase, bpy.types.Operat
 
 class SOLLUMZ_PT_shader_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Shader Presets"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"INSTANCED"}
 
     category = SHADER_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_shader_preset.bl_idname

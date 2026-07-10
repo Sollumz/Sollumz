@@ -119,9 +119,6 @@ class SOLLUMZ_OT_delete_entity_preset(PresetDeleteOperatorBase, bpy.types.Operat
 
 class SOLLUMZ_PT_entity_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Entity Presets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"INSTANCED"}
 
     category = ENTITY_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_entity_preset.bl_idname

@@ -14,7 +14,8 @@ class PresetPanel:
     delete_operator: str = ""  # bl_idname of the delete operator
 
     bl_label = "Presets"
-    bl_options = {"INSTANCED"}  # popover, not auto-added to anywhere
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "HEADER"
 
     @classmethod
     def draw_panel_header(cls, layout):

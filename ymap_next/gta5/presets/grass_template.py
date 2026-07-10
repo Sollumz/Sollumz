@@ -64,9 +64,6 @@ class SOLLUMZ_OT_delete_grass_template_preset(PresetDeleteOperatorBase, bpy.type
 
 class SOLLUMZ_PT_grass_template_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Grass Template Presets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"INSTANCED"}
 
     category = GRASS_TEMPLATE_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_grass_template_preset.bl_idname

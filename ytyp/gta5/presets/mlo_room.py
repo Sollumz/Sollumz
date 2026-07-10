@@ -57,9 +57,6 @@ class SOLLUMZ_OT_delete_mlo_room_preset(PresetDeleteOperatorBase, bpy.types.Oper
 
 class SOLLUMZ_PT_mlo_room_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Room Presets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"INSTANCED"}
 
     category = MLO_ROOM_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_mlo_room_preset.bl_idname

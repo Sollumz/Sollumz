@@ -72,9 +72,6 @@ class SOLLUMZ_OT_delete_cargen_preset(PresetDeleteOperatorBase, bpy.types.Operat
 
 class SOLLUMZ_PT_cargen_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Car Generator Presets"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"INSTANCED"}
 
     category = CARGEN_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_cargen_preset.bl_idname

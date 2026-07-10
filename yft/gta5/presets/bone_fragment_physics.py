@@ -96,9 +96,6 @@ class SOLLUMZ_OT_delete_bone_fragment_physics_preset(PresetDeleteOperatorBase, b
 
 class SOLLUMZ_PT_bone_fragment_physics_presets(PresetPanel, bpy.types.Panel):
     bl_label = "Bone Physics Presets"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = {"INSTANCED"}
 
     category = BONE_FRAGMENT_PHYSICS_PRESET_CATEGORY
     save_operator = SOLLUMZ_OT_save_bone_fragment_physics_preset.bl_idname
