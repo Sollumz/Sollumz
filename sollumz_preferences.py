@@ -417,6 +417,9 @@ class SollumzThemeSettings(PropertyGroup):
     mlo_gizmo_tcm: RGBAProperty("Timecycle Modifier", (0.45, 0.98, 0.55, 0.5))
     mlo_gizmo_tcm_selected: RGBAProperty("Timecycle Modifier Selected", (0.93, 1.0, 1.0, 0.7))
 
+    map_gizmo_tcm: RGBAProperty("Timecycle Modifier", (0.45, 0.98, 0.55, 0.5))
+    map_gizmo_tcm_selected: RGBAProperty("Timecycle Modifier Selected", (0.93, 1.0, 1.0, 0.7))
+
     cable_overlay_radius: RGBAProperty("Radius", (1.0, 0.0, 0.0, 1.0))
 
     cloth_overlay_pinned: RGBAProperty("Pinned", (1.0, 0.65, 0.0, 0.5))
@@ -1452,6 +1455,10 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "mlo_gizmo_portal_direction_size")
         layout.prop(theme, "mlo_gizmo_tcm")
         layout.prop(theme, "mlo_gizmo_tcm_selected")
+
+        _section_header(layout, "Map Gizmos", "OBJECT_ORIGIN")
+        layout.prop(theme, "map_gizmo_tcm")
+        layout.prop(theme, "map_gizmo_tcm_selected")
 
         _section_header(layout, "Cable Overlays", "OUTLINER_DATA_GREASEPENCIL")
         layout.prop(theme, "cable_overlay_radius")

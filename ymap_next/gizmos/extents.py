@@ -9,7 +9,8 @@ from bpy.types import (
 )
 from mathutils import Matrix, Vector
 
-from ..context import active_tcm
+from ...sollumz_preferences import get_theme_settings
+from ..context import active_tcms_collection
 from ..properties.map import get_maps
 from ..ui.map import SOLLUMZ_PT_map_tcms
 
@@ -90,32 +91,34 @@ class SOLLUMZ_GGT_maps(GizmoGroup):
     def draw_prepare(self, context):
         extents_gz_idx = 0
 
-        # theme = context.preferences.themes[0]
-        # color_default = theme.view_3d.light[0:3]
-        # color_selected = theme.view_3d.object_selected
-        # color_active = theme.view_3d.object_active
+        theme = get_theme_settings(context)
 
         if SOLLUMZ_PT_map_tcms.is_active():
-            tcm = active_tcm(context)
+            tcms = active_tcms_collection(context)
 
-            if tcm:
-                color = (0.0, 1.0, 1.0)  # TODO(ymap_next): TCM gizmo color theme
-                extents_min, extents_max = tcm.extents
-                if extents_gz_idx < len(self.extents_gizmos):
-                    gz = self.extents_gizmos[extents_gz_idx]
-                else:
-                    gz = self.gizmos.new(SOLLUMZ_GT_map_extents.bl_idname)
-                    self.extents_gizmos.append(gz)
-                    gz.alpha = 0.9
+            if tcms:
+                selected_tcms = set(tcms.selected_items_indices)
+                for i, tcm in enumerate(tcms):
+                    if i in selected_tcms:
+                        r, g, b, a = theme.map_gizmo_tcm_selected
+                    else:
+                        r, g, b, a = theme.map_gizmo_tcm
+                    extents_min, extents_max = tcm.extents
+                    if extents_gz_idx < len(self.extents_gizmos):
+                        gz = self.extents_gizmos[extents_gz_idx]
+                    else:
+                        gz = self.gizmos.new(SOLLUMZ_GT_map_extents.bl_idname)
+                        self.extents_gizmos.append(gz)
 
-                gz.use_event_handle_all = False
-                gz.extents_min = extents_min
-                gz.extents_max = extents_max
-                gz.color = color
-                gz.color_highlight = color
-                gz.alpha_highlight = gz.alpha
+                    gz.use_event_handle_all = False
+                    gz.extents_min = extents_min
+                    gz.extents_max = extents_max
+                    gz.color = r, g, b
+                    gz.alpha = a
+                    gz.color_highlight = gz.color * 0.9
+                    gz.alpha_highlight = gz.alpha
 
-                extents_gz_idx += 1
+                    extents_gz_idx += 1
 
         # Remove unused gizmos
         for i in range(extents_gz_idx, len(self.extents_gizmos)):

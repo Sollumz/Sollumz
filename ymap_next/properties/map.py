@@ -35,6 +35,7 @@ from ...shared.multiselection import (
     MultiSelectProperty,
     define_multiselect_collection,
 )
+from ...tools.blenderhelper import tag_redraw
 from ...ytyp.properties.extensions import ExtensionsContainer, ExtensionType
 from ...ytyp.properties.flags import EntityFlags
 from ..lod_lights.bake import LodLightBakeSettings
@@ -1153,6 +1154,11 @@ class MapGroup(PropertyGroup):
 
         for root in roots:
             _add_to_ui(root, 0)
+
+    def on_timecycle_modifiers_active_index_update_from_ui(self, context):
+        from ..ui.map import SOLLUMZ_PT_map_tcms
+        if SOLLUMZ_PT_map_tcms.is_active():
+            tag_redraw(context, space_type="VIEW_3D", region_type="WINDOW")
 
 
 class MapGroupSelectionAccess(MultiSelectAccess):
