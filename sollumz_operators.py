@@ -803,10 +803,10 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
 
         return any_warnings_or_errors
 
-    def _save_bundle(self, name: str, export_bundle: ExportBundle | list[ExportBundle], directory: Path, export_settings, op_log, legacy_success=False) -> bool:
+    def _save_bundle(self, name: str, export_bundle: ExportBundle | list[ExportBundle] | None, directory: Path, export_settings, op_log, legacy_success=False) -> bool:
         any_warnings_or_errors = False
-        export_bundles = export_bundle if isinstance(export_bundle, list) else [export_bundle]
-        success = (export_bundles and all(b.is_valid() for b in export_bundles)) or legacy_success
+        export_bundles = export_bundle if isinstance(export_bundle, list) else [export_bundle] if export_bundle else []
+        success = legacy_success or (export_bundles and all(b.is_valid() for b in export_bundles))
         if success:
             for b in export_bundles:
                 if b:
