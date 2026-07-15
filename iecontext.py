@@ -17,6 +17,12 @@ class ImportTexturesMode(Enum):
     CUSTOM_DIR = auto()
 
 
+class ImportExternalSkeletonMode(Enum):
+    NO = auto()
+    FROM_DIR = auto()
+    SAVED = auto()
+
+
 @dataclass(slots=True, frozen=True)
 class ImportSettings:
     import_as_asset: bool
@@ -25,8 +31,11 @@ class ImportSettings:
     """Split each drawable model by vertex group."""
     mlo_instance_entities: bool
     """Instance MLO entities when importing a YTYP."""
-    import_external_skeleton: bool
-    """Look for a YFT to use as skeleton when importing a YDD."""
+    map_instance_entities: bool
+    """Instance map entities when importing a YMAP."""
+    dwd_import_external_skeleton: ImportExternalSkeletonMode = ImportExternalSkeletonMode.NO
+    """How to look for a YFT to use as skeleton when importing a YDD."""
+    dwd_import_external_skeleton_saved_path: Path | None = None
     frag_import_vehicle_windows: bool = False
     """Whether to import vehicle windows when importing a YFT."""
     textures_mode: ImportTexturesMode = ImportTexturesMode.PACK
@@ -151,6 +160,7 @@ class ExportContext:
         /,
         *secondary_assets: tuple[str, Asset | None],
         extra_files: Sequence[DataSource | None] = (),
+        name_override: str | None = None,
     ) -> ExportBundle:
         """Creates an `ExportBundle` from the given assets and optional files.
 
@@ -162,7 +172,7 @@ class ExportContext:
                 embedded resources like textures.
         """
         return ExportBundle(
-            self.asset_name,
+            name_override or self.asset_name,
             main_asset,
             tuple(s for s in secondary_assets if s[1] is not None),
             tuple(f for f in extra_files if f is not None),

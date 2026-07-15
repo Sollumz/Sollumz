@@ -264,6 +264,11 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     IS_ARCHETYPE = True
     DEFAULT_EXTENSION_TYPE = ExtensionType.PARTICLE
 
+    __sz_preset_capture__ = (
+        "lod_dist", "hd_texture_dist", "special_attribute",
+        "flags", "time_flags", "mlo_flags",
+    )
+
     __portal_enum_items_cache: dict[str, list] = {}
     __room_enum_items_cache: dict[str, list] = {}
     __entity_set_enum_items_cache: dict[str, list] = {}
@@ -559,6 +564,18 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     def update_cached_entity_set_enum_items(archetype_uuid: str) -> Optional[list]:
         if archetype_uuid in ArchetypeProperties.__entity_set_enum_items_cache:
             del ArchetypeProperties.__entity_set_enum_items_cache[archetype_uuid]
+
+    def calc_num_exit_portals(self) -> int | None:
+        if self.type != ArchetypeType.MLO:
+            return None
+
+        num_exit_portals = 0
+        for p in self.portals:
+            link_interiors = p.flags.flag2
+            if (not link_interiors and (p.room_to_index == 0 or p.room_from_index == 0)):
+                num_exit_portals += 1
+
+        return num_exit_portals
 
 
 class ArchetypeFlagsSelectionAccess(MultiSelectNestedAccess):

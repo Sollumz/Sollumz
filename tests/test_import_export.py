@@ -235,21 +235,28 @@ DEFAULT_EXPORT_SETTINGS = {
     "ymap_model_occluders": False,
     "ymap_car_generators": False,
     "apply_transforms": False,
-    "mesh_domain": "FACE_CORNER"
+    "mesh_domain": "FACE_CORNER",
+    "export_ytyps": False,
+    "export_ytyps_include": "ALL",
+    "export_ymaps": False,
+    "export_ymaps_include": "ALL",
+    "export_ytds": False,
+    "export_ytds_include": "ALL",
 }
 
 
 DEFAULT_IMPORT_SETTINGS = {
     "import_as_asset": False,
     "split_by_group": True,
-    "import_ext_skeleton": False,
+    "dwd_import_external_skeleton": "NO",
+    "dwd_import_external_skeleton_saved_path": "",
     "frag_import_vehicle_windows": False,
     "ymap_skip_missing_entities": True,
     "ymap_exclude_entities": False,
     "ymap_box_occluders": False,
     "ymap_model_occluders": False,
     "ymap_car_generators": False,
-    "ymap_instance_entities": False,
+    "ymap_instance_entities": True,
     "ytyp_mlo_instance_entities": True,
     "textures_mode": "PACK",
     "textures_extract_custom_directory": "",

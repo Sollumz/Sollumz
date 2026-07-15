@@ -11,11 +11,11 @@ from ..tools.meshhelper import get_combined_bound_box, get_sphere_radius
 
 def calculate_ymap_content_flags(selected_ymap=None, sollum_type=None):
     content_flags = []
-    if sollum_type == SollumType.YMAP_ENTITY_GROUP:
+    if sollum_type == SollumType.DEPRECATED__YMAP_ENTITY_GROUP:
         selected_ymap.ymap_properties.content_flags_toggle.has_hd = True
         selected_ymap.ymap_properties.content_flags_toggle.has_physics = True
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = False
-    elif sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP or sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
+    elif sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP or sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP:
         selected_ymap.ymap_properties.content_flags_toggle.has_hd = False
         selected_ymap.ymap_properties.content_flags_toggle.has_physics = False
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = True
@@ -23,7 +23,7 @@ def calculate_ymap_content_flags(selected_ymap=None, sollum_type=None):
     return content_flags
 
 
-def create_ymap(name="ymap", sollum_type=SollumType.YMAP):
+def create_ymap(name="ymap", sollum_type=SollumType.DEPRECATED__YMAP):
     empty = bpy.data.objects.new(SOLLUMZ_UI_NAMES[sollum_type], None)
     empty.empty_display_size = 0
     empty.sollum_type = sollum_type
@@ -38,10 +38,10 @@ def create_ymap_group(sollum_type=None, selected_ymap=None, empty_name=None, sel
     empty.sollum_type = sollum_type
     empty.name = empty_name
     bpy.context.collection.objects.link(empty)
-    if sollum_type == SollumType.YMAP_ENTITY_GROUP:
+    if sollum_type == SollumType.DEPRECATED__YMAP_ENTITY_GROUP:
         selected_ymap.ymap_properties.content_flags_toggle.has_hd = True
         selected_ymap.ymap_properties.content_flags_toggle.has_physics = True
-    elif sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP or sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
+    elif sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP or sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP:
         selected_ymap.ymap_properties.content_flags_toggle.has_occl = True
     empty.parent = selected_ymap
     calculate_ymap_content_flags(selected_ymap, sollum_type)
@@ -60,10 +60,10 @@ def add_occluder_material(sollum_type=None):
     mat_color = []
     mat_transparency = 0.5
 
-    if sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
+    if sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER:
         mat_name = "model_occluder_material"
         mat_color = (1, 0, 0, mat_transparency)
-    elif sollum_type == SollumType.YMAP_BOX_OCCLUDER:
+    elif sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER:
         mat_name = "box_occluder_material"
         mat_color = (0, 0, 1, mat_transparency)
 
@@ -144,7 +144,7 @@ def generate_ymap_extents(selected_ymap=None):
 
     # Clone of CodeWalker's ymap extents calculations
     for child in selected_ymap.children:
-        if child.sollum_type == SollumType.YMAP_ENTITY_GROUP:
+        if child.sollum_type == SollumType.DEPRECATED__YMAP_ENTITY_GROUP:
             for entity_obj in child.children:
                 if entity_obj.sollum_type == SollumType.DRAWABLE or entity_obj.sollum_type == SollumType.FRAGMENT:
                     position = entity_obj.location
@@ -193,9 +193,9 @@ def generate_ymap_extents(selected_ymap=None):
                         smin = Vector(min(smin[i], stream_corner_world[i]) for i in range(3))
                         smax = Vector(max(smax[i], stream_corner_world[i]) for i in range(3))
 
-        elif child.sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
+        elif child.sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP:
             for box_obj in child.children:
-                if box_obj.sollum_type == SollumType.YMAP_BOX_OCCLUDER:
+                if box_obj.sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER:
                     position = box_obj.location
                     size = box_obj.dimensions
 
@@ -207,9 +207,9 @@ def generate_ymap_extents(selected_ymap=None):
                     smin = Vector(min(smin[i], bbmin[i]) for i in range(3))
                     smax = Vector(max(smax[i], bbmax[i]) for i in range(3))
 
-        elif child.sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
+        elif child.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP:
             for model_obj in child.children:
-                if model_obj.sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
+                if model_obj.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER:
                     bbmin, bbmax = get_combined_bound_box(model_obj, use_world=True)
 
                     emin = Vector(min(emin[i], bbmin[i]) for i in range(3))
@@ -217,9 +217,9 @@ def generate_ymap_extents(selected_ymap=None):
                     smin = Vector(min(smin[i], bbmin[i]) for i in range(3))
                     smax = Vector(max(smax[i], bbmax[i]) for i in range(3))
 
-        elif child.sollum_type == SollumType.YMAP_CAR_GENERATOR_GROUP:
+        elif child.sollum_type == SollumType.DEPRECATED__YMAP_CAR_GENERATOR_GROUP:
             for cargen_obj in child.children:
-                if cargen_obj.sollum_type == SollumType.YMAP_CAR_GENERATOR:
+                if cargen_obj.sollum_type == SollumType.DEPRECATED__YMAP_CAR_GENERATOR:
                     position = cargen_obj.location
                     perpendicular_length = Vector((
                         cargen_obj.ymap_cargen_properties.perpendicular_length,

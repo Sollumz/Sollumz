@@ -21,14 +21,14 @@ from ..ydr.cloth_char_io import (
 )
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import create_empty_object, create_blender_object
-from ..iecontext import import_context
+from ..iecontext import import_context, ImportExternalSkeletonMode
 from .. import logger
 
 
 def find_ydd_external_dependencies(asset: AssetDrawableDictionary, name: str) -> AssetWithDependencies | None:
     prefers_xml = import_context().asset_target.format == AssetFormat.CWXML
     deps = {}
-    if import_context().settings.import_external_skeleton:
+    if import_context().settings.dwd_import_external_skeleton != ImportExternalSkeletonMode.NO:
         # TODO: if multiple .yft, match by name and show a popup to allow the user to select the correct one
         skel_yft = try_load_external_skeleton()
 
@@ -64,17 +64,28 @@ def try_load_cloth_dictionary(name: str, prefers_xml: bool) -> AssetClothDiction
 
 def try_load_external_skeleton() -> Optional[AssetFragment]:
     """Read first yft at ydd_filepath into a Fragment"""
-    directory = import_context().directory
+    ctx = import_context()
 
-    yft_filepath = get_first_yft_path(directory)
+    match ctx.settings.dwd_import_external_skeleton:
+        case ImportExternalSkeletonMode.FROM_DIR:
+            directory = ctx.directory
+            yft_filepath = get_first_yft_path(directory)
 
-    if yft_filepath is None:
-        logger.warning(f"Could not find external skeleton yft in directory '{directory}'.")
-        return None
+            if yft_filepath is None:
+                logger.warning(f"Could not find external skeleton YFT in directory '{directory}'.")
+                return None
+        case ImportExternalSkeletonMode.SAVED:
+            yft_filepath = ctx.settings.dwd_import_external_skeleton_saved_path
+
+            if yft_filepath is None:
+                logger.warning("No external skeleton YFT selected.")
+                return None
+        case _:
+            return None
 
     yft = try_load_asset(yft_filepath)
     if yft is None:
-        logger.warning(f"Could not load external skeleton yft '{yft_filepath}'.")
+        logger.warning(f"Could not load external skeleton YFT '{yft_filepath}'.")
         return None
 
     logger.info(f"Using '{yft_filepath}' as external skeleton...")

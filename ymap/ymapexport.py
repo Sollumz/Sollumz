@@ -140,12 +140,12 @@ def ymap_from_object(obj):
 
     for child in obj.children:
         # Entities
-        if export_settings.ymap_exclude_entities == False and child.sollum_type == SollumType.YMAP_ENTITY_GROUP:
+        if export_settings.ymap_exclude_entities == False and child.sollum_type == SollumType.DEPRECATED__YMAP_ENTITY_GROUP:
             for entity_obj in child.children:
                 ymap.entities.append(entity_from_obj(entity_obj))
 
         # Box occluders
-        if export_settings.ymap_box_occluders == False and child.sollum_type == SollumType.YMAP_BOX_OCCLUDER_GROUP:
+        if export_settings.ymap_box_occluders == False and child.sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP:
             obj.ymap_properties.content_flags_toggle.has_occl = True
 
             for box_obj in child.children:
@@ -155,18 +155,18 @@ def ymap_from_object(obj):
                         f"Box occluders only support Z-axis rotation. Skipping {box_obj.name} due to X/Y rotation.")
                     continue
 
-                if box_obj.sollum_type == SollumType.YMAP_BOX_OCCLUDER:
+                if box_obj.sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER:
                     ymap.box_occluders.append(box_from_obj(box_obj))
                 else:
                     logger.warning(
-                        f"Object {box_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_BOX_OCCLUDER]} type.")
+                        f"Object {box_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DEPRECATED__YMAP_BOX_OCCLUDER]} type.")
 
         # Model occluders
-        if export_settings.ymap_model_occluders == False and child.sollum_type == SollumType.YMAP_MODEL_OCCLUDER_GROUP:
+        if export_settings.ymap_model_occluders == False and child.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP:
             obj.ymap_properties.content_flags_toggle.has_occl = True
 
             for model_obj in child.children:
-                if model_obj.sollum_type == SollumType.YMAP_MODEL_OCCLUDER:
+                if model_obj.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER:
                     if len(model_obj.data.vertices) > 256:
                         logger.warning(
                             f"Object {model_obj.name} has too many vertices and will be skipped. It can not have more than 256 vertices.")
@@ -176,25 +176,25 @@ def ymap_from_object(obj):
                         model_from_obj(model_obj))
                 else:
                     logger.warning(
-                        f"Object {model_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_MODEL_OCCLUDER]} type.")
+                        f"Object {model_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER]} type.")
 
         # TODO: physics_dictionaries
 
         # TODO: time cycle
 
         # Car generators
-        if export_settings.ymap_car_generators == False and child.sollum_type == SollumType.YMAP_CAR_GENERATOR_GROUP:
+        if export_settings.ymap_car_generators == False and child.sollum_type == SollumType.DEPRECATED__YMAP_CAR_GENERATOR_GROUP:
             for cargen_obj in child.children:
                 rotation = cargen_obj.rotation_euler
                 if abs(rotation.x) > 0.01 or abs(rotation.y) > 0.01:
                     logger.error(
                         f"Car generators only support Z-axis rotation. Skipping {cargen_obj.name} due to X/Y rotation.")
                     continue
-                if cargen_obj.sollum_type == SollumType.YMAP_CAR_GENERATOR:
+                if cargen_obj.sollum_type == SollumType.DEPRECATED__YMAP_CAR_GENERATOR:
                     ymap.car_generators.append(cargen_from_obj(cargen_obj))
                 else:
                     logger.warning(
-                        f"Object {cargen_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.YMAP_CAR_GENERATOR]} type.")
+                        f"Object {cargen_obj.name} will be skipped because it is not a {SOLLUMZ_UI_NAMES[SollumType.DEPRECATED__YMAP_CAR_GENERATOR]} type.")
 
         # TODO: lod ligths
 

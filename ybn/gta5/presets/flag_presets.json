@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "category": "flag",
+  "presets": [
+    {
+      "name": "General (Default)",
+      "data": {
+        "composite_flags1": {
+          "map_weapon": true,
+          "map_dynamic": true,
+          "map_animal": true,
+          "map_cover": true,
+          "map_vehicle": true
+        },
+        "composite_flags2": {
+          "vehicle_not_bvh": true,
+          "vehicle_bvh": true,
+          "ped": true,
+          "ragdoll": true,
+          "animal": true,
+          "animal_ragdoll": true,
+          "object": true,
+          "plant": true,
+          "projectile": true,
+          "explosion": true,
+          "forklift_forks": true,
+          "test_weapon": true,
+          "test_camera": true,
+          "test_ai": true,
+          "test_script": true,
+          "test_vehicle_wheel": true,
+          "glass": true
+        }
+      }
+    },
+    {
+      "name": "General 2",
+      "data": {
+        "composite_flags1": {
+          "map_dynamic": true,
+          "map_animal": true,
+          "map_cover": true,
+          "map_vehicle": true
+        },
+        "composite_flags2": {
+          "vehicle_not_bvh": true,
+          "vehicle_bvh": true,
+          "ped": true,
+          "ragdoll": true,
+          "animal": true,
+          "animal_ragdoll": true,
+          "object": true,
+          "plant": true,
+          "projectile": true,
+          "explosion": true,
+          "forklift_forks": true,
+          "test_weapon": true,
+          "test_camera": true,
+          "test_ai": true,
+          "test_script": true,
+          "test_vehicle_wheel": true,
+          "glass": true
+        }
+      }
+    },
+    {
+      "name": "Water surface",
+      "data": {
+        "composite_flags1": {
+          "map_river": true
+        },
+        "composite_flags2": {
+          "test_weapon": true,
+          "test_camera": true,
+          "test_ai": true,
+          "test_script": true,
+          "test_vehicle_wheel": true
+        }
+      }
+    },
+    {
+      "name": "Leaves - Bush",
+      "data": {
+        "composite_flags1": {
+          "foliage": true
+        },
+        "composite_flags2": {
+          "map_dynamic": true,
+          "vehicle_not_bvh": true,
+          "vehicle_bvh": true,
+          "ped": true,
+          "ragdoll": true,
+          "animal": true,
+          "animal_ragdoll": true,
+          "object": true,
+          "projectile": true,
+          "explosion": true,
+          "forklift_forks": true,
+          "test_weapon": true,
+          "test_camera": true,
+          "test_ai": true,
+          "test_script": true,
+          "glass": true
+        }
+      }
+    },
+    {
+      "name": "Stair plane",
+      "data": {
+        "composite_flags1": {
+          "map_stairs": true
+        },
+        "composite_flags2": {
+          "ped": true,
+          "test_weapon": true,
+          "test_camera": true,
+          "test_ai": true,
+          "test_script": true,
+          "test_vehicle_wheel": true
+        }
+      }
+    },
+    {
+      "name": "Stair mesh",
+      "data": {
+        "composite_flags1": {
+          "map_weapon": true,
+          "map_dynamic": true,
+          "map_animal": true,
+          "map_cover": true,
+          "map_vehicle": true,
+          "map_stairs": true
+        },
+        "composite_flags2": {
+          "vehicle_not_bvh": true,
+          "vehicle_bvh": true,
+          "ped": true,
+          "ragdoll": true,
+          "animal": true,
+          "animal_ragdoll": true,
+          "object": true,
+          "plant": true,
+          "projectile": true,
+          "explosion": true,
+          "forklift_forks": true,
+          "test_weapon": true,
+          "test_camera": true,
+          "test_ai": true,
+          "test_script": true,
+          "test_vehicle_wheel": true,
+          "glass": true
+        }
+      }
+    },
+    {
+      "name": "Deep surface",
+      "data": {
+        "composite_flags1": {
+          "map_weapon": true,
+          "map_deep_surface": true
+        },
+        "composite_flags2": {
+          "projectile": true,
+          "test_weapon": true,
+          "test_camera": true
+        }
+      }
+    }
+  ]
+}

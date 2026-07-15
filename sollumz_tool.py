@@ -2,6 +2,7 @@ import bpy
 from typing import NamedTuple, Optional
 from .ytyp.tools import ArchetypeExtensionTool
 from .ydr.gizmos.light_manipulators.culling_plane import LightCullingPlaneTool
+from .ymap_next.overlays.lod_hierarchy_tool import MapLodHierarchyTool
 from .editor_tools.vertex_paint.gradient import VertexPaintGradientTool
 
 
@@ -16,6 +17,7 @@ tools = (
     # Object Mode Tools
     SollumzToolDef(ArchetypeExtensionTool, separator=True, group=True),
     SollumzToolDef(LightCullingPlaneTool, after=ArchetypeExtensionTool.bl_idname),
+    SollumzToolDef(MapLodHierarchyTool, after=LightCullingPlaneTool.bl_idname),
     # Vertex Paint Tools
     SollumzToolDef(VertexPaintGradientTool, separator=True),
 )

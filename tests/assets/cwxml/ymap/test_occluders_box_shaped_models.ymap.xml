@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CMapData>
+  <name>test_occluders_box_shaped_models</name>
+  <parent />
+  <flags value="0" />
+  <contentFlags value="32" />
+  <streamingExtentsMin x="-6.8317966" y="-8.294118" z="-1.7528864" />
+  <streamingExtentsMax x="8.306636" y="15.2416935" z="0.24711359" />
+  <entitiesExtentsMin x="-6.8317966" y="-8.294118" z="-1.7528864" />
+  <entitiesExtentsMax x="8.306636" y="15.2416935" z="0.24711359" />
+  <entities />
+  <containerLods itemType="rage__fwContainerLodDef" />
+  <boxOccluders itemType="BoxOccluder">
+    <Item>
+      <iCenterX value="2" />
+      <iCenterY value="-28" />
+      <iCenterZ value="-3" />
+      <iCosZ value="0" />
+      <iLength value="8" />
+      <iWidth value="8" />
+      <iHeight value="8" />
+      <iSinZ value="16384" />
+    </Item>
+    <Item>
+      <iCenterX value="28" />
+      <iCenterY value="-28" />
+      <iCenterZ value="-3" />
+      <iCosZ value="-9566" />
+      <iLength value="8" />
+      <iWidth value="8" />
+      <iHeight value="8" />
+      <iSinZ value="13301" />
+    </Item>
+    <Item>
+      <iCenterX value="2" />
+      <iCenterY value="55" />
+      <iCenterZ value="-3" />
+      <iCosZ value="0" />
+      <iLength value="8" />
+      <iWidth value="8" />
+      <iHeight value="8" />
+      <iSinZ value="16384" />
+    </Item>
+    <Item>
+      <iCenterX value="28" />
+      <iCenterY value="55" />
+      <iCenterZ value="-3" />
+      <iCosZ value="-9566" />
+      <iLength value="8" />
+      <iWidth value="8" />
+      <iHeight value="8" />
+      <iSinZ value="13301" />
+    </Item>
+    <Item>
+      <iCenterX value="1" />
+      <iCenterY value="16" />
+      <iCenterZ value="-3" />
+      <iCosZ value="-11314" />
+      <iLength value="8" />
+      <iWidth value="8" />
+      <iHeight value="8" />
+      <iSinZ value="11850" />
+    </Item>
+    <Item>
+      <iCenterX value="20" />
+      <iCenterY value="-2" />
+      <iCenterZ value="-3" />
+      <iCosZ value="3015" />
+      <iLength value="8" />
+      <iWidth value="8" />
+      <iHeight value="8" />
+      <iSinZ value="16104" />
+    </Item>
+  </boxOccluders>
+  <occludeModels itemType="OccludeModel">
+    <Item>
+      <bmin x="-6.8317966" y="-7.898402" z="-1.7528864" />
+      <bmax x="-2.778674" y="14.845979" z="0.24711359" />
+      <dataSize value="468" />
+      <verts>14 9e da c0 b6 bf fc c0 95 5e e0 bf 14 9e da c0 b6 bf fc c0 58 0b 7d 3e 14 9e da c0 b6 bf bc c0 95 5e e0 bf 14 9e da c0 b6 bf bc c0 58 0b 7d 3e 14 9e 9a c0 b6 bf fc c0 95 5e e0 bf 14 9e 9a c0 b6 bf fc c0 58 0b 7d 3e 14 9e 9a c0 b6 bf bc c0 95 5e e0 bf 14 9e 9a c0 b6 bf bc c0 58 0b 7d 3e 14 9e 9a c0 b6 bf fc c0 95 5e e0 bf 14 9e 9a c0 b6 bf bc c0 95 5e e0 bf 14 9e da c0 21 89 4d 41 95 5e e0 bf 14 9e da c0 21 89 4d 41 58 0b 7d 3e 14 9e da c0 21 89 6d 41 95 5e e0 bf 14 9e da c0 21 89 6d 41 58 0b 7d 3e 14 9e 9a c0 21 89 4d 41 95 5e e0 bf 14 9e 9a c0 21 89 4d 41 58 0b 7d 3e 14 9e 9a c0 21 89 6d 41 95 5e e0 bf 14 9e 9a c0 21 89 6d 41 58 0b 7d 3e 14 9e 9a c0 21 89 4d 41 95 5e e0 bf 14 9e 9a c0 21 89 6d 41 95 5e e0 bf 2c 67 b3 c0 88 84 04 41 95 5e e0 bf 2c 67 b3 c0 88 84 04 41 58 0b 7d 3e 26 35 87 c0 a8 a9 1b 41 95 5e e0 bf 26 35 87 c0 a8 a9 1b 41 58 0b 7d 3e ec 1c 85 c0 0c d7 dc 40 95 5e e0 bf ec 1c 85 c0 0c d7 dc 40 58 0b 7d 3e cb d5 31 c0 a6 90 05 41 95 5e e0 bf cb d5 31 c0 a6 90 05 41 58 0b 7d 3e ec 1c 85 c0 0c d7 dc 40 95 5e e0 bf cb d5 31 c0 a6 90 05 41 95 5e e0 bf 00 01 03 00 03 02 04 01 00 02 04 00 04 08 01 09 03 01 09 01 08 02 03 09 02 09 06 02 06 04 06 07 05 06 05 04 0a 0b 0d 0a 0d 0c 0e 0b 0a 0c 0e 0a 0e 12 0b 13 0d 0b 13 0b 12 0c 0d 13 0c 13 10 0c 10 0e 10 11 0f 10 0f 0e 14 15 17 14 17 16 18 15 14 16 18 14 18 1c 15 1d 17 15 1d 15 1c 16 17 1d 16 1d 1a 16 1a 18 1a 1b 19 1a 19 18</verts>
+      <numVertsInBytes value="360" />
+      <numTris value="32804" />
+      <flags value="0" />
+    </Item>
+  </occludeModels>
+  <physicsDictionaries />
+  <instancedData>
+    <GrassInstanceList itemType="rage__fwGrassInstanceListDef" />
+  </instancedData>
+  <timeCycleModifiers itemType="CTimeCycleModifier" />
+  <carGenerators itemType="CCarGen" />
+  <LODLightsSOA>
+    <direction itemType="FloatXYZ" />
+    <falloff />
+    <falloffExponent />
+    <timeAndStateFlags />
+    <hash />
+    <coneInnerAngle />
+    <coneOuterAngleOrCapExt />
+    <coronaIntensity />
+  </LODLightsSOA>
+  <DistantLODLightsSOA>
+    <position itemType="FloatXYZ" />
+    <RGBI />
+    <numStreetLights value="0" />
+    <category value="0" />
+  </DistantLODLightsSOA>
+  <block>
+    <version value="0" />
+    <flags value="0" />
+    <name />
+    <exportedBy />
+    <owner />
+    <time />
+  </block>
+</CMapData>

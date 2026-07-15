@@ -27,6 +27,7 @@ from .operators import (
     SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES,
     SOLLUMZ_OT_vehicle_preview_generated_windows,
 )
+from .gta5.presets.bone_fragment_physics import SOLLUMZ_PT_bone_fragment_physics_presets
 
 
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
@@ -438,6 +439,9 @@ class SOLLUMZ_PT_BONE_PHYSICS_PANEL(bpy.types.Panel):
     def draw_header(self, context):
         bone = context.active_bone
         self.layout.prop(bone, "sollumz_use_physics", text="")
+
+    def draw_header_preset(self, _context):
+        SOLLUMZ_PT_bone_fragment_physics_presets.draw_panel_header(self.layout)
 
     def draw(self, context):
         bone = context.active_bone

@@ -351,12 +351,7 @@ class SOLLUMZ_OT_delete_archetype(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected_ytyp = get_selected_ytyp(context)
 
-        indices_to_remove = selected_ytyp.archetypes.selected_items_indices
-        indices_to_remove.sort(reverse=True)
-        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
-        for index_to_remove in indices_to_remove:
-            selected_ytyp.archetypes.remove(index_to_remove)
-        selected_ytyp.archetypes.select(new_active_index)
+        selected_ytyp.archetypes.remove_selected()
 
         # Force redraw of gizmos
         context.space_data.show_gizmo = context.space_data.show_gizmo
@@ -393,12 +388,7 @@ class SOLLUMZ_OT_delete_timecycle_modifier(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
         selected_archetype = get_selected_archetype(context)
 
-        indices_to_remove = selected_archetype.timecycle_modifiers.selected_items_indices
-        indices_to_remove.sort(reverse=True)
-        new_active_index = max(indices_to_remove[-1] - 1, 0) if indices_to_remove else 0
-        for index_to_remove in indices_to_remove:
-            selected_archetype.timecycle_modifiers.remove(index_to_remove)
-        selected_archetype.timecycle_modifiers.select(new_active_index)
+        selected_archetype.timecycle_modifiers.remove_selected()
 
         return True
 

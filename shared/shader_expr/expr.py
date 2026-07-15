@@ -767,6 +767,10 @@ class AttributeExpr(Expr):
         return AttributeVectorExpr(self)
 
     @property
+    def color(self) -> 'AttributeColorExpr':
+        return AttributeColorExpr(self)
+
+    @property
     def x(self) -> FloatExpr:
         return self.color.x
 
@@ -809,11 +813,27 @@ class AttributeVectorExpr(VectorExpr):
         self.attribute = attribute
 
     def __str__(self):
-        return f"{self.attribute}.fac"
+        return f"{self.attribute}.vector"
 
     def dump(self, ctx: ExprDumpContext) -> str:
         attribute_id = self.attribute.dump(ctx)
-        return f"{attribute_id}.fac"
+        return f"{attribute_id}.vector"
+
+
+class AttributeColorExpr(VectorExpr):
+    """Read the color value of an attribute."""
+
+    attribute: AttributeExpr
+
+    def __init__(self, attribute: AttributeExpr):
+        self.attribute = attribute
+
+    def __str__(self):
+        return f"{self.attribute}.color"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        attribute_id = self.attribute.dump(ctx)
+        return f"{attribute_id}.color"
 
 
 class ShaderExpr(Expr, ABC):

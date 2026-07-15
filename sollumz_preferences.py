@@ -8,6 +8,7 @@ from bpy.types import (
     UIList,
     UILayout,
     AddonPreferences,
+    Menu,
 )
 from bpy.props import (
     StringProperty,
@@ -24,13 +25,19 @@ import rna_keymap_ui
 import os
 import ast
 import textwrap
+import traceback
 from typing import Optional, Any, TYPE_CHECKING
 from configparser import ConfigParser
 from pathlib import Path
-from .known_paths import prefs_file_path, config_directory_path, data_directory_path
+from .known_paths import prefs_file_path, data_directory_path
 from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
 if TYPE_CHECKING:
     from .iecontext import ImportSettings, ExportSettings
+
+
+# Set while preferences are being loaded from disk so the property update callbacks don't trigger a
+# redundant save (and full-file rewrite) for every property being loaded. See `_load_preferences`.
+_is_loading_preferences = False
 
 
 def _save_preferences_on_update(self, context):
@@ -99,28 +106,28 @@ class ExportSettingsBase:
     )
 
     ymap_exclude_entities: BoolProperty(
-        name="Exclude Entities",
+        name="(Deprecated) Exclude Entities",
         description="If enabled, ignore all Entities from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_box_occluders: BoolProperty(
-        name="Exclude Box Occluders",
+        name="(Deprecated) Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_model_occluders: BoolProperty(
-        name="Exclude Model Occluders",
+        name="(Deprecated) Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_car_generators: BoolProperty(
-        name="Exclude Car Generators",
+        name="(Deprecated) Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
@@ -158,6 +165,7 @@ class ExportSettingsBase:
 
     export_ytyps: BoolProperty(
         name="Export YTYPs",
+        default=False,
         update=_on_update_thunk,
     )
     export_ytyps_include: EnumProperty(
@@ -170,8 +178,24 @@ class ExportSettingsBase:
         update=_on_update_thunk,
     )
 
+    export_ymaps: BoolProperty(
+        name="Export Maps",
+        default=False,
+        update=_on_update_thunk,
+    )
+    export_ymaps_include: EnumProperty(
+        name="Include Maps",
+        default="SELECTED",
+        items=(
+            ("ALL", "All", "Export all maps in the scene"),
+            ("SELECTED", "Selected", "Export the selected maps"),
+        ),
+        update=_on_update_thunk,
+    )
+
     export_ytds: BoolProperty(
         name="Export Texture Dictionaries",
+        default=False,
         update=_on_update_thunk,
     )
     export_ytds_include: EnumProperty(
@@ -218,10 +242,21 @@ class ImportSettingsBase:
         update=_on_update_thunk,
     )
 
-    import_ext_skeleton: BoolProperty(
+    dwd_import_external_skeleton: EnumProperty(
         name="Import External Skeleton",
-        description="Imports the first found yft skeleton in the same folder as the selected file",
-        default=False,
+        description="Import external YFT to use as skeleton when importing a YDD",
+        items=(
+            ("NO", "No", "Do not import any external skeleton"),
+            ("FROM_DIR", "Auto", "Automatically use the first YFT found in the same directory as the imported file"),
+            ("SAVED", "Saved", "Use YFT saved in preferences"),
+        ),
+        default="NO",
+        update=_on_update_thunk,
+    )
+
+    dwd_import_external_skeleton_saved_path: StringProperty(
+        name="Import External Skeleton Selection",
+        description="The external skeleton YFT to use, from the ones saved in the preferences",
         update=_on_update_thunk,
     )
 
@@ -236,35 +271,35 @@ class ImportSettingsBase:
     )
 
     ymap_skip_missing_entities: BoolProperty(
-        name="Skip Missing Entities",
+        name="(Deprecated) Skip Missing Entities",
         description="If enabled, missing entities wont be created as an empty object",
         default=True,
         update=_on_update_thunk,
     )
 
     ymap_exclude_entities: BoolProperty(
-        name="Exclude Entities",
+        name="(Deprecated) Exclude Entities",
         description="If enabled, ignore all entities from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_box_occluders: BoolProperty(
-        name="Exclude Box Occluders",
+        name="(Deprecated) Exclude Box Occluders",
         description="If enabled, ignore all Box occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_model_occluders: BoolProperty(
-        name="Exclude Model Occluders",
+        name="(Deprecated) Exclude Model Occluders",
         description="If enabled, ignore all Model occluders from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
     )
 
     ymap_car_generators: BoolProperty(
-        name="Exclude Car Generators",
+        name="(Deprecated) Exclude Car Generators",
         description="If enabled, ignore all Car Generators from the selected ymap(s)",
         default=False,
         update=_on_update_thunk,
@@ -272,8 +307,8 @@ class ImportSettingsBase:
 
     ymap_instance_entities: BoolProperty(
         name="Instance Entities",
-        description="If enabled, instance all entities from the selected ymap(s)",
-        default=False,
+        description="If enabled, instance all entities from the imported ymap(s)",
+        default=True,
         update=_on_update_thunk,
     )
 
@@ -310,7 +345,7 @@ class ImportSettingsBase:
     )
 
     def to_import_context_settings(self) -> "ImportSettings":
-        from .iecontext import ImportSettings, ImportTexturesMode
+        from .iecontext import ImportSettings, ImportTexturesMode, ImportExternalSkeletonMode
 
         textures_mode = ImportTexturesMode[self.textures_mode]
         textures_extract_custom_dir=(
@@ -322,12 +357,21 @@ class ImportSettingsBase:
             # If there is no custom directory set, fallback to the import directory.
             textures_mode = ImportTexturesMode.IMPORT_DIR
 
+        dwd_import_external_skeleton = ImportExternalSkeletonMode[self.dwd_import_external_skeleton]
+        dwd_import_external_skeleton_saved_path = (
+            Path(bpy.path.abspath(self.dwd_import_external_skeleton_saved_path))
+            if dwd_import_external_skeleton == ImportExternalSkeletonMode.SAVED and self.dwd_import_external_skeleton_saved_path
+            else None
+        )
+
         return ImportSettings(
             import_as_asset=self.import_as_asset,
             split_by_group=self.split_by_group,
             mlo_instance_entities=self.ytyp_mlo_instance_entities,
-            import_external_skeleton=self.import_ext_skeleton,
+            dwd_import_external_skeleton=dwd_import_external_skeleton,
+            dwd_import_external_skeleton_saved_path=dwd_import_external_skeleton_saved_path,
             frag_import_vehicle_windows=self.frag_import_vehicle_windows,
+            map_instance_entities=self.ymap_instance_entities,
             textures_mode=textures_mode,
             textures_extract_custom_directory=textures_extract_custom_dir,
         )
@@ -373,6 +417,9 @@ class SollumzThemeSettings(PropertyGroup):
     mlo_gizmo_tcm: RGBAProperty("Timecycle Modifier", (0.45, 0.98, 0.55, 0.5))
     mlo_gizmo_tcm_selected: RGBAProperty("Timecycle Modifier Selected", (0.93, 1.0, 1.0, 0.7))
 
+    map_gizmo_tcm: RGBAProperty("Timecycle Modifier", (0.45, 0.98, 0.55, 0.5))
+    map_gizmo_tcm_selected: RGBAProperty("Timecycle Modifier Selected", (0.93, 1.0, 1.0, 0.7))
+
     cable_overlay_radius: RGBAProperty("Radius", (1.0, 0.0, 0.0, 1.0))
 
     cloth_overlay_pinned: RGBAProperty("Pinned", (1.0, 0.65, 0.0, 0.5))
@@ -394,6 +441,108 @@ class SOLLUMZ_OT_prefs_theme_reset(Operator):
     def execute(self, context):
         get_theme_settings(context).reset()
         _save_preferences()
+        return {"FINISHED"}
+
+
+class SzSharedAssetsDirectory(PropertyGroup):
+    name: StringProperty(name="Name")
+    path: StringProperty(
+        name="Path",
+        description="Path to a directory where to store the asset library",
+        subtype="DIR_PATH",
+        update=_save_preferences_on_update,
+    )
+
+
+class SOLLUMZ_UL_prefs_shared_assets_directories(UIList):
+    bl_idname = "SOLLUMZ_UL_prefs_shared_assets_directories"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        layout.prop(item, "name", text="", emboss=False)
+        layout.prop(item, "path", text="", emboss=False)
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_add(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_add"
+    bl_label = "Add Shared Assets Directory"
+    bl_description = "Add a new directory to search assets in"
+
+    name: StringProperty(name="Name")
+    path: StringProperty(
+        name="Path",
+        description="Path to a directory where to store the asset library",
+        subtype="DIR_PATH",
+    )
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        d = prefs.shared_assets_directories.add()
+        d.name = self.name
+        d.path = self.path
+        prefs.shared_assets_directories_index = len(prefs.shared_assets_directories) - 1
+        _save_preferences()
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_remove(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_remove"
+    bl_label = "Remove Shared Assets Directory"
+    bl_description = "Remove the selected directory"
+
+    @classmethod
+    def poll(cls, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.shared_assets_directories_index < len(prefs.shared_assets_directories)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        prefs.shared_assets_directories.remove(prefs.shared_assets_directories_index)
+        prefs.shared_assets_directories_index = max(prefs.shared_assets_directories_index - 1, 0)
+        _save_preferences()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_move_up(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_move_up"
+    bl_label = "Increase Shared Texture Directory Priority"
+    bl_description = "Increase search priority of this directory"
+
+    @classmethod
+    def poll(self, context):
+        prefs = get_addon_preferences(context)
+        return 0 < prefs.shared_assets_directories_index < len(prefs.shared_assets_directories)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        indexA = prefs.shared_assets_directories_index
+        indexB = prefs.shared_assets_directories_index - 1
+        prefs.swap_shared_assets_directories(indexA, indexB)
+        prefs.shared_assets_directories_index -= 1
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_shared_assets_directory_move_down(Operator):
+    bl_idname = "sollumz.prefs_shared_assets_directory_move_down"
+    bl_label = "Decrease Shared Texture Directory Priority"
+    bl_description = "Decrease search priority of this directory"
+
+    @classmethod
+    def poll(self, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.shared_assets_directories_index < (len(prefs.shared_assets_directories) - 1)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        indexA = prefs.shared_assets_directories_index
+        indexB = prefs.shared_assets_directories_index + 1
+        prefs.swap_shared_assets_directories(indexA, indexB)
+        prefs.shared_assets_directories_index += 1
         return {"FINISHED"}
 
 
@@ -609,6 +758,150 @@ class SOLLUMZ_OT_prefs_name_table_path_remove(Operator):
         return {"FINISHED"}
 
 
+class SzExternalSkeletonPath(PropertyGroup):
+    # Named `name` so it can be used with `prop_search`, its `item_search_property` parameter was not added until 5.0
+    # and we still support older versions
+    name: StringProperty(
+        name="Path",
+        description="Path to a YFT file",
+        subtype="FILE_PATH",
+        update=_save_preferences_on_update,
+    )
+
+
+class SOLLUMZ_UL_prefs_external_skeleton_paths(UIList):
+    bl_idname = "SOLLUMZ_UL_prefs_external_skeleton_paths"
+
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        layout.prop(item, "name", text="", emboss=False)
+
+
+class SOLLUMZ_OT_prefs_external_skeleton_path_add(Operator, ImportHelper):
+    bl_idname = "sollumz.prefs_external_skeleton_path_add"
+    bl_label = "Add External Skeleton"
+    bl_description = "Add new external skeleton"
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
+    files: bpy.props.CollectionProperty(
+        name="File Path",
+        type=bpy.types.OperatorFileListElement,
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
+
+    filter_glob: bpy.props.StringProperty(
+        default="".join(f"*{ext};" for ext in (".yft", ".yft.xml")),
+        options={"HIDDEN", "SKIP_SAVE"},
+        maxlen=255,
+    )
+
+    def execute(self, context):
+        if not self.directory or len(self.files) == 0 or self.files[0].name == "":
+            # logger.info("No file selected for import!")
+            return {"CANCELLED"}
+
+        self.directory = bpy.path.abspath(self.directory)
+
+        from pathlib import Path
+        prefs = get_addon_preferences(context)
+        filenames = [f.name for f in self.files]
+        directory = Path(self.directory)
+        for filename in filenames:
+            filepath = (directory / filename).absolute()
+
+            d = prefs.external_skeleton_paths.add()
+            d.name = str(filepath)
+
+        prefs.external_skeleton_paths_index = len(prefs.external_skeleton_paths) - 1
+        _save_preferences()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_external_skeleton_path_remove(Operator):
+    bl_idname = "sollumz.prefs_external_skeleton_path_remove"
+    bl_label = "Remove External Skeleton Path"
+    bl_description = "Remove the selected external skeleton"
+
+    @classmethod
+    def poll(cls, context):
+        prefs = get_addon_preferences(context)
+        return 0 <= prefs.external_skeleton_paths_index < len(prefs.external_skeleton_paths)
+
+    def execute(self, context):
+        prefs = get_addon_preferences(context)
+        prefs.external_skeleton_paths.remove(prefs.external_skeleton_paths_index)
+        prefs.external_skeleton_paths_index = max(prefs.external_skeleton_paths_index - 1, 0)
+        _save_preferences()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode(Operator):
+    bl_idname = "sollumz.prefs_external_skeleton_path_add_mp_freemode"
+    bl_label = "Choose Game Installation"
+    bl_description = "Add MP freemode skeletons from game files"
+
+    directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
+
+    @classmethod
+    def poll(cls, context):
+        if not IS_SZIO_NATIVE_AVAILABLE:
+            cls.poll_message_set(PYMATERIA_REQUIRED_MSG)
+            return False
+
+        return True
+
+    def draw(self, context):
+        pass
+
+    def execute(self, context):
+        from . import logger
+        with logger.use_operator_logger(self):
+            if not self.directory:
+                return {"CANCELLED"}
+
+            directory = Path(bpy.path.abspath(self.directory))
+            if not directory.is_dir():
+                return {"CANCELLED"}
+
+            from .shared.game_assets.game_files import GameFiles
+            gf = GameFiles(directory)
+            if not gf.is_game_installation():
+                logger.warning("The selected directory is not the GTA5 installation directory")
+                return {"CANCELLED"}
+
+
+            prefs = get_addon_preferences(context)
+            for subpath in (
+                r"x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_m_freemode_01.yft",
+                r"x64v.rpf\models\cdimages\streamedpeds_mp.rpf\mp_f_freemode_01.yft",
+            ):
+                filepath = (directory / subpath).absolute()
+
+                d = prefs.external_skeleton_paths.add()
+                d.name = str(filepath)
+
+            prefs.external_skeleton_paths_index = len(prefs.external_skeleton_paths) - 1
+
+            return {"FINISHED"}
+
+    def invoke(self, context, event):
+        if self.directory:
+            return self.execute(context)
+
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+
+class SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu(Menu):
+    bl_label = "External Skeleton Paths Specials"
+    bl_idname = "SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu"
+
+    def draw(self, _context):
+        layout = self.layout
+        layout.operator(SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode.bl_idname, text="Add MP Freemode Skeletons from Game Files")
+
+
 class SzFavoriteEntry(PropertyGroup):
     name: StringProperty(
         name="Name",
@@ -713,12 +1006,30 @@ class SollumzAddonPreferences(AddonPreferences):
         min=0
     )
 
+    shared_assets_directories: CollectionProperty(
+        name="Game Asset Libraries",
+        type=SzSharedAssetsDirectory,
+    )
+    shared_assets_directories_index: IntProperty(
+        name="Selected Shared Assets Directory",
+        min=0
+    )
+
     name_table_paths: CollectionProperty(
         name="Name Tables",
         type=SzNameTablePath,
     )
     name_table_paths_index: IntProperty(
         name="Selected Name Table",
+        min=0
+    )
+
+    external_skeleton_paths: CollectionProperty(
+        name="External Skeletons",
+        type=SzExternalSkeletonPath,
+    )
+    external_skeleton_paths_index: IntProperty(
+        name="Selected External Skeleton",
         min=0
     )
 
@@ -781,6 +1092,14 @@ class SollumzAddonPreferences(AddonPreferences):
             ("ABOUT", "About", "", "INFO_LARGE", 6),
         )
     )
+
+    def swap_shared_assets_directories(self, indexA: int, indexB: int):
+        a = self.shared_assets_directories[indexA]
+        b = self.shared_assets_directories[indexB]
+        nameA, pathA = a.name, a.path
+        nameB, pathB = b.name, b.path
+        a.name, a.path = nameB, pathB
+        b.name, b.path = nameA, pathA
 
     def swap_shared_textures_directories(self, indexA: int, indexB: int):
         a = self.shared_textures_directories[indexA]
@@ -882,6 +1201,27 @@ class SollumzAddonPreferences(AddonPreferences):
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()
+        layout.label(text="Game Asset Libraries")
+        row = layout.row()
+        self._draw_help_text(
+            context, row,
+            "Directories where .blend libraries containing game assets are stored. Used when importing maps and interiors."
+        )
+        _, side_col = draw_list_with_add_remove(
+            layout,
+            SOLLUMZ_OT_prefs_shared_assets_directory_add.bl_idname,
+            SOLLUMZ_OT_prefs_shared_assets_directory_remove.bl_idname,
+            SOLLUMZ_UL_prefs_shared_assets_directories.bl_idname, "",
+            self, "shared_assets_directories",
+            self, "shared_assets_directories_index",
+            rows=4
+        )
+        side_col.separator()
+        subcol = side_col.column(align=True)
+        subcol.operator(SOLLUMZ_OT_prefs_shared_assets_directory_move_up.bl_idname, text="", icon="TRIA_UP")
+        subcol.operator(SOLLUMZ_OT_prefs_shared_assets_directory_move_down.bl_idname, text="", icon="TRIA_DOWN")
+
+        layout.separator()
         layout.label(text="Shared Textures")
         row = layout.row()
         self._draw_help_text(
@@ -920,6 +1260,27 @@ class SollumzAddonPreferences(AddonPreferences):
             self, "name_table_paths_index",
             rows=4
         )
+
+        layout.separator()
+        layout.label(text="External Skeletons")
+        row = layout.row()
+        self._draw_help_text(
+            context, row,
+            "YFT files available as external skeletons when importing drawable dictionaries that do not include "
+            "their own skeleton, such as ped component models. Used when the 'Import External Skeleton' import "
+            "setting is set to 'Saved'."
+        )
+        _, side_col = draw_list_with_add_remove(
+            layout,
+            SOLLUMZ_OT_prefs_external_skeleton_path_add.bl_idname,
+            SOLLUMZ_OT_prefs_external_skeleton_path_remove.bl_idname,
+            SOLLUMZ_UL_prefs_external_skeleton_paths.bl_idname, "",
+            self, "external_skeleton_paths",
+            self, "external_skeleton_paths_index",
+            rows=4
+        )
+        side_col.separator()
+        side_col.menu(SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
 
         layout.separator()
         if bpy.app.version >= (4, 1, 0):
@@ -965,22 +1326,31 @@ class SollumzAddonPreferences(AddonPreferences):
                 row.label(icon="ERROR", text="No directory set")
             split.row().prop(settings, "textures_extract_custom_directory", text="")
 
-        _section_header(box, text="Fragment")
+        _section_header(box, "Fragment")
         box.prop(settings, "split_by_group")
         box.prop(settings, "frag_import_vehicle_windows")
         _section_header(box, "Drawable Dictionary")
-        box.prop(settings, "import_ext_skeleton")  # Drawable Dictionary
+        col = box.column(align=True)
+        col.row(align=True).prop(settings, "dwd_import_external_skeleton", expand=True)
+        if settings.dwd_import_external_skeleton == "SAVED":
+            if self.external_skeleton_paths:
+                col.prop_search(
+                    settings, "dwd_import_external_skeleton_saved_path",
+                    self, "external_skeleton_paths",
+                    text=" ", icon="ARMATURE_DATA",
+                )
+            else:
+                split = col.split(factor=0.4)
+                row = split.row()
+                row = split.row()
+                row.alert = True
+                row.label(text="No external skeletons saved in preferences.", icon="ERROR")
 
-        _section_header(box, "YTYP")
+        _section_header(box, "Archetype Definitions")
         box.prop(settings, "ytyp_mlo_instance_entities")
 
-        _section_header(box, "YMAP")
-        box.prop(settings, "ymap_skip_missing_entities")
-        box.prop(settings, "ymap_exclude_entities")
+        _section_header(box, "Maps")
         box.prop(settings, "ymap_instance_entities")
-        box.prop(settings, "ymap_box_occluders")
-        box.prop(settings, "ymap_model_occluders")
-        box.prop(settings, "ymap_car_generators")
 
         # Export settings
         box = sublayout.box()
@@ -1022,12 +1392,6 @@ class SollumzAddonPreferences(AddonPreferences):
 
         _section_header(box, "Drawable Dictionary")
         box.prop(settings, "exclude_skeleton")
-
-        _section_header(box, "YMAP")
-        box.prop(settings, "ymap_exclude_entities")
-        box.prop(settings, "ymap_box_occluders")
-        box.prop(settings, "ymap_model_occluders")
-        box.prop(settings, "ymap_car_generators")
 
         _line_separator(layout, factor=3.0)
         layout.prop(self, "legacy_import_export")
@@ -1091,6 +1455,10 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "mlo_gizmo_portal_direction_size")
         layout.prop(theme, "mlo_gizmo_tcm")
         layout.prop(theme, "mlo_gizmo_tcm_selected")
+
+        _section_header(layout, "Map Gizmos", "OBJECT_ORIGIN")
+        layout.prop(theme, "map_gizmo_tcm")
+        layout.prop(theme, "map_gizmo_tcm_selected")
 
         _section_header(layout, "Cable Overlays", "OUTLINER_DATA_GREASEPENCIL")
         layout.prop(theme, "cable_overlay_radius")
@@ -1213,10 +1581,17 @@ def get_theme_settings(context: Optional[bpy.types.Context] = None) -> SollumzTh
 
 
 def _save_preferences():
-    addon_prefs = get_addon_preferences(bpy.context)
-    prefs_path = get_prefs_path()
+    if _is_loading_preferences:
+        # Don't save while loading preferences from disk; otherwise each setattr in the property
+        # update callbacks would trigger a redundant full-file rewrite.
+        return
 
-    config = ConfigParser()
+    addon_prefs = get_addon_preferences(bpy.context)
+    prefs_path = prefs_file_path()
+
+    # interpolation=None so values containing '%' are written and read verbatim instead of being
+    # treated as interpolation tokens.
+    config = ConfigParser(interpolation=None)
     prefs_dict = _get_bpy_struct_as_dict(addon_prefs)
     main_prefs: dict[str, Any] = {}
 
@@ -1229,33 +1604,65 @@ def _save_preferences():
 
     config["main"] = main_prefs
 
-    with open(prefs_path, "w") as f:
-        config.write(f)
+    # Write atomically (temp file + os.replace) so an interrupted or failed write never truncates or
+    # corrupts the existing preferences file.
+    tmp_path = prefs_path + ".tmp"
+    try:
+        with open(tmp_path, "w") as f:
+            config.write(f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, prefs_path)
+    except OSError:
+        from . import logger
+        logger.error(f"Failed to save Sollumz preferences to '{prefs_path}'.\n{traceback.format_exc()}")
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
 
 
 def _load_preferences():
     # Preferences are loaded via an ini file in <user_blender_path>/<version>/config/sollumz_prefs.ini
-    addon_prefs = get_addon_preferences(bpy.context)
-    if addon_prefs is None:
-        return
+    global _is_loading_preferences
 
-    prefs_path = get_prefs_path()
+    addon_prefs = get_addon_preferences(bpy.context)
+
+    prefs_path = prefs_file_path()
     if not os.path.isfile(prefs_path):
         return
 
-    config = ConfigParser()
-    config.read(prefs_path)
-    config_dict = {}
-    for section in config.keys():
-        if section == "DEFAULT":
-            continue
+    try:
+        config = ConfigParser(interpolation=None)
+        config.read(prefs_path)
+        config_dict = {}
+        for section in config.keys():
+            if section == "DEFAULT":
+                continue
 
-        if section == "main":
-            config_dict.update(config["main"])
-        else:
-            config_dict[section] = dict(config[section])
+            if section == "main":
+                config_dict.update(config["main"])
+            else:
+                config_dict[section] = dict(config[section])
 
-    _update_bpy_struct_from_dict(addon_prefs, config_dict, eval_strings=True)
+        _is_loading_preferences = True
+        try:
+            _update_bpy_struct_from_dict(addon_prefs, config_dict, eval_strings=True)
+        finally:
+            _is_loading_preferences = False
+    except Exception:
+        # Loading runs from register(), so any error here would propagate out of the add-on registration and prevent it
+        # from being enabled. Catch everything, fall back to the default preferences, and back up the unreadable file
+        # so it isn't silently lost.
+        from . import logger
+        logger.error(
+            f"Failed to load Sollumz preferences from '{prefs_path}'. Falling back to default "
+            f"preferences.\n{traceback.format_exc()}"
+        )
+        try:
+            os.replace(prefs_path, prefs_path + ".bak")
+        except OSError:
+            pass
 
 
 def _get_bpy_struct_as_dict(struct: bpy_struct) -> dict:
@@ -1321,26 +1728,17 @@ def _get_bpy_struct_as_tuple(struct: bpy_struct) -> tuple:
 
 def _update_bpy_struct_from_tuple(struct: bpy_struct, values: tuple | object):
     keys = list(struct.__annotations__.keys())
-    values_is_tuple = isinstance(values, tuple)
-    num_values = len(values) if values_is_tuple else 1
-    if len(keys) != num_values:
-        raise ValueError(f"Incorrect number of values in tuple: expected {len(keys)}, got {len(values)}")
+    values = values if isinstance(values, tuple) else (values,)
 
-    if not values_is_tuple:
-        values = (values,)
+    if len(keys) != len(values):
+        from . import logger
+        logger.warning(
+            f"Sollumz preferences: entry for '{type(struct).__name__}' has {len(values)} value(s), "
+            f"expected {len(keys)}. Loading overlapping fields and leaving the rest at their defaults."
+        )
 
     for key, value in zip(keys, values):
         setattr(struct, key, value)
-
-
-def get_prefs_path():
-    """Deprecated, use `known_paths.prefs_file_path` instead."""
-    return prefs_file_path()
-
-
-def get_config_directory_path() -> str:
-    """Deprecated, use `known_paths.config_directory_path` instead."""
-    return config_directory_path()
 
 
 def register():

@@ -42,7 +42,7 @@ class SOLLUMZ_OT_create_entity_group(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_ENTITY_GROUP, selected_ymap=ymap_obj, empty_name='Entities')
+        create_ymap_group(sollum_type=SollumType.DEPRECATED__YMAP_ENTITY_GROUP, selected_ymap=ymap_obj, empty_name='Entities')
         # TODO: Find a way to use "bpy.ops.outliner.show_active()" to show the new object in outliner. But we are in wrong context here.
         return True
 
@@ -70,7 +70,7 @@ class SOLLUMZ_OT_create_model_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_MODEL_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Model Occluders')
+        create_ymap_group(sollum_type=SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Model Occluders')
         return True
 
 
@@ -97,7 +97,7 @@ class SOLLUMZ_OT_create_box_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator):
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_BOX_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Box Occluders')
+        create_ymap_group(sollum_type=SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP, selected_ymap=ymap_obj, empty_name='Box Occluders')
         return True
 
 
@@ -123,7 +123,7 @@ class SOLLUMZ_OT_create_car_generator_group(SOLLUMZ_OT_base, bpy.types.Operator)
 
     def run(self, context):
         ymap_obj = context.active_object
-        create_ymap_group(sollum_type=SollumType.YMAP_CAR_GENERATOR_GROUP, selected_ymap=ymap_obj, empty_name='Car Generators')
+        create_ymap_group(sollum_type=SollumType.DEPRECATED__YMAP_CAR_GENERATOR_GROUP, selected_ymap=ymap_obj, empty_name='Car Generators')
         return True
 
 
@@ -137,9 +137,9 @@ class SOLLUMZ_OT_create_box_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
         group_obj = context.active_object
         bpy.ops.mesh.primitive_cube_add(size=2)
         box_obj = bpy.context.view_layer.objects.active
-        box_obj.sollum_type = SollumType.YMAP_BOX_OCCLUDER
+        box_obj.sollum_type = SollumType.DEPRECATED__YMAP_BOX_OCCLUDER
         box_obj.name = "Box"
-        box_obj.active_material = add_occluder_material(SollumType.YMAP_BOX_OCCLUDER)
+        box_obj.active_material = add_occluder_material(SollumType.DEPRECATED__YMAP_BOX_OCCLUDER)
         box_obj.parent = group_obj
 
         # Prevent rotation on X and Y axis, since only Z axis is supported on Box Occluders
@@ -160,9 +160,9 @@ class SOLLUMZ_OT_create_model_occluder(SOLLUMZ_OT_base, bpy.types.Operator):
         bpy.ops.mesh.primitive_cube_add(size=1)
         model_obj = bpy.context.view_layer.objects.active
         model_obj.name = "Model"
-        model_obj.sollum_type = SollumType.YMAP_MODEL_OCCLUDER
+        model_obj.sollum_type = SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER
         model_obj.ymap_properties.flags = 0
-        model_obj.active_material = add_occluder_material(SollumType.YMAP_MODEL_OCCLUDER)
+        model_obj.active_material = add_occluder_material(SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER)
         set_object_collection(model_obj)
         bpy.context.view_layer.objects.active = model_obj
         model_obj.parent = group_obj
@@ -180,7 +180,7 @@ class SOLLUMZ_OT_create_car_generator(SOLLUMZ_OT_base, bpy.types.Operator):
         group_obj = context.active_object
         cargen_ref_mesh = get_cargen_mesh()
         cargen_obj = bpy.data.objects.new("Car Generator", object_data=cargen_ref_mesh)
-        cargen_obj.sollum_type = SollumType.YMAP_CAR_GENERATOR
+        cargen_obj.sollum_type = SollumType.DEPRECATED__YMAP_CAR_GENERATOR
         cargen_obj.ymap_cargen_properties.orient_x = 0.0
         cargen_obj.ymap_cargen_properties.orient_y = 0.0
         cargen_obj.ymap_cargen_properties.perpendicular_length = 2.3

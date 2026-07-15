@@ -2,12 +2,12 @@ import bpy
 from bpy.props import (
     BoolProperty
 )
-import os
 from .properties import BoundFlags, CollisionMatFlags, ProceduralIdEnumItems
 from ..sollumz_properties import MaterialType, SollumType, BOUND_TYPES, BOUND_POLYGON_TYPES
 from .collision_materials import collisionmats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from . import operators as ybn_ops
+from .gta5.presets.flag import SOLLUMZ_PT_flag_presets
 
 
 def generate_flags(layout, prop):
@@ -139,6 +139,9 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
         obj = context.active_object
         return obj is not None and obj.parent is not None and obj.parent.sollum_type == SollumType.BOUND_COMPOSITE and obj.sollum_type in BOUND_TYPES
 
+    def draw_header_preset(self, _context):
+        SOLLUMZ_PT_flag_presets.draw_panel_header(self.layout)
+
     def draw(self, context):
         obj = context.active_object
         layout = self.layout
@@ -147,6 +150,8 @@ class SOLLUMZ_PT_BOUND_FLAGS_PANEL(bpy.types.Panel):
         layout.separator_spacer()
         layout.label(text="Include Flags")
         generate_flags(layout, obj.composite_flags2)
+        layout.separator()
+        layout.operator(ybn_ops.SOLLUMZ_OT_clear_col_flags.bl_idname, icon="SHADERFX")
 
 
 class SOLLUMZ_PT_MATERIAL_COL_FLAGS_PANEL(bpy.types.Panel):
@@ -236,16 +241,6 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
-class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_FLAG_PRESET_LIST"
-
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        row = layout.row()
-        row.label(text=item.name, icon="BOOKMARKS")
-
-
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Collisions"
     bl_idname = "SOLLUMZ_PT_COLLISION_TOOL_PANEL"
@@ -292,8 +287,6 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
         row.prop(context.scene, "create_seperate_composites")
         row.prop(context.scene, "center_composite_to_selection")
 
-        layout.separator()
-
         row = layout.row(align=True)
         row.operator(ybn_ops.SOLLUMZ_OT_create_bound.bl_idname, icon="CUBE")
         row.prop(context.scene, "create_bound_type", text="")
@@ -320,6 +313,9 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(CollisionToolChildPanel, bpy.types.Panel):
         box_parent = context.window_manager.sz_create_bound_box_parent
         box_from_verts_op.parent_name = box_parent.name if box_parent else ""
         box_from_verts_op.sollum_type = context.scene.poly_bound_type_verts
+
+        layout.separator()
+        layout.prop(context.scene, "sz_default_flag_preset_name", icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel):
@@ -349,42 +345,3 @@ class SOLLUMZ_PT_CREATE_MATERIAL_PANEL(CollisionToolChildPanel, bpy.types.Panel)
             ybn_ops.SOLLUMZ_OT_convert_non_collision_materials_to_selected.bl_idname)
 
 
-class SOLLUMZ_PT_FLAG_PRESETS_PANEL(CollisionToolChildPanel, bpy.types.Panel):
-    bl_label = "Flag Presets"
-    bl_idname = "SOLLUMZ_PT_FLAG_PRESETS_PANEL"
-    bl_order = 2
-
-    def draw_header(self, context):
-        # Example property to display a checkbox, can be anything
-        self.layout.label(text="", icon="ALIGN_TOP")
-
-    def draw(self, context):
-        layout = self.layout
-
-        row = layout.row()
-        row.template_list(SOLLUMZ_UL_FLAG_PRESET_LIST.bl_idname, "flag_presets",
-                          context.window_manager, "sz_flag_presets", context.window_manager, "sz_flag_preset_index")
-        col = row.column(align=True)
-        col.operator(ybn_ops.SOLLUMZ_OT_save_flag_preset.bl_idname, text="", icon="ADD")
-        col.operator(ybn_ops.SOLLUMZ_OT_delete_flag_preset.bl_idname, text="", icon="REMOVE")
-        col.separator()
-        col.menu(SOLLUMZ_MT_flag_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
-
-        row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_load_flag_preset.bl_idname, icon='CHECKMARK')
-
-        row = layout.row()
-        row.operator(ybn_ops.SOLLUMZ_OT_clear_col_flags.bl_idname, icon='SHADERFX')
-
-
-class SOLLUMZ_MT_flag_presets_context_menu(bpy.types.Menu):
-    bl_label = "Flag Presets Specials"
-    bl_idname = "SOLLUMZ_MT_flag_presets_context_menu"
-
-    def draw(self, _context):
-        layout = self.layout
-
-        from .properties import get_flag_presets_path
-        path = get_flag_presets_path()
-        layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open Presets File").filepath = path

@@ -10,6 +10,9 @@ from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
 )
 from ..operators import ytyp as ytyp_ops
+from ..gta5.presets.mlo_room import SOLLUMZ_PT_mlo_room_presets
+from ..gta5.presets.mlo_portal import SOLLUMZ_PT_mlo_portal_presets
+from ..gta5.presets.mlo_timecycle_modifier import SOLLUMZ_PT_mlo_timecycle_modifier_presets
 
 
 class SOLLUMZ_PT_MLO_PANEL(ArchetypeChildPanel, TabbedPanelHelper, bpy.types.Panel):
@@ -95,6 +98,11 @@ class SOLLUMZ_PT_ROOM_PANEL(MloChildTabPanel, bpy.types.Panel):
         # active = selected_archetype.rooms.active_item
 
         layout.separator()
+
+        row = layout.row()
+        row.alignment = "RIGHT"
+        SOLLUMZ_PT_mlo_room_presets.draw_panel_header(row)
+
         for prop_name in RoomProperties.__annotations__:
             if prop_name in ["flags", "id", "uuid"]:
                 continue
@@ -242,6 +250,11 @@ class SOLLUMZ_PT_PORTAL_PANEL(MloChildTabPanel, bpy.types.Panel):
         row.operator("sollumz.search_portal_room_to", text="", icon="VIEWZOOM")
 
         layout.separator()
+
+        row = layout.row()
+        row.alignment = "RIGHT"
+        SOLLUMZ_PT_mlo_portal_presets.draw_panel_header(row)
+
         layout.prop(selection.owner, selection.propnames.mirror_priority)
         layout.prop(selection.owner, selection.propnames.opacity)
         layout.prop(selection.owner, selection.propnames.audio_occlusion)
@@ -339,6 +352,10 @@ class SOLLUMZ_PT_TIMECYCLE_MODIFIER_PANEL(MloChildTabPanel, bpy.types.Panel):
         # active = selected_archetype.timecycle_modifiers.active_item
 
         layout.separator()
+
+        row = layout.row()
+        row.alignment = "RIGHT"
+        SOLLUMZ_PT_mlo_timecycle_modifier_presets.draw_panel_header(row)
 
         layout.prop(selection.owner, selection.propnames.name)
         layout.prop(selection.owner, selection.propnames.sphere_center)

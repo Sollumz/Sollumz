@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CMapData>
+ <name>test_tcm</name>
+ <parent />
+ <flags value="0" />
+ <contentFlags value="0" />
+ <streamingExtentsMin x="300" y="300" z="50" />
+ <streamingExtentsMax x="500" y="500" z="200" />
+ <entitiesExtentsMin x="0" y="0" z="0" />
+ <entitiesExtentsMax x="0" y="0" z="0" />
+ <entities />
+ <containerLods itemType="rage__fwContainerLodDef" />
+ <boxOccluders itemType="BoxOccluder" />
+ <occludeModels itemType="OccludeModel" />
+ <physicsDictionaries />
+ <instancedData>
+  <ImapLink />
+  <PropInstanceList itemType="rage__fwPropInstanceListDef" />
+  <GrassInstanceList itemType="rage__fwGrassInstanceListDef" />
+ </instancedData>
+ <timeCycleModifiers itemType="CTimeCycleModifier">
+  <Item>
+   <name>noambientmult</name>
+   <minExtents x="351.167" y="339.780853" z="100.825592" />
+   <maxExtents x="413.285645" y="362.047028" z="105.825592" />
+   <percentage value="35" />
+   <range value="5" />
+   <startHour value="0" />
+   <endHour value="23" />
+  </Item>
+ </timeCycleModifiers>
+ <carGenerators itemType="CCarGen" />
+ <LODLightsSOA>
+  <direction itemType="FloatXYZ" />
+  <falloff />
+  <falloffExponent />
+  <timeAndStateFlags />
+  <hash />
+  <coneInnerAngle />
+  <coneOuterAngleOrCapExt />
+  <coronaIntensity />
+ </LODLightsSOA>
+ <DistantLODLightsSOA>
+  <position itemType="FloatXYZ" />
+  <RGBI />
+  <numStreetLights value="0" />
+  <category value="0" />
+ </DistantLODLightsSOA>
+ <block>
+  <version value="0" />
+  <flags value="0" />
+  <name></name>
+  <exportedBy></exportedBy>
+  <owner></owner>
+  <time></time>
+ </block>
+</CMapData>

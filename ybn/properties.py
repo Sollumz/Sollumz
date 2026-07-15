@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from bpy.app.handlers import persistent
 from .collision_materials import collisionmats
-from .flag_preset import FlagPresetsFile
 from ..tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
 from ..tools.blenderhelper import tag_redraw
 from ..sollumz_preferences import get_addon_preferences
@@ -466,43 +465,6 @@ class CollisionMaterial(bpy.types.PropertyGroup):
     )
 
 
-class FlagPresetProp(bpy.types.PropertyGroup):
-    index: bpy.props.IntProperty("Index")
-    name: bpy.props.StringProperty("Name")
-
-
-def get_flag_presets_path() -> str:
-    from ..sollumz_preferences import get_config_directory_path
-    return os.path.join(get_config_directory_path(), "flag_presets.xml")
-
-
-_default_flag_presets_path = os.path.join(os.path.dirname(__file__), "flag_presets.xml")
-
-
-def get_default_flag_presets_path() -> str:
-    return _default_flag_presets_path
-
-
-flag_presets = FlagPresetsFile()
-
-
-def load_flag_presets():
-    bpy.context.window_manager.sz_flag_presets.clear()
-
-    path = get_flag_presets_path()
-    if not os.path.exists(path):
-        path = get_default_flag_presets_path()
-        if not os.path.exists(path):
-            return
-
-    file = FlagPresetsFile.from_xml_file(path)
-    flag_presets.presets = file.presets
-    for index, preset in enumerate(flag_presets.presets):
-        item = bpy.context.window_manager.sz_flag_presets.add()
-        item.name = str(preset.name)
-        item.index = index
-
-
 def load_collision_materials():
     bpy.context.window_manager.sz_collision_materials.clear()
     for index, mat in enumerate(collisionmats):
@@ -514,7 +476,12 @@ def load_collision_materials():
 
 def refresh_ui_collections():
     load_collision_materials()
-    load_flag_presets()
+
+
+def _flag_preset_name_search(self, context, edit_text):
+    from ..shared.presets import store
+    from .gta5.presets.flag import FLAG_PRESET_CATEGORY
+    return [p.get("name", "") for p in store.load_presets(FLAG_PRESET_CATEGORY) if p.get("name")]
 
 
 @persistent
@@ -531,8 +498,12 @@ def register():
     bpy.types.WindowManager.sz_collision_materials = bpy.props.CollectionProperty(
         type=CollisionMaterial, name="Collision Materials")
 
-    bpy.types.WindowManager.sz_flag_preset_index = bpy.props.IntProperty(name="Flag Preset Index")
-    bpy.types.WindowManager.sz_flag_presets = bpy.props.CollectionProperty(type=FlagPresetProp, name="Flag Presets")
+    bpy.types.Scene.sz_default_flag_preset_name = bpy.props.StringProperty(
+        name="Default Flag Preset",
+        description="Flag preset applied to new bounds and to bounds auto-created during drawable conversion",
+        default="General (Default)",
+        search=_flag_preset_name_search,
+    )
 
     bpy.types.Material.collision_properties = bpy.props.PointerProperty(
         type=CollisionProperties)
@@ -624,8 +595,7 @@ def unregister():
     del bpy.types.WindowManager.sz_collision_materials
     del bpy.types.Material.collision_properties
     del bpy.types.Material.collision_flags
-    del bpy.types.WindowManager.sz_flag_presets
-    del bpy.types.WindowManager.sz_flag_preset_index
+    del bpy.types.Scene.sz_default_flag_preset_name
     del bpy.types.Scene.create_poly_bound_type
     del bpy.types.Scene.create_seperate_composites
     del bpy.types.Scene.create_bound_type

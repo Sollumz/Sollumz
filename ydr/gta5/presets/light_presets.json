@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "category": "light",
+  "presets": [
+    {
+      "name": "Default",
+      "data": {
+        "light": {
+          "color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "energy": 10.0,
+          "cutoff_distance": 40.0,
+          "shadow_soft_size": 0.0,
+          "volume_factor": 1.0,
+          "shadow_buffer_clip_start": 0.05,
+          "spot_size": 0.0,
+          "spot_blend": 0.0
+        },
+        "time_flags": "0",
+        "light_flags": "0",
+        "light_properties": {
+          "projected_texture_hash": "",
+          "flashiness": "CONSTANT",
+          "volume_size_scale": 1.0,
+          "volume_outer_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "volume_outer_intensity": 1.0,
+          "volume_outer_exponent": 1.0,
+          "light_fade_distance": 0.0,
+          "shadow_fade_distance": 0.0,
+          "specular_fade_distance": 0.0,
+          "volumetric_fade_distance": 0.0,
+          "culling_plane_normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "culling_plane_offset": 0.0,
+          "corona_size": 0.0,
+          "corona_intensity": 1.0,
+          "corona_z_bias": 0.1,
+          "shadow_blur": 0.0,
+          "extent": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    {
+      "name": "Spot: Streetlight 1",
+      "data": {
+        "light": {
+          "color": [
+            1.0,
+            0.40784314274787903,
+            0.0
+          ],
+          "energy": 16000.0,
+          "cutoff_distance": 18.0,
+          "shadow_soft_size": 19.2,
+          "volume_factor": 1.0,
+          "shadow_buffer_clip_start": 0.01,
+          "spot_size": 2.443461,
+          "spot_blend": 0.9444444
+        },
+        "time_flags": "15728703",
+        "light_flags": "1408",
+        "light_properties": {
+          "projected_texture_hash": "",
+          "flashiness": "CONSTANT",
+          "volume_size_scale": 1.0,
+          "volume_outer_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "volume_outer_intensity": 1.0,
+          "volume_outer_exponent": 1.0,
+          "light_fade_distance": 0.0,
+          "shadow_fade_distance": 40.0,
+          "specular_fade_distance": 40.0,
+          "volumetric_fade_distance": 0.0,
+          "culling_plane_normal": [
+            -0.8372505903244019,
+            0.4854814112186432,
+            -0.2516329884529114
+          ],
+          "culling_plane_offset": 18.0,
+          "corona_size": 3.0,
+          "corona_intensity": 0.1,
+          "corona_z_bias": 0.1,
+          "shadow_blur": 0.0,
+          "extent": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    {
+      "name": "Point: Wall Light 1",
+      "data": {
+        "light": {
+          "color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "energy": 500.0,
+          "cutoff_distance": 2.0,
+          "shadow_soft_size": 12.8,
+          "volume_factor": 1.0,
+          "shadow_buffer_clip_start": 0.01,
+          "spot_size": 0.0,
+          "spot_blend": 0.0
+        },
+        "time_flags": "15728767",
+        "light_flags": "0",
+        "light_properties": {
+          "projected_texture_hash": "",
+          "flashiness": "CONSTANT",
+          "volume_size_scale": 1.0,
+          "volume_outer_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "volume_outer_intensity": 1.0,
+          "volume_outer_exponent": 1.0,
+          "light_fade_distance": 20.0,
+          "shadow_fade_distance": 0.0,
+          "specular_fade_distance": 0.0,
+          "volumetric_fade_distance": 0.0,
+          "culling_plane_normal": [
+            0.6779035925865173,
+            0.3486787974834442,
+            -0.6472015976905823
+          ],
+          "culling_plane_offset": 2.0,
+          "corona_size": 0.0,
+          "corona_intensity": 1.0,
+          "corona_z_bias": 0.1,
+          "shadow_blur": 0.0,
+          "extent": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    {
+      "name": "Spot: Wall Light 1",
+      "data": {
+        "light": {
+          "color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "energy": 4000.0,
+          "cutoff_distance": 5.0,
+          "shadow_soft_size": 12.8,
+          "volume_factor": 1.0,
+          "shadow_buffer_clip_start": 0.01,
+          "spot_size": 3.0717795,
+          "spot_blend": 0.9444444
+        },
+        "time_flags": "15728703",
+        "light_flags": "384",
+        "light_properties": {
+          "projected_texture_hash": "hash_A94A6095",
+          "flashiness": "CONSTANT",
+          "volume_size_scale": 1.0,
+          "volume_outer_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "volume_outer_intensity": 1.0,
+          "volume_outer_exponent": 1.0,
+          "light_fade_distance": 0.0,
+          "shadow_fade_distance": 20.0,
+          "specular_fade_distance": 0.0,
+          "volumetric_fade_distance": 0.0,
+          "culling_plane_normal": [
+            0.6779034733772278,
+            0.6472015976905823,
+            0.3486788868904114
+          ],
+          "culling_plane_offset": 5.0,
+          "corona_size": 0.3,
+          "corona_intensity": 0.1,
+          "corona_z_bias": 0.1,
+          "shadow_blur": 0.0,
+          "extent": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    {
+      "name": "Point: Wall Light 2",
+      "data": {
+        "light": {
+          "color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "energy": 250.0,
+          "cutoff_distance": 2.0,
+          "shadow_soft_size": 6.4,
+          "volume_factor": 1.0,
+          "shadow_buffer_clip_start": 0.01,
+          "spot_size": 0.0,
+          "spot_blend": 0.0
+        },
+        "time_flags": "15728767",
+        "light_flags": "2097152",
+        "light_properties": {
+          "projected_texture_hash": "",
+          "flashiness": "CONSTANT",
+          "volume_size_scale": 1.0,
+          "volume_outer_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "volume_outer_intensity": 1.0,
+          "volume_outer_exponent": 1.0,
+          "light_fade_distance": 20.0,
+          "shadow_fade_distance": 0.0,
+          "specular_fade_distance": 0.0,
+          "volumetric_fade_distance": 0.0,
+          "culling_plane_normal": [
+            0.677903413772583,
+            -0.010437220335006714,
+            0.735076904296875
+          ],
+          "culling_plane_offset": 2.0,
+          "corona_size": 0.0,
+          "corona_intensity": 1.0,
+          "corona_z_bias": 0.1,
+          "shadow_blur": 0.0,
+          "extent": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    {
+      "name": "Spot: Wall Light 2",
+      "data": {
+        "light": {
+          "color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "energy": 1500.0,
+          "cutoff_distance": 8.0,
+          "shadow_soft_size": 25.6,
+          "volume_factor": 1.0,
+          "shadow_buffer_clip_start": 0.01,
+          "spot_size": 2.9670596,
+          "spot_blend": 0.5555556
+        },
+        "time_flags": "15728703",
+        "light_flags": "384",
+        "light_properties": {
+          "projected_texture_hash": "hash_249E51B0",
+          "flashiness": "CONSTANT",
+          "volume_size_scale": 1.0,
+          "volume_outer_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "volume_outer_intensity": 1.0,
+          "volume_outer_exponent": 1.0,
+          "light_fade_distance": 0.0,
+          "shadow_fade_distance": 30.0,
+          "specular_fade_distance": 0.0,
+          "volumetric_fade_distance": 0.0,
+          "culling_plane_normal": [
+            0.677903413772583,
+            -0.5698102116584778,
+            0.4645034074783325
+          ],
+          "culling_plane_offset": 8.0,
+          "corona_size": 3.0,
+          "corona_intensity": 0.1,
+          "corona_z_bias": 0.1,
+          "shadow_blur": 0.0,
+          "extent": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    }
+  ]
+}

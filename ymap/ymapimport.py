@@ -55,7 +55,7 @@ def apply_entity_properties(obj, entity):
 
 def entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
     group_obj = bpy.data.objects.new("Entities", None)
-    group_obj.sollum_type = SollumType.YMAP_ENTITY_GROUP
+    group_obj.sollum_type = SollumType.DEPRECATED__YMAP_ENTITY_GROUP
     group_obj.parent = ymap_obj
     group_obj.lock_location = (True, True, True)
     group_obj.lock_rotation = (True, True, True)
@@ -84,7 +84,7 @@ def entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
 
 def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
     group_obj = bpy.data.objects.new("Entities", None)
-    group_obj.sollum_type = SollumType.YMAP_ENTITY_GROUP
+    group_obj.sollum_type = SollumType.DEPRECATED__YMAP_ENTITY_GROUP
     group_obj.parent = ymap_obj
     group_obj.lock_location = (True, True, True)
     group_obj.lock_rotation = (True, True, True)
@@ -141,7 +141,7 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
 
 
 def box_to_obj(obj, ymap: CMapData):
-    group_obj = create_empty_object(SollumType.YMAP_BOX_OCCLUDER_GROUP, "Box Occluders")
+    group_obj = create_empty_object(SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP, "Box Occluders")
     group_obj.parent = obj
     group_obj.lock_location = (True, True, True)
     group_obj.lock_rotation = (True, True, True)
@@ -151,8 +151,8 @@ def box_to_obj(obj, ymap: CMapData):
     obj.ymap_properties.content_flags_toggle.has_occl = True
 
     for box in ymap.box_occluders:
-        box_obj = create_blender_object(SollumType.YMAP_BOX_OCCLUDER, "Box")
-        box_obj.active_material = add_occluder_material(SollumType.YMAP_BOX_OCCLUDER)
+        box_obj = create_blender_object(SollumType.DEPRECATED__YMAP_BOX_OCCLUDER, "Box")
+        box_obj.active_material = add_occluder_material(SollumType.DEPRECATED__YMAP_BOX_OCCLUDER)
         create_box(box_obj.data, 1)
         box_obj.location = Vector([box.center_x, box.center_y, box.center_z]) / 4
         box_obj.rotation_euler[2] = math.atan2(box.cos_z, box.sin_z)
@@ -163,7 +163,7 @@ def box_to_obj(obj, ymap: CMapData):
 
 
 def model_to_obj(obj: bpy.types.Object, ymap: CMapData):
-    group_obj = create_empty_object(SollumType.YMAP_MODEL_OCCLUDER_GROUP, "Model Occluders")
+    group_obj = create_empty_object(SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP, "Model Occluders")
     group_obj.parent = obj
     group_obj.lock_location = (True, True, True)
     group_obj.lock_rotation = (True, True, True)
@@ -176,9 +176,9 @@ def model_to_obj(obj: bpy.types.Object, ymap: CMapData):
         verts, faces = occlude_model_to_mesh_data(model)
 
         mesh = bpy.data.meshes.new("Model Occluders")
-        model_obj = create_blender_object(SollumType.YMAP_MODEL_OCCLUDER, "Model", mesh)
+        model_obj = create_blender_object(SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER, "Model", mesh)
         model_obj.ymap_model_occl_properties.model_occl_flags = model.flags
-        model_obj.active_material = add_occluder_material(SollumType.YMAP_MODEL_OCCLUDER)
+        model_obj.active_material = add_occluder_material(SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER)
         mesh.from_pydata(verts, [], faces)
         model_obj.parent = group_obj
         model_obj.lock_location = (True, True, True)
@@ -188,7 +188,7 @@ def model_to_obj(obj: bpy.types.Object, ymap: CMapData):
 
 def cargen_to_obj(obj: bpy.types.Object, ymap: CMapData):
     group_obj = bpy.data.objects.new("Car Generators", None)
-    group_obj.sollum_type = SollumType.YMAP_CAR_GENERATOR_GROUP
+    group_obj.sollum_type = SollumType.DEPRECATED__YMAP_CAR_GENERATOR_GROUP
     group_obj.parent = obj
     group_obj.lock_location = (True, True, True)
     group_obj.lock_rotation = (True, True, True)
@@ -216,13 +216,13 @@ def cargen_to_obj(obj: bpy.types.Object, ymap: CMapData):
         cargen_obj.rotation_euler = Euler((0.0, 0.0, angl * -1))
 
         cargen_obj.location = cargen.position
-        cargen_obj.sollum_type = SollumType.YMAP_CAR_GENERATOR
+        cargen_obj.sollum_type = SollumType.DEPRECATED__YMAP_CAR_GENERATOR
         cargen_obj.parent = group_obj
 
 
 def ymap_to_obj(ymap: CMapData):
     ymap_obj = bpy.data.objects.new(ymap.name, None)
-    ymap_obj.sollum_type = SollumType.YMAP
+    ymap_obj.sollum_type = SollumType.DEPRECATED__YMAP
     ymap_obj.lock_location = (True, True, True)
     ymap_obj.lock_rotation = (True, True, True)
     ymap_obj.lock_scale = (True, True, True)
@@ -285,7 +285,7 @@ def import_ymap(filepath):
     ymap_xml: CMapData = YMAP.from_xml_file(filepath)
     found = False
     for obj in bpy.context.scene.objects:
-        if obj.sollum_type == SollumType.YMAP and obj.name == ymap_xml.name:
+        if obj.sollum_type == SollumType.DEPRECATED__YMAP and obj.name == ymap_xml.name:
             logger.error(
                 f"{ymap_xml.name} is already existing in the scene. Aborting.")
             found = True

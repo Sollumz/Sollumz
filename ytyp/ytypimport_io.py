@@ -1,6 +1,7 @@
 import bpy
 from typing import Union
-from mathutils import Vector, Quaternion
+from collections import defaultdict
+from mathutils import Vector, Euler, Quaternion
 from szio.gta5 import (
     AssetMapTypes,
     Archetype,
@@ -16,7 +17,8 @@ from ..iecontext import import_context
 from ..sollumz_helper import duplicate_object_with_children
 from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer, EXTENSION_DEF_CLASS_TO_TYPE
-from szio.gta5 import LightFlashiness
+
+from .. import logger
 
 
 def import_ytyp(asset: AssetMapTypes, name: str):
@@ -75,8 +77,11 @@ def find_and_set_archetype_asset(archetype: ArchetypeProperties):
 
 def create_mlo_archetype_children(archetype: Archetype, archetype_props: ArchetypeProperties):
     """Create entities, rooms, portals, and timecylce modifiers for an MLO archetype."""
+
+    entities_to_batch_instance = defaultdict(list)
+
     for entity in archetype.entities:
-        create_mlo_entity(entity, archetype_props)
+        create_mlo_entity(entity, archetype_props, entities_to_batch_instance)
 
     for room in archetype.rooms:
         create_mlo_room(room, archetype_props)
@@ -85,17 +90,18 @@ def create_mlo_archetype_children(archetype: Archetype, archetype_props: Archety
         create_mlo_portal(portal, archetype_props)
 
     for entity_set in archetype.entity_sets:
-        create_mlo_entity_set(entity_set, archetype_props)
+        create_mlo_entity_set(entity_set, archetype_props, entities_to_batch_instance)
 
     for tcm in archetype.timecycle_modifiers:
         create_mlo_tcm(tcm, archetype_props)
 
     entities_are_instanced = import_context().settings.mlo_instance_entities
     if entities_are_instanced:
+        batch_instance_mlo_entities(archetype_props, entities_to_batch_instance)
         organize_mlo_entities_in_collections(archetype_props)
 
 
-def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties) -> MloEntityProperties:
+def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties, entities_to_instance: dict[str, list[tuple[int, Vector, Euler, Vector]]]) -> MloEntityProperties:
     """Create an MLO entity from a definition for the provided archetype data-block."""
     e = archetype.new_entity()
     e.archetype_name = entity.archetype_name
@@ -103,7 +109,7 @@ def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties) -> MloE
     e.rotation = entity.rotation.inverted()
     e.scale_xy = entity.scale_xy
     e.scale_z = entity.scale_z
-    e.flags.total = str(entity.flags)
+    e.flags.total = str(entity.flags.value)
     e.guid = entity.guid
     e.parent_index = entity.parent_index
     e.lod_dist = entity.lod_dist
@@ -116,6 +122,17 @@ def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties) -> MloE
     e.tint_value = entity.tint_value
 
     find_and_link_entity_object(e)
+    if e.linked_object is None:
+        entity_data_idx = len(archetype.entities) - 1
+        entities_to_instance[entity.archetype_name].append(
+            (
+                entity_data_idx,
+                entity.position,
+                entity.rotation.inverted().to_euler(),
+                Vector((entity.scale_xy, entity.scale_xy, entity.scale_z)),
+            )
+        )
+
 
     for extension in entity.extensions:
         create_extension(extension, e)
@@ -158,6 +175,36 @@ def find_and_link_entity_object(entity: MloEntityProperties):
     obj.scale = Vector((entity.scale_xy, entity.scale_xy, entity.scale_z))
 
 
+def batch_instance_mlo_entities(
+    archetype: ArchetypeProperties,
+    entities_to_instance: dict[str, list[tuple[int, Vector, Euler, Vector]]],
+):
+    from ..shared.game_assets.library import batch_create_objects_from_library
+
+    # Cache entities collection into a list for O(1) lookups. Collection properties are
+    # a linked-list internally so each index lookup is O(N).
+    entities_list = list(archetype.entities)
+
+    def _link_obj(obj, entity_idx: int):
+        e = entities_list[entity_idx]
+        e.linked_object = obj
+
+        # Link light extension effect, see create_extension()
+        for ext in e.extensions:
+            if ext.extension_type != ExtensionType.LIGHT_EFFECT:
+                continue
+
+            constraint = ext.light_effect_properties.linked_lights_object.constraints.new("COPY_TRANSFORMS")
+            constraint.target = obj
+
+    num_linked, num_missing = batch_create_objects_from_library(entities_to_instance, _link_obj)
+
+    if num_missing > 0:
+        logger.info(f"Game asset linking: {num_linked} entities linked, {num_missing} assets not found in library")
+    elif num_linked > 0:
+        logger.info(f"Game asset linking: {num_linked} entities linked")
+
+
 def create_mlo_room(room: MloRoom, archetype: ArchetypeProperties) -> RoomProperties:
     """Create an MLO room from a definition for the provided archetype data-block."""
     r = archetype.new_room()
@@ -191,7 +238,7 @@ def create_mlo_portal(portal: MloPortal, archetype: ArchetypeProperties) -> Port
     return p
 
 
-def create_mlo_entity_set(entity_set: MloEntitySet, archetype: ArchetypeProperties) -> EntitySetProperties:
+def create_mlo_entity_set(entity_set: MloEntitySet, archetype: ArchetypeProperties, entities_to_instance: dict[str, list[tuple[int, Vector, Euler, Vector]]]) -> EntitySetProperties:
     """Create an MLO entity set from a definition for the provided archetype data-block."""
     s = archetype.new_entity_set()
     s.name = entity_set.name
@@ -199,7 +246,7 @@ def create_mlo_entity_set(entity_set: MloEntitySet, archetype: ArchetypeProperti
     entity_set_id = str(s.id)
     assert len(entity_set.entities) == len(entity_set.locations)
     for entity, location in zip(entity_set.entities, entity_set.locations):
-        e = create_mlo_entity(entity, archetype)
+        e = create_mlo_entity(entity, archetype, entities_to_instance)
         e.attached_entity_set_id = entity_set_id
 
         if (location & (1 << 31)) != 0:
@@ -227,10 +274,14 @@ def create_mlo_tcm(tcm: MloTimeCycleModifier, archetype: ArchetypeProperties) ->
 
 def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
     """Places all entities linked objects in collections. One collection per room."""
-    base_collection_name = f"{archetype.asset_name}.entities"
-    base_collection = bpy.data.collections.new(base_collection_name)
-    bpy.context.collection.children.link(base_collection)
-    mlo_collections = {base_collection_name: base_collection}
+    root_collection_name = archetype.asset_name
+    root_collection = bpy.data.collections.new(root_collection_name)
+    bpy.context.collection.children.link(root_collection)
+
+    entities_base_collection_name = f"{archetype.asset_name}.entities"
+    entities_base_collection = bpy.data.collections.new(entities_base_collection_name)
+    root_collection.children.link(entities_base_collection)
+    mlo_collections = {root_collection_name: root_collection, entities_base_collection_name: entities_base_collection}
 
     def _link_to_collection(obj, coll):
         for c in obj.users_collection:
@@ -258,12 +309,12 @@ def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
         if room_name:
             entity_collection_name = f"{archetype.asset_name}.{room_name}"
         else:
-            entity_collection_name = base_collection_name
+            entity_collection_name = entities_base_collection_name
 
         entity_collection = mlo_collections.get(entity_collection_name, None)
         if entity_collection is None:
             entity_collection = bpy.data.collections.new(entity_collection_name)
-            base_collection.children.link(entity_collection)
+            entities_base_collection.children.link(entity_collection)
             mlo_collections[entity_collection_name] = entity_collection
 
         _link_to_collection_recursive(obj, entity_collection)
@@ -272,7 +323,7 @@ def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
         # Place all light effect objects in their own collection
         light_effect_collection_name = f"{archetype.asset_name}.light_effects"
         light_effect_collection = bpy.data.collections.new(light_effect_collection_name)
-        bpy.context.collection.children.link(light_effect_collection)
+        root_collection.children.link(light_effect_collection)
         for lights_parent_obj in light_effect_objs:
             _link_to_collection_recursive(lights_parent_obj, light_effect_collection)
 

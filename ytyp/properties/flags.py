@@ -126,6 +126,12 @@ class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag32: bpy.props.BoolProperty(
         name="Unknown 32", update=FlagPropertyGroup.update_flag)
 
+    # Cannot rename properties due to backward compatibility (or at least would need versioning).
+    # Just create wrappers for the few flags we may directly use
+    @property
+    def lod_in_parent_map(self) -> bool:
+        return self.flag4
+
 
 class ArchetypeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag1: bpy.props.BoolProperty(

@@ -11,6 +11,7 @@ from ..tools.blenderhelper import create_empty_object, create_blender_object, ad
 from szio.gta5 import (
     Light,
     LightType as IOLightType,
+    LightFlashiness as IOLightFlashiness,
 )
 from .properties import LightProperties
 from .. import logger
@@ -204,3 +205,49 @@ def export_light(light_obj: Object, parent_obj: Object) -> Light:
         cone_outer_angle=degrees(light_props.cone_outer_angle) if is_spot else 0.0,
     )
 
+
+def serialize_lights(lights: list[Light]) -> list[dict]:
+    if not lights:
+        return []
+
+    from dataclasses import asdict
+
+    lights_serialized = []
+    for light in lights:
+        light_dict = asdict(light)
+        for k, v in light_dict.items():
+            match v:
+                case IOLightType() | IOLightFlashiness():
+                    light_dict[k] = v.name
+                case Vector():
+                    light_dict[k] = tuple(v)
+        lights_serialized.append(light_dict)
+
+    return lights_serialized
+
+
+def serialize_lights_to_asset(asset_obj: Object, lights: list[Light]):
+    """Store the light information in the object as a custom property, serialized to a JSON string.
+    Used when importing to the asset library, as drawables and fragments are joined into a single mesh and the light
+    objects are lost.
+    """
+
+    if not lights:
+        return
+
+    import json
+
+    LIGHTS_KEY = "sz_asset_lights"
+
+    lights_serialized = serialize_lights(lights)
+    lights_serialized_str = json.dumps(
+        lights_serialized,
+        separators=(",", ":"),
+        indent=None,
+    )
+
+    asset_obj[LIGHTS_KEY] = lights_serialized_str
+    if data := asset_obj.data:
+            data[LIGHTS_KEY] = lights_serialized_str
+    if asset_data := asset_obj.asset_data:
+            asset_data[LIGHTS_KEY] = lights_serialized_str

@@ -233,15 +233,12 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
             bound_xml = create_bound_geometry_xml(obj)
 
             if bound_xml.vertices and bound_xml.polygons:
-                mesh_vertices = np.array([(v + bound_xml.geometry_center) for v in bound_xml.vertices])
-                mesh_faces = []
-                for poly in bound_xml.polygons:
-                    mesh_faces.append([poly.v1, poly.v2, poly.v3])
-                mesh_faces = np.array(mesh_faces)
+                geom_center = np.array(bound_xml.geometry_center, dtype=np.float64)
+                mesh_vertices = np.array(bound_xml.vertices, dtype=np.float64) + geom_center
+                mesh_faces = np.array([[poly.v1, poly.v2, poly.v3] for poly in bound_xml.polygons])
 
                 centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
                 volume, cg, inertia = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
-
 
             # R* seems to apply the margin to the bbox before calculating the actual margin from shrunk mesh, so
             # the default margin is applied
@@ -264,7 +261,8 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
 
             primitives = []
             if bound_xml.vertices and bound_xml.polygons:
-                mesh_vertices = np.array([(v + bound_xml.geometry_center) for v in bound_xml.vertices])
+                geom_center = np.array(bound_xml.geometry_center, dtype=np.float64)
+                mesh_vertices = np.array(bound_xml.vertices, dtype=np.float64) + geom_center
                 mesh_faces = []
                 for poly in bound_xml.polygons:
                     if not isinstance(poly, PolyTriangle):
@@ -597,37 +595,113 @@ def create_export_mesh(obj: bpy.types.Object):
     return obj_eval, mesh
 
 
+def _batch_extract_mesh_tri_data(mesh: bpy.types.Mesh, transforms: Matrix, color_attr):
+    """Batch extract all triangle mesh."""
+    num_tris = len(mesh.loop_triangles)
+    num_loops = len(mesh.loops)
+    num_verts = len(mesh.vertices)
+
+    tri_loop_indices = np.empty(num_tris * 3, dtype=np.uint32)
+    mesh.loop_triangles.foreach_get("loops", tri_loop_indices)
+    tri_loop_indices = tri_loop_indices.reshape((num_tris, 3))
+
+    tri_mat_indices = np.empty(num_tris, dtype=np.uint32)
+    mesh.loop_triangles.foreach_get("material_index", tri_mat_indices)
+
+    positions = np.empty(num_verts * 3, dtype=np.float32)
+    mesh.attributes["position"].data.foreach_get("vector", positions)
+    positions = positions.reshape((num_verts, 3)).astype(np.float64)
+
+    loop_to_vert = np.empty(num_loops, dtype=np.uint32)
+    mesh.loops.foreach_get("vertex_index", loop_to_vert)
+
+    transforms_np = np.array(transforms, dtype=np.float64)
+    rot_scale = transforms_np[:3, :3]
+    translation = transforms_np[:3, 3]
+    transformed_positions = positions @ rot_scale.T + translation
+
+    loop_positions = transformed_positions[loop_to_vert]
+
+    colors_int = None
+    if color_attr is not None:
+        colors_float = np.empty(num_loops * 4, dtype=np.float32)
+        color_attr.data.foreach_get("color_srgb", colors_float)
+        colors_float = colors_float.reshape((num_loops, 4))
+        colors_float *= 255.0
+        colors_int = np.rint(colors_float).astype(np.int32)
+
+    return tri_loop_indices, tri_mat_indices, loop_positions, loop_to_vert, colors_int
+
+
+def _dedupe_bound_vertices(loop_positions, loop_to_vert, colors_int, tri_loop_indices):
+    """
+    Deduplicate vertices using integer keys for fast 1D np.unique.
+    Uses mesh vertex indices (+ color) as dedup keys instead of comparing float positions,
+    since vertices with the same mesh index always produce the same transformed position.
+    """
+    used_loops = tri_loop_indices.ravel()
+    used_vert_indices = loop_to_vert[used_loops]
+
+    if colors_int is not None:
+        used_colors = colors_int[used_loops]
+        # Encode (vertex_index, r, g, b, a) as a single int64 for fast 1D dedup
+        keys = (used_vert_indices.astype(np.int64) << 32) | \
+               (used_colors[:, 0].astype(np.int64) << 24) | \
+               (used_colors[:, 1].astype(np.int64) << 16) | \
+               (used_colors[:, 2].astype(np.int64) << 8) | \
+               used_colors[:, 3].astype(np.int64)
+    else:
+        used_colors = None
+        keys = used_vert_indices.astype(np.int64)
+
+    _, unique_indices, inverse_indices = np.unique(keys, return_index=True, return_inverse=True)
+
+    unique_loop_idx = used_loops[unique_indices]
+    unique_positions = loop_positions[unique_loop_idx]
+    unique_colors = colors_int[unique_loop_idx] if colors_int is not None else None
+
+    tri_vert_indices = inverse_indices.reshape((len(tri_loop_indices), 3)).astype(np.uint32)
+
+    return unique_positions, unique_colors, tri_vert_indices
+
+
 def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     """Create all bound polygon triangle XML objects for this BoundGeometry/BVH."""
-    triangles: list[PolyTriangle] = []
-
     color_attr_name = get_color_attr_name(0)
     color_attr = mesh.color_attributes.get(color_attr_name, None)
     if color_attr is not None and (color_attr.domain != "CORNER" or color_attr.data_type != "BYTE_COLOR"):
         color_attr = None
 
-    for tri in mesh.loop_triangles:
+    num_tris = len(mesh.loop_triangles)
+    if num_tris == 0:
+        return []
+
+    tri_loop_indices, tri_mat_indices, loop_positions, loop_to_vert, colors_int = \
+        _batch_extract_mesh_tri_data(mesh, transforms, color_attr)
+    unique_positions, unique_colors, tri_vert_indices = \
+        _dedupe_bound_vertices(loop_positions, loop_to_vert, colors_int, tri_loop_indices)
+
+    # Register unique vertices for proper offset handling
+    num_unique = len(unique_positions)
+    local_to_global = np.empty(num_unique, dtype=np.uint32)
+    for i in range(num_unique):
+        pos = Vector(unique_positions[i])
+        vert_color = tuple(int(c) for c in unique_colors[i]) if unique_colors is not None else None
+        local_to_global[i] = get_vert_index(pos, vert_color=vert_color)
+
+    unique_mat_indices = np.unique(tri_mat_indices)
+    mat_index_map = {}
+    for mat_idx in unique_mat_indices:
+        mat = mesh.materials[int(mat_idx)]
+        mat_index_map[int(mat_idx)] = get_mat_index(mat)
+
+    triangles: list[PolyTriangle] = []
+    for t in range(num_tris):
         triangle = PolyTriangle()
-        mat = mesh.materials[tri.material_index]
-        triangle.material_index = get_mat_index(mat)
-
-        tri_indices: list[int] = []
-
-        for loop_idx in tri.loops:
-            loop = mesh.loops[loop_idx]
-
-            vert_pos = transforms @ mesh.vertices[loop.vertex_index].co
-            vert_color = color_attr.data[loop_idx].color_srgb if color_attr is not None else None
-            if vert_color is not None:
-                vert_color = (vert_color[0] * 255, vert_color[1] * 255, vert_color[2] * 255, vert_color[3] * 255)
-            vert_ind = get_vert_index(vert_pos, vert_color=vert_color)
-
-            tri_indices.append(vert_ind)
-
-        triangle.v1 = tri_indices[0]
-        triangle.v2 = tri_indices[1]
-        triangle.v3 = tri_indices[2]
-
+        triangle.material_index = mat_index_map[int(tri_mat_indices[t])]
+        triangle.v1 = int(local_to_global[tri_vert_indices[t, 0]])
+        triangle.v2 = int(local_to_global[tri_vert_indices[t, 1]])
+        triangle.v3 = int(local_to_global[tri_vert_indices[t, 2]])
         triangles.append(triangle)
 
     return triangles

@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from .properties.ytyp import CMapTypesProperties, ArchetypeProperties
     from .properties.mlo import RoomProperties, PortalProperties, MloEntityProperties, TimecycleModifierProperties, EntitySetProperties
     from .properties.extensions import ExtensionProperties
+    from ..shared.multiselection import MultiSelectCollection
 
 import bpy
 from ..tools.utils import get_list_item
@@ -20,6 +21,12 @@ def get_selected_archetype(context) -> Union[ArchetypeProperties, None]:
     ytyp = get_selected_ytyp(context)
     if ytyp:
         return ytyp.selected_archetype
+
+
+def get_selected_archetypes_collection(context) -> Union[MultiSelectCollection, None]:
+    ytyp = get_selected_ytyp(context)
+    if ytyp:
+        return ytyp.archetypes
 
 
 def get_selected_room(context) -> Union[RoomProperties, None]:
@@ -52,6 +59,30 @@ def get_selected_tcm(context) -> Union[TimecycleModifierProperties, None]:
         archetype = ytyp.selected_archetype
         if archetype:
             return archetype.selected_tcm
+
+
+def get_selected_rooms_collection(context) -> Union[MultiSelectCollection, None]:
+    archetype = get_selected_archetype(context)
+    if archetype:
+        return archetype.rooms
+
+
+def get_selected_portals_collection(context) -> Union[MultiSelectCollection, None]:
+    archetype = get_selected_archetype(context)
+    if archetype:
+        return archetype.portals
+
+
+def get_selected_mlo_entities_collection(context) -> Union[MultiSelectCollection, None]:
+    archetype = get_selected_archetype(context)
+    if archetype:
+        return archetype.entities
+
+
+def get_selected_tcms_collection(context) -> Union[MultiSelectCollection, None]:
+    archetype = get_selected_archetype(context)
+    if archetype:
+        return archetype.timecycle_modifiers
 
 
 def get_selected_extension(context) -> Union[ExtensionProperties, None]:

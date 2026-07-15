@@ -5,7 +5,6 @@ from bpy.types import (
 from bpy.props import (
     BoolProperty
 )
-import os
 from .operators import (
     cloths as cloth_ops,
     cables as cable_ops,
@@ -13,6 +12,7 @@ from .operators import (
     lights as light_ops,
     materials as mat_ops,
 )
+from .gta5.presets.light import SOLLUMZ_PT_light_presets
 from .shader_materials import shadermats
 from .cable import CableAttr, is_cable_mesh
 from .cloth import ClothAttr
@@ -23,7 +23,6 @@ from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
-from ..sollumz_preferences import get_addon_preferences
 from ..icons import icon_manager
 from ..shared.shader_nodes import SzShaderNodeParameter
 from ..tools.meshhelper import (
@@ -302,6 +301,9 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
     def draw_header(self, context):
         icon_manager.icon_label("sollumz_icon", self)
 
+    def draw_header_preset(self, _context):
+        SOLLUMZ_PT_light_presets.draw_panel_header(self.layout)
+
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
@@ -549,113 +551,9 @@ class SOLLUMZ_PT_CREATE_LIGHT_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        row = layout.row()
-        row.template_list(SOLLUMZ_UL_LIGHT_PRESET_LIST.bl_idname, "light_presets",
-                          context.window_manager, "sz_light_presets", context.window_manager, "sz_light_preset_index")
-        col = row.column(align=True)
-        col.operator(light_ops.SOLLUMZ_OT_save_light_preset.bl_idname, text="", icon="ADD")
-        col.operator(light_ops.SOLLUMZ_OT_delete_light_preset.bl_idname, text="", icon="REMOVE")
-        col.separator()
-        col.menu(SOLLUMZ_MT_light_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
-
-        row = layout.row()
-        row.operator(light_ops.SOLLUMZ_OT_load_light_preset.bl_idname, icon='CHECKMARK')
-
-        layout.separator()
         row = layout.row(align=True)
         row.operator(light_ops.SOLLUMZ_OT_create_light.bl_idname)
         row.prop(context.scene, "create_light_type", text="")
-
-
-class SOLLUMZ_MT_light_presets_context_menu(bpy.types.Menu):
-    bl_label = "Light Presets Specials"
-    bl_idname = "SOLLUMZ_MT_light_presets_context_menu"
-
-    def draw(self, _context):
-        layout = self.layout
-
-        from .properties import get_light_presets_path
-        path = get_light_presets_path()
-        layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open Presets File").filepath = path
-
-
-class SOLLUMZ_UL_LIGHT_PRESET_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_LIGHT_PRESET_LIST"
-
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        row = layout.row()
-        row.label(text=item.name, icon="BOOKMARKS")
-
-
-class SOLLUMZ_PT_SHADER_PRESET_PANEL(bpy.types.Panel):
-    bl_label = "Shader Presets"
-    bl_idname = "SOLLUMZ_PT_SHADER_PRESET_PANEL"
-    bl_category = "Sollumz Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"DEFAULT_CLOSED"}
-    bl_parent_id = SOLLUMZ_PT_SHADER_TOOLS_PANEL.bl_idname
-
-    bl_order = 1
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon="BOOKMARKS")
-
-    def draw(self, context):
-        layout = self.layout
-        wm = context.window_manager
-
-        row = layout.row()
-        row.template_list(
-            SOLLUMZ_UL_SHADER_PRESET_LIST.bl_idname, "shader_presets",
-            wm, "sz_shader_presets",
-            wm, "sz_shader_preset_index"
-        )
-        col = row.column(align=True)
-        col.operator(mat_ops.SOLLUMZ_OT_save_shader_preset.bl_idname, text="", icon="ADD")
-        col.operator(mat_ops.SOLLUMZ_OT_delete_shader_preset.bl_idname, text="", icon="REMOVE")
-        col.separator()
-        col.menu(SOLLUMZ_MT_shader_presets_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
-
-        row = layout.row(align=True)
-        op = row.operator(mat_ops.SOLLUMZ_OT_load_shader_preset.bl_idname, icon="CHECKMARK")
-        op.apply_textures = get_addon_preferences(context).shader_preset_apply_textures
-        row.menu(SOLLUMZ_MT_shader_presets_apply_context_menu.bl_idname, icon="DOWNARROW_HLT", text="")
-
-
-class SOLLUMZ_MT_shader_presets_context_menu(bpy.types.Menu):
-    bl_label = "Shader Presets Specials"
-    bl_idname = "SOLLUMZ_MT_shader_presets_context_menu"
-
-    def draw(self, _context):
-        layout = self.layout
-
-        from .properties import get_shader_presets_path
-        path = get_shader_presets_path()
-        layout.enabled = os.path.exists(path)
-        layout.operator("wm.path_open", text="Open Presets File").filepath = path
-
-
-class SOLLUMZ_MT_shader_presets_apply_context_menu(bpy.types.Menu):
-    bl_label = "Shader Presets Apply Options"
-    bl_idname = "SOLLUMZ_MT_shader_presets_apply_context_menu"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(get_addon_preferences(context), "shader_preset_apply_textures", text="Apply Textures")
-
-
-class SOLLUMZ_UL_SHADER_PRESET_LIST(bpy.types.UIList):
-    bl_idname = "SOLLUMZ_UL_SHADER_PRESET_LIST"
-
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
-        row = layout.row()
-        row.label(text=item.name, icon="BOOKMARKS")
 
 
 class SOLLUMZ_PT_BONE_TOOLS_PANEL(bpy.types.Panel):

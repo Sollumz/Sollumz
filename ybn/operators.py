@@ -1,8 +1,6 @@
 from math import ceil
 from ..tools.obb import get_obb, get_obb_extents
-import traceback
-from .flag_preset import FlagPreset
-from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
+from ..ybn.properties import BoundFlags
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..tools.boundhelper import create_bound_shape, convert_objs_to_composites, convert_objs_to_single_composite, center_composite_to_children, apply_flag_preset
 from ..tools.meshhelper import create_box_from_extents
@@ -125,12 +123,12 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
         bound_child_type = context.scene.bound_child_type
         do_center = context.scene.center_composite_to_selection
 
-        flag_preset_index = context.window_manager.sz_flag_preset_index
+        flag_preset_name = context.scene.sz_default_flag_preset_name
 
         if context.scene.create_seperate_composites or len(selected_meshes) == 1:
-            convert_objs_to_composites(selected_meshes, bound_child_type, flag_preset_index)
+            convert_objs_to_composites(selected_meshes, bound_child_type, flag_preset_name)
         else:
-            composite_obj = convert_objs_to_single_composite(selected_meshes, bound_child_type, flag_preset_index)
+            composite_obj = convert_objs_to_single_composite(selected_meshes, bound_child_type, flag_preset_name)
 
             if do_center:
                 center_composite_to_children(composite_obj)
@@ -163,7 +161,7 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
 
         bound_obj.parent = parent
 
-        apply_flag_preset(bound_obj, context.window_manager.sz_flag_preset_index)
+        apply_flag_preset(bound_obj, context.scene.sz_default_flag_preset_name)
 
         return {"FINISHED"}
 
@@ -243,146 +241,6 @@ class SOLLUMZ_OT_convert_to_collision_material(SOLLUMZ_OT_base, bpy.types.Operat
         mat = create_collision_material_from_index(context.window_manager.sz_collision_material_index)
         active_mat_index = aobj.active_material_index
         aobj.data.materials[active_mat_index] = mat
-
-
-class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Delete a flag preset"""
-    bl_idname = "sollumz.delete_flag_preset"
-    bl_label = "Delete Flag Preset"
-    bl_action = f"{bl_label}"
-
-    preset_blacklist = [
-        "General (Default)",
-        "General 2",
-        "Water surface",
-        "Leaves - Bush",
-        "Stair plane",
-        "Stair mesh",
-        "Deep surface",
-    ]
-
-    def run(self, context):
-        index = context.window_manager.sz_flag_preset_index
-        load_flag_presets()
-
-        try:
-            preset = flag_presets.presets[index]
-            if preset.name in self.preset_blacklist:
-                self.message("Cannot delete a default preset!")
-                return False
-
-            filepath = get_flag_presets_path()
-            flag_presets.presets.remove(preset)
-
-            try:
-                flag_presets.write_xml(filepath)
-                load_flag_presets()
-
-                return True
-            except:
-                self.error(
-                    f"Error during deletion of flag preset: {traceback.format_exc()}")
-                return False
-
-        except IndexError:
-            self.message(
-                f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
-            return False
-
-
-class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Save a flag preset"""
-    bl_idname = "sollumz.save_flag_preset"
-    bl_label = "Save Flag Preset"
-    bl_action = f"{bl_label}"
-
-    name: bpy.props.StringProperty(name="Name")
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        return obj is not None and obj.sollum_type in BOUND_TYPES
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
-
-    def run(self, context):
-        self.name = self.name.strip()
-        if len(self.name) == 0:
-            self.warning("Please specify a name for the new flag preset.")
-            return False
-
-        obj = context.active_object
-
-        if not obj:
-            self.message("No object selected!")
-            return False
-
-        if obj.sollum_type not in BOUND_TYPES:
-            self.message("Selected object must be a Sollumz bound!")
-            return False
-
-        load_flag_presets()
-
-        for preset in flag_presets.presets:
-            if preset.name == self.name:
-                self.warning(
-                    "A preset with that name already exists! If you wish to overwrite this preset, delete the original.")
-                return False
-
-        flag_preset = FlagPreset()
-        flag_preset.name = self.name
-
-        for prop in dir(obj.composite_flags1):
-            value = getattr(obj.composite_flags1, prop)
-            if value is True:
-                flag_preset.flags1.append(prop)
-
-        for prop in dir(obj.composite_flags2):
-            value = getattr(obj.composite_flags2, prop)
-            if value is True:
-                flag_preset.flags2.append(prop)
-
-        flag_presets.presets.append(flag_preset)
-
-        filepath = get_flag_presets_path()
-        flag_presets.write_xml(filepath)
-        load_flag_presets()
-
-        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
-        return True
-
-
-class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Load a flag preset to the selected bounds"""
-    bl_idname = "sollumz.load_flag_preset"
-    bl_label = "Apply Flags Preset"
-    bl_context = "object"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_action = f"{bl_label}"
-
-    def run(self, context):
-        index = context.window_manager.sz_flag_preset_index
-        selected = context.selected_objects
-        if len(selected) < 1:
-            self.message("No objects selected!")
-            return False
-
-        load_flag_presets()
-
-        for obj in selected:
-            try:
-                if apply_flag_preset(obj, index, reload_presets=False):
-                    preset = flag_presets.presets[index]
-                    self.message(f"Applied preset '{preset.name}' to: {obj.name}")
-            except IndexError:
-                filepath = get_flag_presets_path()
-                self.error(
-                    f"Flag preset does not exist! Ensure the preset file is present in the '{filepath}' directory.")
-                return False
-
-        tag_redraw(context)
-        return True
 
 
 class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):

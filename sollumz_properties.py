@@ -50,14 +50,14 @@ class SollumType(str, Enum):
     ANIMATIONS = "sollumz_animations"
     ANIMATION = "sollumz_animation"
 
-    YMAP = "sollumz_ymap"
-    YMAP_ENTITY_GROUP = "sollumz_ymap_entity_group"
-    YMAP_BOX_OCCLUDER_GROUP = "sollumz_ymap_box_occluder_group"
-    YMAP_MODEL_OCCLUDER_GROUP = "sollumz_ymap_model_occluder_group"
-    YMAP_CAR_GENERATOR_GROUP = "sollumz_ymap_car_generator_group"
-    YMAP_BOX_OCCLUDER = "sollumz_ymap_box_occluder"
-    YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
-    YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
+    DEPRECATED__YMAP = "sollumz_ymap"
+    DEPRECATED__YMAP_ENTITY_GROUP = "sollumz_ymap_entity_group"
+    DEPRECATED__YMAP_BOX_OCCLUDER_GROUP = "sollumz_ymap_box_occluder_group"
+    DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP = "sollumz_ymap_model_occluder_group"
+    DEPRECATED__YMAP_CAR_GENERATOR_GROUP = "sollumz_ymap_car_generator_group"
+    DEPRECATED__YMAP_BOX_OCCLUDER = "sollumz_ymap_box_occluder"
+    DEPRECATED__YMAP_MODEL_OCCLUDER = "sollumz_ymap_model_occluder"
+    DEPRECATED__YMAP_CAR_GENERATOR = "sollumz_ymap_car_generator"
 
     CHARACTER_CLOTH_MESH = "sollumz_character_cloth_mesh"
 
@@ -255,18 +255,6 @@ DRAWABLE_TYPES = [
 ]
 
 
-YMAP_GROUP_TYPES = [
-    SollumType.YMAP,
-    SollumType.YMAP_ENTITY_GROUP,
-    SollumType.YMAP_BOX_OCCLUDER_GROUP,
-    SollumType.YMAP_MODEL_OCCLUDER_GROUP,
-    SollumType.YMAP_CAR_GENERATOR_GROUP,
-    SollumType.YMAP_BOX_OCCLUDER,
-    SollumType.YMAP_MODEL_OCCLUDER,
-    SollumType.YMAP_CAR_GENERATOR,
-]
-
-
 SOLLUMZ_UI_NAMES = {
     SollumType.BOUND_BOX: "Bound Box",
     SollumType.BOUND_SPHERE: "Bound Sphere",
@@ -310,19 +298,19 @@ SOLLUMZ_UI_NAMES = {
     SollumType.ANIMATIONS: "Animations",
     SollumType.ANIMATION: "Animation",
 
-    SollumType.YMAP: "Ymap",
-    SollumType.YMAP_ENTITY_GROUP: "Entity Group",
-    SollumType.YMAP_BOX_OCCLUDER_GROUP: "Box Occluder Group",
-    SollumType.YMAP_MODEL_OCCLUDER_GROUP: "Model Occluder Group",
-    SollumType.YMAP_CAR_GENERATOR_GROUP: "Car Generator Group",
-    SollumType.YMAP_BOX_OCCLUDER: "Box Occluder",
-    SollumType.YMAP_MODEL_OCCLUDER: "Model Occluder",
-    SollumType.YMAP_CAR_GENERATOR: "Car Generator",
+    SollumType.DEPRECATED__YMAP: "(Deprecated) Ymap",
+    SollumType.DEPRECATED__YMAP_ENTITY_GROUP: "(Deprecated) Entity Group",
+    SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP: "(Deprecated) Box Occluder Group",
+    SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP: "(Deprecated) Model Occluder Group",
+    SollumType.DEPRECATED__YMAP_CAR_GENERATOR_GROUP: "(Deprecated) Car Generator Group",
+    SollumType.DEPRECATED__YMAP_BOX_OCCLUDER: "(Deprecated) Box Occluder",
+    SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER: "(Deprecated) Model Occluder",
+    SollumType.DEPRECATED__YMAP_CAR_GENERATOR: "(Deprecated) Car Generator",
 
     MaterialType.NONE: "None",
     MaterialType.SHADER: "Sollumz Material",
     MaterialType.COLLISION: "Sollumz Collision Material",
-    MaterialType.DEPRECATED__SHATTER_MAP: "Sollumz Shatter Map",
+    MaterialType.DEPRECATED__SHATTER_MAP: "(Deprecated) Sollumz Shatter Map",
 
     LODLevel.VERYHIGH: "Very High",
     LODLevel.HIGH: "High",
@@ -330,13 +318,13 @@ SOLLUMZ_UI_NAMES = {
     LODLevel.LOW: "Low",
     LODLevel.VERYLOW: "Very Low",
 
-    EntityLodLevel.LODTYPES_DEPTH_HD: "DEPTH HD",
-    EntityLodLevel.LODTYPES_DEPTH_LOD: "DEPTH LOD",
-    EntityLodLevel.LODTYPES_DEPTH_SLOD1: "DEPTH SLOD1",
-    EntityLodLevel.LODTYPES_DEPTH_SLOD2: "DEPTH SLOD2",
-    EntityLodLevel.LODTYPES_DEPTH_SLOD3: "DEPTH SLOD3",
-    EntityLodLevel.LODTYPES_DEPTH_SLOD4: "DEPTH SLOD4",
-    EntityLodLevel.LODTYPES_DEPTH_ORPHANHD: "DEPTH ORPHAN HD",
+    EntityLodLevel.LODTYPES_DEPTH_HD: "HD",
+    EntityLodLevel.LODTYPES_DEPTH_LOD: "LOD",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD1: "SLOD1",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD2: "SLOD2",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD3: "SLOD3",
+    EntityLodLevel.LODTYPES_DEPTH_SLOD4: "SLOD4",
+    EntityLodLevel.LODTYPES_DEPTH_ORPHANHD: "ORPHAN HD",
 
     EntityPriorityLevel.PRI_REQUIRED: "REQUIRED",
     EntityPriorityLevel.PRI_OPTIONAL_HIGH: "OPTIONAL HIGH",
@@ -428,6 +416,9 @@ class FlagPropertyGroup:
 
     total: bpy.props.StringProperty(name="Flags", update=update_flags_total, default="0")
 
+    # Preset capture/apply only round-trips `total`, setting it updates all the per-flag BoolProperty fields
+    __sz_preset_capture__ = ("total",)
+
 
 time_items = [("0", "12:00 AM", ""),
               ("1", "1:00 AM", ""),
@@ -507,6 +498,7 @@ class EntityProperties:
         default=EntityPriorityLevel.PRI_REQUIRED,
         options={"HIDDEN"}
     )
+    # TODO(ymap-next): make ambient_occlusion_multiplier, artificial_ambient_occlusion, and tint_value integers
     ambient_occlusion_multiplier: bpy.props.FloatProperty(
         name="Ambient Occlusion Multiplier", default=255)
     artificial_ambient_occlusion: bpy.props.FloatProperty(
