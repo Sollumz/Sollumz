@@ -240,23 +240,19 @@ def get_armature_obj(armature):
 
 
 def get_children_recursive(obj) -> list[bpy.types.Object]:
-    if obj is None:
-        return []
-
-    children_by_parent: dict[bpy.types.Object, list[bpy.types.Object]] = {}
-    for o in bpy.data.objects:
-        parent = o.parent
-        if parent is not None:
-            children_by_parent.setdefault(parent, []).append(o)
-
     children = []
 
-    def _collect(parent):
-        for child in children_by_parent.get(parent, ()):
-            children.append(child)
-            _collect(child)
+    if obj is None:
+        return children
 
-    _collect(obj)
+    if len(obj.children) < 1:
+        return children
+
+    for child in obj.children:
+        children.append(child)
+        if len(child.children) > 0:
+            children.extend(get_children_recursive(child))
+
     return children
 
 
