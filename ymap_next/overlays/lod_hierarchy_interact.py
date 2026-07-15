@@ -6,6 +6,7 @@ from bpy_extras.view3d_utils import location_3d_to_region_2d
 from gpu_extras.batch import batch_for_shader
 
 from ...shared.multiselection import SelectMode
+from ...sollumz_preferences import get_theme_settings
 from ..context import active_entity, active_group
 from ..properties.map import MapLodLevel
 from . import lod_hierarchy
@@ -16,9 +17,15 @@ DRAG_THRESHOLD_PX = 5
 CYCLE_POS_THRESHOLD_PX = 5
 COLOCATED_EPSILON_SQ = 1.0  # Screen-space distance^2 to consider entities co-located
 
-COLOR_VALID = (0.3, 1.0, 0.3, 0.8)
-COLOR_INVALID = (1.0, 0.3, 0.3, 0.8)
-COLOR_NO_TARGET = (1.0, 1.0, 1.0, 0.4)
+
+def _drag_feedback_colors() -> tuple[tuple, tuple, tuple]:
+    """(valid, invalid, no_target) drag feedback RGBA from the theme preferences."""
+    theme = get_theme_settings()
+    return (
+        tuple(theme.map_lod_overlay_drag_valid),
+        tuple(theme.map_lod_overlay_drag_invalid),
+        tuple(theme.map_lod_overlay_drag_no_target),
+    )
 
 
 def _is_valid_parent(child_lod: str, parent_lod: str) -> bool:
@@ -181,6 +188,7 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
         if self._drag_draw_handle is not None:
             SpaceView3D.draw_handler_remove(self._drag_draw_handle, "WINDOW")
             self._drag_draw_handle = None
+        self._handler.set_drag_hover_outline(None)
         context.area.tag_redraw()
 
     def _compute_drag_sources(self, context) -> list[int]:
@@ -225,9 +233,12 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
         self._drag_target_idx = idx
         if idx is None:
             self._drag_valid = False
+            self._handler.set_drag_hover_outline(None)
         else:
             parent_lod = self._handler.entities[idx][E_LOD]
             self._drag_valid = all(_is_valid_parent(lod, parent_lod) for lod in self._drag_source_lods)
+            color_valid, color_invalid, _ = _drag_feedback_colors()
+            self._handler.set_drag_hover_outline(idx, color_valid if self._drag_valid else color_invalid)
 
     def _draw_drag_feedback(self):
         if not self._dragging or not self._drag_source_indices:
@@ -240,13 +251,16 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
         if rv3d is None:
             return
 
+        ui_scale = context.preferences.system.ui_scale
+
         mx, my = self._drag_mx, self._drag_my
 
         # Determine line color
+        color_valid, color_invalid, color_no_target = _drag_feedback_colors()
         if self._drag_target_idx is not None:
-            color = COLOR_VALID if self._drag_valid else COLOR_INVALID
+            color = color_valid if self._drag_valid else color_invalid
         else:
-            color = COLOR_NO_TARGET
+            color = color_no_target
 
         # Collect line segments: each source -> cursor
         line_coords = []
@@ -272,7 +286,7 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
 
         # Draw label near cursor
         font_id = 0
-        blf.size(font_id, 12)
+        blf.size(font_id, 12 * ui_scale)
         blf.enable(font_id, blf.SHADOW)
         blf.shadow(font_id, 3, 0.0, 0.0, 0.0, 1.0)
         blf.shadow_offset(font_id, 2, -2)
@@ -292,15 +306,15 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
                 target_label += f" ({self._drag_target_cycle + 1}/{n_targets} scroll to cycle)"
             if self._drag_valid:
                 label = f"{child_label} \u2192 {target_label}"
-                blf.color(font_id, *COLOR_VALID)
+                blf.color(font_id, *color_valid)
             else:
                 label = f"{child_label} \u2192 {target_label} (invalid)"
-                blf.color(font_id, *COLOR_INVALID)
+                blf.color(font_id, *color_invalid)
         else:
             label = f"{child_label} \u2192 ?"
-            blf.color(font_id, *COLOR_NO_TARGET)
+            blf.color(font_id, *color_no_target)
 
-        blf.position(font_id, mx + 15, my + 15, 0.0)
+        blf.position(font_id, mx + 15 * ui_scale, my + 15 * ui_scale, 0.0)
         blf.draw(font_id, label)
         blf.disable(font_id, blf.SHADOW)
 

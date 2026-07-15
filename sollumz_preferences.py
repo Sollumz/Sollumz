@@ -428,6 +428,52 @@ class SollumzThemeSettings(PropertyGroup):
     cloth_overlay_binding_errors: RGBAProperty("Binding Errors", (1.0, 0.05, 0.025, 0.75))
     cloth_overlay_binding_errors_size: IntProperty(name="Binding Errors Size", default=12, min=1, max=50)
 
+    map_lod_overlay_orphan_hd: RGBAProperty("Orphan HD", (1.0, 0.0, 0.0, 1.0))
+    map_lod_overlay_hd: RGBAProperty("HD", (0.3, 0.5, 1.0, 1.0))
+    map_lod_overlay_lod: RGBAProperty("LOD", (0.3, 0.8, 0.3, 1.0))
+    map_lod_overlay_slod1: RGBAProperty("SLOD1", (1.0, 0.8, 0.2, 1.0))
+    map_lod_overlay_slod2: RGBAProperty("SLOD2", (1.0, 0.5, 0.1, 1.0))
+    map_lod_overlay_slod3: RGBAProperty("SLOD3", (1.0, 0.2, 0.2, 1.0))
+    map_lod_overlay_slod4: RGBAProperty("SLOD4", (0.7, 0.3, 0.9, 1.0))
+    map_lod_overlay_drag_valid: RGBAProperty("Drag Valid Target", (0.3, 1.0, 0.3, 0.8))
+    map_lod_overlay_drag_invalid: RGBAProperty("Drag Invalid Target", (1.0, 0.3, 0.3, 0.8))
+    map_lod_overlay_drag_no_target: RGBAProperty("Drag No Target", (1.0, 1.0, 1.0, 0.4))
+    map_lod_overlay_line_alpha: FloatProperty(
+        name="Line Alpha",
+        description="Opacity of connection lines",
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+        update=_save_preferences_on_update,
+    )
+    map_lod_overlay_outline_alpha: FloatProperty(
+        name="Outline Alpha",
+        description="Opacity of entity mesh outlines",
+        default=0.25,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+        update=_save_preferences_on_update,
+    )
+    map_lod_overlay_marker_size: FloatProperty(
+        name="Marker Size",
+        description="Base size of entity markers in the viewport",
+        default=7.0,
+        min=1.0,
+        max=16.0,
+        update=_save_preferences_on_update,
+    )
+    map_lod_overlay_marker_alpha: FloatProperty(
+        name="Marker Alpha",
+        description="Opacity of entity markers",
+        default=0.8,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+        update=_save_preferences_on_update,
+    )
+
     def reset(self):
         for prop_name, annotation in SollumzThemeSettings.__annotations__.items():
             setattr(self, prop_name, annotation.keywords["default"])
@@ -1469,6 +1515,22 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "cloth_overlay_material_errors")
         layout.prop(theme, "cloth_overlay_binding_errors")
         layout.prop(theme, "cloth_overlay_binding_errors_size")
+
+        _section_header(layout, "Map LOD Hierarchy Overlay", "POINTCLOUD_DATA")
+        layout.prop(theme, "map_lod_overlay_orphan_hd")
+        layout.prop(theme, "map_lod_overlay_hd")
+        layout.prop(theme, "map_lod_overlay_lod")
+        layout.prop(theme, "map_lod_overlay_slod1")
+        layout.prop(theme, "map_lod_overlay_slod2")
+        layout.prop(theme, "map_lod_overlay_slod3")
+        layout.prop(theme, "map_lod_overlay_slod4")
+        layout.prop(theme, "map_lod_overlay_drag_valid")
+        layout.prop(theme, "map_lod_overlay_drag_invalid")
+        layout.prop(theme, "map_lod_overlay_drag_no_target")
+        layout.prop(theme, "map_lod_overlay_line_alpha")
+        layout.prop(theme, "map_lod_overlay_outline_alpha")
+        layout.prop(theme, "map_lod_overlay_marker_size")
+        layout.prop(theme, "map_lod_overlay_marker_alpha")
 
     def draw_about(self, context, layout: UILayout):
         row = layout.row()

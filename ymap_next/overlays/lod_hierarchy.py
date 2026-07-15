@@ -1,5 +1,4 @@
 import functools
-import math
 
 import blf
 import bpy
@@ -9,6 +8,7 @@ from bpy.types import SpaceView3D
 from bpy_extras.view3d_utils import location_3d_to_region_2d
 from gpu_extras.batch import batch_for_shader
 
+from ...sollumz_preferences import get_theme_settings
 from ..context import active_group
 
 TOOL_IDNAME = "sollumz.map_lod_hierarchy"
@@ -21,21 +21,21 @@ else:
     POLYLINE_SMOOTH_COLOR_NAME = "SMOOTH_COLOR"
 
 # Visual category for each entity (HD split into ORPHAN_HD vs HD)
-LOD_COLORS = {
-    "ORPHAN_HD": (1.0, 0.0, 0.0, 1.0),
-    "HD": (0.3, 0.5, 1.0, 1.0),
-    "LOD": (0.3, 0.8, 0.3, 1.0),
-    "SLOD1": (1.0, 0.8, 0.2, 1.0),
-    "SLOD2": (1.0, 0.5, 0.1, 1.0),
-    "SLOD3": (1.0, 0.2, 0.2, 1.0),
-    "SLOD4": (0.7, 0.3, 0.9, 1.0),
-}
+LOD_LEVELS = ("ORPHAN_HD", "HD", "LOD", "SLOD1", "SLOD2", "SLOD3", "SLOD4")
 
 # Visual category → window-manager visibility toggle property name
-LOD_LEVEL_VIS_PROPS = {level: f"sz_ui_map_lod_overlay_show_{level.lower()}" for level in LOD_COLORS}
+LOD_LEVEL_VIS_PROPS = {level: f"sz_ui_map_lod_overlay_show_{level.lower()}" for level in LOD_LEVELS}
 
-# Brightened RGB of each color, used for chain-highlighted elements (alpha is per use site)
-LOD_COLORS_BRIGHT = {level: tuple(min(c + 0.3, 1.0) for c in color[:3]) for level, color in LOD_COLORS.items()}
+
+def _theme_lod_colors(theme) -> dict[str, tuple]:
+    """Theme RGBA per visual category (customizable in addon preferences)."""
+    return {level: tuple(getattr(theme, f"map_lod_overlay_{level.lower()}")) for level in LOD_LEVELS}
+
+
+def _brightened(colors: dict[str, tuple]) -> dict[str, tuple]:
+    """Brightened RGB of each color, used for chain-highlighted elements (alpha is per use site)."""
+    return {level: tuple(min(c + 0.3, 1.0) for c in color[:3]) for level, color in colors.items()}
+
 
 # Marker size multiplier per visual category (base * factor)
 LOD_SIZE_FACTORS = {
@@ -47,8 +47,6 @@ LOD_SIZE_FACTORS = {
     "SLOD3": 2.2,
     "SLOD4": 2.8,
 }
-
-LOD_DIST_CIRCLE_SEGMENTS = 64
 
 # Width of the entity mesh outline glow, in screen pixels
 OUTLINE_WIDTH_PX = 3.0
@@ -67,19 +65,6 @@ E_LINKED = 7  # linked_object reference (Object | None)
 def _visual_category(lod_level: str, parent_uuid: bytes) -> str:
     """Visual category splits HD into ORPHAN_HD (HD with no parent) vs HD."""
     return "ORPHAN_HD" if lod_level == "HD" and not parent_uuid else lod_level
-
-
-def _build_circle_coords(segments: int) -> list[tuple[float, float, float]]:
-    coords = []
-    for i in range(segments):
-        a0 = 2.0 * math.pi * i / segments
-        a1 = 2.0 * math.pi * (i + 1) / segments
-        coords.append((math.cos(a0), math.sin(a0), 0.0))
-        coords.append((math.cos(a1), math.sin(a1), 0.0))
-    return coords
-
-
-_UNIT_CIRCLE = _build_circle_coords(LOD_DIST_CIRCLE_SEGMENTS)
 
 
 @functools.cache
@@ -192,6 +177,10 @@ class LodHierarchyOverlayDrawHandler:
         # Visual categories currently enabled in the overlay settings (refreshed each draw)
         self.visible_levels: frozenset[str] = frozenset()
 
+        # Theme color snapshot (refreshed in _ensure_cache when preferences change)
+        self.lod_colors: dict[str, tuple] = {}
+        self.lod_colors_bright: dict[str, tuple] = {}
+
         # Cached highlight chain
         self._chain_uuids: set[bytes] = set()
 
@@ -205,8 +194,6 @@ class LodHierarchyOverlayDrawHandler:
         self._line_batch = None
         self._line_shader = None
         self._highlight_line_batch = None
-        self._lod_circle_batch = None
-        self._child_circle_batch = None
 
         # Outline (inverted hull) caches
         # mesh.session_uid -> GPUBatch | None; survives chain changes, evicted when outlined meshes change
@@ -214,6 +201,8 @@ class LodHierarchyOverlayDrawHandler:
         # Rebuilt when the chain or outline settings change. List of (mesh_obj, batch, color_rgba).
         # matrix_world is read live at draw time so outlines track object movement.
         self._outline_draw_list: list[tuple] = []
+        # Transient outline for the drag&drop hover target, managed by the interact operator
+        self._hover_outline_draw_list: list[tuple] = []
 
     def register(self):
         self.handler_geometry = SpaceView3D.draw_handler_add(self.draw_geometry, (), "WINDOW", "POST_VIEW")
@@ -287,10 +276,10 @@ class LodHierarchyOverlayDrawHandler:
 
         self._chain_uuids = chain
 
-    def _rebuild_geometry_batches(self, wm):
-        marker_size = wm.sz_ui_map_lod_overlay_marker_size
-        marker_alpha = wm.sz_ui_map_lod_overlay_marker_alpha
-        line_alpha = wm.sz_ui_map_lod_overlay_line_alpha
+    def _rebuild_geometry_batches(self, wm, theme):
+        marker_size = theme.map_lod_overlay_marker_size * bpy.context.preferences.system.ui_scale
+        marker_alpha = theme.map_lod_overlay_marker_alpha
+        line_alpha = theme.map_lod_overlay_line_alpha
         show_lines = wm.sz_ui_map_lod_overlay_show_lines
         chain = self._chain_uuids
         visible = self.visible_levels
@@ -314,11 +303,11 @@ class LodHierarchyOverlayDrawHandler:
         batches = []
         for vis, coords in regular_by_vis.items():
             b = batch_for_shader(point_shader, "POINTS", {"pos": coords})
-            color = LOD_COLORS[vis]
+            color = self.lod_colors[vis]
             batches.append((b, (*color[:3], color[3] * marker_alpha), marker_size * LOD_SIZE_FACTORS[vis]))
         for vis, coords in highlight_by_vis.items():
             b = batch_for_shader(point_shader, "POINTS", {"pos": coords})
-            bright = (*LOD_COLORS_BRIGHT[vis], min(1.0, LOD_COLORS[vis][3] * marker_alpha + 0.2))
+            bright = (*self.lod_colors_bright[vis], min(1.0, self.lod_colors[vis][3] * marker_alpha + 0.2))
             batches.append((b, bright, marker_size * LOD_SIZE_FACTORS[vis] * 2.0))
         self._marker_batches = batches
 
@@ -349,13 +338,13 @@ class LodHierarchyOverlayDrawHandler:
                 if e[E_UUID] in chain and parent_uuid in chain:
                     hl_line_coords.append(pe[E_POS])
                     hl_line_coords.append(e[E_POS])
-                    hl_line_colors.append((*LOD_COLORS_BRIGHT[pe[E_VISUAL]], 1.0))
-                    hl_line_colors.append((*LOD_COLORS_BRIGHT[visual], 1.0))
+                    hl_line_colors.append((*self.lod_colors_bright[pe[E_VISUAL]], 1.0))
+                    hl_line_colors.append((*self.lod_colors_bright[visual], 1.0))
                 else:
                     line_coords.append(pe[E_POS])
                     line_coords.append(e[E_POS])
-                    line_colors.append((*LOD_COLORS[pe[E_VISUAL]][:3], line_alpha))
-                    line_colors.append((*LOD_COLORS[visual][:3], line_alpha))
+                    line_colors.append((*self.lod_colors[pe[E_VISUAL]][:3], line_alpha))
+                    line_colors.append((*self.lod_colors[visual][:3], line_alpha))
 
             shader = gpu.shader.from_builtin(POLYLINE_SMOOTH_COLOR_NAME)
             self._line_shader = shader
@@ -367,7 +356,27 @@ class LodHierarchyOverlayDrawHandler:
                     shader, "LINES", {"pos": hl_line_coords, "color": hl_line_colors}
                 )
 
-    def _rebuild_outline_draw_list(self, wm):
+    def _outline_entries(self, e, color, seen_uids: "set[int] | None" = None) -> list[tuple]:
+        """(mesh_obj, batch, color) outline entries for one entity's object (and mesh children),
+        using the shared per-mesh batch cache."""
+        obj = e[E_LINKED]
+        if obj is None:
+            return []
+
+        entries = []
+        for mesh_obj in (o for o in (obj, *obj.children_recursive) if o.type == "MESH"):
+            uid = mesh_obj.data.session_uid
+            if uid not in self._outline_mesh_batches:
+                self._outline_mesh_batches[uid] = _build_outline_mesh_batch(mesh_obj.data)
+            if seen_uids is not None:
+                seen_uids.add(uid)
+
+            batch = self._outline_mesh_batches[uid]
+            if batch is not None:
+                entries.append((mesh_obj, batch, color))
+        return entries
+
+    def _rebuild_outline_draw_list(self, wm, theme):
         """Build the per-object outline draw list for chain entities.
 
         Per-mesh GPU batches are cached by mesh.session_uid so the expensive vertex extraction
@@ -377,47 +386,27 @@ class LodHierarchyOverlayDrawHandler:
         seen_uids: set[int] = set()
 
         if wm.sz_ui_map_lod_overlay_show_outlines:
-            alpha = wm.sz_ui_map_lod_overlay_outline_alpha
+            alpha = theme.map_lod_overlay_outline_alpha
             chain = self._chain_uuids
             visible = self.visible_levels
 
             for e in self.entities:
                 if e[E_UUID] not in chain or e[E_VISUAL] not in visible:
                     continue
-                obj = e[E_LINKED]
-                if obj is None:
-                    continue
-
-                color = (*LOD_COLORS_BRIGHT[e[E_VISUAL]], alpha)
-
-                mesh_objs = [o for o in (obj, *obj.children_recursive) if o.type == "MESH"]
-                for mesh_obj in mesh_objs:
-                    uid = mesh_obj.data.session_uid
-                    if uid not in self._outline_mesh_batches:
-                        self._outline_mesh_batches[uid] = _build_outline_mesh_batch(mesh_obj.data)
-                    seen_uids.add(uid)
-
-                    batch = self._outline_mesh_batches[uid]
-                    if batch is not None:
-                        draw_list.append((mesh_obj, batch, color))
+                color = (*self.lod_colors_bright[e[E_VISUAL]], alpha)
+                draw_list.extend(self._outline_entries(e, color, seen_uids))
 
         for uid in [uid for uid in self._outline_mesh_batches if uid not in seen_uids]:
             del self._outline_mesh_batches[uid]
 
         self._outline_draw_list = draw_list
 
-    def _rebuild_lod_circles(self, active_entity, active_pos):
-        uniform_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
-        px, py, pz = active_pos
-
-        def circle(dist, color):
-            if dist <= 0:
-                return None
-            coords = [(px + v[0] * dist, py + v[1] * dist, pz) for v in _UNIT_CIRCLE]
-            return (batch_for_shader(uniform_shader, "LINES", {"pos": coords}), color)
-
-        self._lod_circle_batch = circle(active_entity.lod_dist, LOD_COLORS[active_entity.lod_level])
-        self._child_circle_batch = circle(active_entity.child_lod_dist, (1.0, 1.0, 1.0, 0.25))
+    def set_drag_hover_outline(self, cache_idx: "int | None", color: tuple = ()):
+        """Outline the entity currently hovered as a drag&drop link target (None to clear)."""
+        if cache_idx is None:
+            self._hover_outline_draw_list = []
+        else:
+            self._hover_outline_draw_list = self._outline_entries(self.entities[cache_idx], color)
 
     def invalidate_cache(self):
         """Force full rebuild on next draw. Called when entity data changes structurally."""
@@ -479,12 +468,21 @@ class LodHierarchyOverlayDrawHandler:
 
         visible_levels = frozenset(lvl for lvl, prop in LOD_LEVEL_VIS_PROPS.items() if getattr(wm, prop))
         self.visible_levels = visible_levels
+
+        theme = get_theme_settings()
+        lod_colors = _theme_lod_colors(theme)
+        if lod_colors != self.lod_colors:
+            self.lod_colors = lod_colors
+            self.lod_colors_bright = _brightened(lod_colors)
+        colors_key = tuple(lod_colors.values())
+
         vis_key = (
             visible_levels,
             wm.sz_ui_map_lod_overlay_show_lines,
-            wm.sz_ui_map_lod_overlay_marker_size,
-            wm.sz_ui_map_lod_overlay_marker_alpha,
-            wm.sz_ui_map_lod_overlay_line_alpha,
+            theme.map_lod_overlay_marker_size,
+            theme.map_lod_overlay_marker_alpha,
+            theme.map_lod_overlay_line_alpha,
+            colors_key,
         )
 
         active_entity = group.entities.active_item
@@ -504,30 +502,25 @@ class LodHierarchyOverlayDrawHandler:
 
         batches_stale = chain_stale or vis_key != self._cache_vis_key
         if batches_stale:
-            self._rebuild_geometry_batches(wm)
+            self._rebuild_geometry_batches(wm, theme)
             self._cache_vis_key = vis_key
 
         outline_key = (
             visible_levels,
             wm.sz_ui_map_lod_overlay_show_outlines,
-            wm.sz_ui_map_lod_overlay_outline_alpha,
+            theme.map_lod_overlay_outline_alpha,
+            colors_key,
         )
         if chain_stale or outline_key != self._cache_outline_key:
-            self._rebuild_outline_draw_list(wm)
+            self._rebuild_outline_draw_list(wm, theme)
             self._cache_outline_key = outline_key
-
-        if batches_stale:
-            if active_entity and active_uuid in self.uuid_to_idx:
-                idx = self.uuid_to_idx[active_uuid]
-                self._rebuild_lod_circles(active_entity, self.entities[idx][E_POS])
-            else:
-                self._lod_circle_batch = None
-                self._child_circle_batch = None
 
         return group
 
     def _draw_outlines(self):
-        if not self._outline_draw_list:
+        # Hover outline last so its color wins where it overlaps a chain outline
+        draw_list = self._outline_draw_list + self._hover_outline_draw_list
+        if not draw_list:
             return
 
         region = bpy.context.region
@@ -542,7 +535,7 @@ class LodHierarchyOverlayDrawHandler:
         gpu.state.blend_set("ALPHA")
         gpu.state.face_culling_set("FRONT")
 
-        for mesh_obj, batch, color in self._outline_draw_list:
+        for mesh_obj, batch, color in draw_list:
             matrix_world = mesh_obj.matrix_world
             with gpu.matrix.push_pop():
                 gpu.matrix.multiply_matrix(matrix_world)
@@ -558,8 +551,6 @@ class LodHierarchyOverlayDrawHandler:
         group = self._ensure_cache()
         if group is None:
             return
-
-        wm = bpy.context.window_manager
 
         self._draw_outlines()
 
@@ -579,29 +570,16 @@ class LodHierarchyOverlayDrawHandler:
             gpu.state.line_width_set(3)
             self._highlight_line_batch.draw(self._line_shader)
 
-        if wm.sz_ui_map_lod_overlay_show_lod_dist:
-            uniform_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
-            if self._lod_circle_batch is not None:
-                batch, color = self._lod_circle_batch
-                gpu.state.line_width_set(1)
-                uniform_shader.uniform_float("color", (*color[:3], 0.4))
-                batch.draw(uniform_shader)
-            if self._child_circle_batch is not None:
-                batch, color = self._child_circle_batch
-                gpu.state.line_width_set(1)
-                uniform_shader.uniform_float("color", color)
-                batch.draw(uniform_shader)
-
         gpu.state.blend_set("NONE")
         gpu.state.line_width_set(1)
 
     def draw_labels(self):
+        """Draw name labels for the selected entity's chain."""
         context = bpy.context
         if not _is_tool_active(context):
             return
 
-        wm = context.window_manager
-        if not self.entities or not wm.sz_ui_map_lod_overlay_show_labels:
+        if not self.entities:
             return
 
         region = context.region
@@ -611,63 +589,32 @@ class LodHierarchyOverlayDrawHandler:
 
         chain = self._chain_uuids
         visible = self.visible_levels
-        label_mode = wm.sz_ui_map_lod_overlay_label_mode
-        vx, vy, vz = rv3d.view_location
-        label_max_dist_sq = (rv3d.view_distance * 2.0) ** 2
 
         font_id = 0
-        blf.size(font_id, 11)
+        blf.size(font_id, 11 * context.preferences.system.ui_scale)
         blf.enable(font_id, blf.SHADOW)
         blf.shadow(font_id, 3, 0.0, 0.0, 0.0, 1.0)
         blf.shadow_offset(font_id, 2, -2)
 
-        MAX_LABELS = 200
+        MAX_LABELS = 200  # a chain can span a whole subtree, so keep a safety cap
         labels_drawn = 0
-        CELL_SIZE = 40
-        occupied_cells: set[tuple[int, int]] = set()
 
         for e in self.entities:
             if labels_drawn >= MAX_LABELS:
                 break
 
+            if e[E_UUID] not in chain:
+                continue
+
             visual = e[E_VISUAL]
-            in_chain = e[E_UUID] in chain
-
-            # Label mode filtering
-            if label_mode == "CHAIN" and not in_chain:
-                continue
-            if label_mode == "NON_HD" and visual in ("ORPHAN_HD", "HD") and not in_chain:
-                continue
-
-            # Don't label orphan HD, too many entities
-            if visual == "ORPHAN_HD" and not in_chain:
-                continue
-
             if visual not in visible:
                 continue
 
-            pos = e[E_POS]
-
-            if not in_chain:
-                dx = pos[0] - vx
-                dy = pos[1] - vy
-                dz = pos[2] - vz
-                if dx * dx + dy * dy + dz * dz > label_max_dist_sq:
-                    continue
-
-            screen_pos = location_3d_to_region_2d(region, rv3d, pos)
+            screen_pos = location_3d_to_region_2d(region, rv3d, e[E_POS])
             if screen_pos is None:
                 continue
 
-            cell = (int(screen_pos.x) // CELL_SIZE, int(screen_pos.y) // CELL_SIZE)
-            if not in_chain and cell in occupied_cells:
-                continue
-            occupied_cells.add(cell)
-
-            if in_chain:
-                blf.color(font_id, *LOD_COLORS_BRIGHT[visual], 1.0)
-            else:
-                blf.color(font_id, *LOD_COLORS[visual])
+            blf.color(font_id, *self.lod_colors_bright[visual], 1.0)
 
             label = f"{e[E_NAME]}  [{e[E_LOD]}]"
             w, _h = blf.dimensions(font_id, label)
@@ -749,62 +696,10 @@ def register():
         description="Draw connection lines between parent and child entities",
         default=True,
     )
-    WM.sz_ui_map_lod_overlay_show_labels = bpy.props.BoolProperty(
-        name="Show Labels",
-        description="Display entity archetype names in the viewport",
-        default=True,
-    )
-    WM.sz_ui_map_lod_overlay_show_lod_dist = bpy.props.BoolProperty(
-        name="Show LOD Distance",
-        description="Draw LOD distance circles around the selected entity",
-        default=True,
-    )
     WM.sz_ui_map_lod_overlay_show_outlines = bpy.props.BoolProperty(
         name="Show Outlines",
         description="Draw X-ray silhouette outlines around the meshes of highlighted entities",
         default=True,
-    )
-
-    WM.sz_ui_map_lod_overlay_label_mode = bpy.props.EnumProperty(
-        name="Label Mode",
-        items=[
-            ("NON_HD", "Non-HD Only", "Show labels only for LOD/SLOD entities (and chain members)"),
-            ("ALL", "All", "Show labels for all visible entities"),
-            ("CHAIN", "Chain Only", "Show labels only for the selected entity's chain"),
-        ],
-        default="NON_HD",
-    )
-
-    WM.sz_ui_map_lod_overlay_marker_size = bpy.props.FloatProperty(
-        name="Marker Size",
-        description="Base size of entity markers in the viewport",
-        default=6.0,
-        min=1.0,
-        max=20.0,
-    )
-    WM.sz_ui_map_lod_overlay_marker_alpha = bpy.props.FloatProperty(
-        name="Marker Alpha",
-        description="Opacity of entity markers",
-        default=0.8,
-        min=0.0,
-        max=1.0,
-        subtype="FACTOR",
-    )
-    WM.sz_ui_map_lod_overlay_line_alpha = bpy.props.FloatProperty(
-        name="Line Alpha",
-        description="Opacity of connection lines",
-        default=0.5,
-        min=0.0,
-        max=1.0,
-        subtype="FACTOR",
-    )
-    WM.sz_ui_map_lod_overlay_outline_alpha = bpy.props.FloatProperty(
-        name="Outline Alpha",
-        description="Opacity of entity mesh outlines",
-        default=0.35,
-        min=0.0,
-        max=1.0,
-        subtype="FACTOR",
     )
 
     handler = LodHierarchyOverlayDrawHandler()
@@ -832,11 +727,4 @@ def unregister():
     del WM.sz_ui_map_lod_overlay_show_slod3
     del WM.sz_ui_map_lod_overlay_show_slod4
     del WM.sz_ui_map_lod_overlay_show_lines
-    del WM.sz_ui_map_lod_overlay_show_labels
-    del WM.sz_ui_map_lod_overlay_show_lod_dist
     del WM.sz_ui_map_lod_overlay_show_outlines
-    del WM.sz_ui_map_lod_overlay_label_mode
-    del WM.sz_ui_map_lod_overlay_marker_size
-    del WM.sz_ui_map_lod_overlay_marker_alpha
-    del WM.sz_ui_map_lod_overlay_line_alpha
-    del WM.sz_ui_map_lod_overlay_outline_alpha
