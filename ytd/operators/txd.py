@@ -11,6 +11,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
 from ...sollumz_operators import ExportAssetsOperatorImpl, ImportAssetsOperatorImpl
+from ..properties import normalize_texture_name
 from ..utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -196,6 +197,48 @@ class SOLLUMZ_OT_txd_refresh_sources(Operator):
         for src in txd.sources:
             src.refresh(context)
         txd.refresh_from_sources()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_txd_update(Operator):
+    """Apply the selected texture dictionary's textures to matching images already in the scene"""
+
+    bl_idname = "sollumz.txd_update"
+    bl_label = "Update TXD"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        txd = get_selected_txd(context)
+        return txd is not None and len(txd.textures) > 0
+
+    def execute(self, context):
+        txd = get_selected_txd(context)
+
+        images_by_name = {}
+        for slot in txd.textures:
+            if slot.image is not None:
+                images_by_name.setdefault(normalize_texture_name(slot.name or slot.image.name), slot.image)
+
+        if not images_by_name:
+            self.report({"WARNING"}, "The selected texture dictionary has no usable textures.")
+            return {"CANCELLED"}
+
+        remapped = 0
+        for image in list(bpy.data.images):
+            new_image = images_by_name.get(normalize_texture_name(image.name))
+            if new_image is None or new_image is image:
+                continue
+
+            try:
+                image.user_remap(new_image)
+            except Exception as e:
+                logger.warning(f"Failed to update texture '{image.name}': {e}")
+                continue
+
+            remapped += 1
+
+        self.report({"INFO"}, f"Updated {remapped} texture(s).")
         return {"FINISHED"}
 
 

@@ -34,6 +34,16 @@ def get_texture_name(image: Image | None) -> str:
     return ""
 
 
+def normalize_texture_name(name: str) -> str:
+    """Normalize a texture/image name for matching purposes: lowercase, strip Blender's `.001` duplicate
+    suffix and a trailing `.dds` extension. Lets a placeholder image (`metal`, `metal.dds`, `metal.dds.001`)
+    match the same texture in a dictionary."""
+    name = _TRAILING_BLENDER_SUFFIX_RE.sub("", name.lower())
+    if name.endswith(".dds"):
+        name = name[: -len(".dds")]
+    return name
+
+
 class TextureSlot(PropertyGroup):
     image: PointerProperty(type=Image, name="Image")
 
