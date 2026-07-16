@@ -533,7 +533,7 @@ class LodHierarchyOverlayDrawHandler:
         shader.uniform_float("Width", OUTLINE_WIDTH_PX)
 
         gpu.state.blend_set("ALPHA")
-        gpu.state.face_culling_set("FRONT")
+        gpu.state.face_culling_set("BACK")
 
         for mesh_obj, batch, color in draw_list:
             matrix_world = mesh_obj.matrix_world
