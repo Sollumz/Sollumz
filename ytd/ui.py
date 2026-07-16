@@ -311,6 +311,8 @@ class SOLLUMZ_PT_txd_list_panel(TxdToolChildPanel, Panel):
         row.operator(txd_ops.SOLLUMZ_OT_import_ytd.bl_idname, icon="IMPORT")
         row.operator(txd_ops.SOLLUMZ_OT_export_ytd.bl_idname, icon="EXPORT")
 
+        list_col.operator(txd_ops.SOLLUMZ_OT_txd_update.bl_idname, icon="FILE_REFRESH")
+
 
 class SOLLUMZ_PT_txd_textures_panel(TxdToolChildPanel, Panel):
     bl_label = "Textures"
