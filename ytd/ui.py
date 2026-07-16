@@ -109,44 +109,48 @@ class SOLLUMZ_UL_txd_source_list(MultiSelectUIListMixin, UIList):
             self_cls.last_filter_options[f"{multiselect_collection_name}_{self.list_id}"] = filter_opts
 
         collection: MultiSelectCollection = getattr(data, multiselect_collection_name)
-        icon = self.get_item_icon(item)
-        match icon:
-            case str():
-                icon_str, icon_value = icon, 0
-            case int():
-                icon_str, icon_value = "NONE", icon
-            case _:
-                raise ValueError(f"Invalid item icon. Only str or int supported, got '{icon}'")
+        # The source_type dropdown already shows the icon
+        # icon = self.get_item_icon(item)
+        # match icon:
+        #     case str():
+        #         icon_str, icon_value = icon, 0
+        #     case int():
+        #         icon_str, icon_value = "NONE", icon
+        #     case _:
+        #         raise ValueError(f"Invalid item icon. Only str or int supported, got '{icon}'")
 
         selection_indices = collection.selection_indices
         is_selected = len(selection_indices) > 1 and any(i.index == index for i in selection_indices)
-        is_active = index == collection.active_index
+        # is_active = index == collection.active_index
         layout.active = len(selection_indices) <= 1 or is_selected
 
-        if is_active:
-            layout.label(text="", icon=icon_str, icon_value=icon_value)
-        else:
-            row = layout.row(align=True)
-            row.alignment = "LEFT"
-            op = row.operator(
-                self.multiselect_operator,
-                text="",
-                icon=icon_str,
-                icon_value=icon_value,
-                emboss=is_selected or is_active,
-            )
-            op.index = index
-            filter_opts.apply_to_operator(op)
+        # Don't really have space for the multiselect operator...
+        # row = layout.row(align=True)
+        # row.alignment = "LEFT"
+        # row.scale_x = 0.75
+        # if is_active:
+        #     row.label(text="")
+        # else:
+        #     op = row.operator(
+        #         self.multiselect_operator,
+        #         text="",
+        #         emboss=is_selected or is_active,
+        #     )
+        #     op.index = index
+        #     filter_opts.apply_to_operator(op)
 
         self.draw_item_extra(context, layout, data, item, icon, active_data, active_propname, index)
 
     def draw_item_extra(self, context, layout: UILayout, data, item, icon, active_data, active_propname, index):
         row = layout.row(align=True)
-        row.prop(item, "object_name", text="")
-        row.prop(item, "object_include_children", text="", icon="OUTLINER")
-
-    def get_item_icon(self, item) -> str | int:
-        return "OBJECT_DATA"
+        row.prop(item, "source_type", text="", icon_only=True)
+        match item.source_type:
+            case "OBJECT":
+                row.prop(item, "object_name", text="")
+                row.prop(item, "object_include_children", text="", icon="OUTLINER")
+            case "COLLECTION":
+                row.prop(item, "collection_name", text="")
+                row.prop(item, "collection_include_children", text="", icon="OUTLINER")
 
 
 class SOLLUMZ_UL_txd_source_image_list(MultiSelectUIListMixin, UIList):
