@@ -759,11 +759,10 @@ class SOLLUMZ_OT_map_go_to_entity(Operator):
 
     @classmethod
     def poll(cls, context):
-        return active_group(context) is not None
+        return active_entities_collection(context)
 
     def execute(self, context):
-        group = active_group(context)
-        entity = group.entities.active_item
+        entity = active_entity(context)
 
         if not entity:
             return {"CANCELLED"}
