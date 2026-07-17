@@ -24,6 +24,7 @@ from szio.gta5 import (
     AssetBoundComposite,
     AssetFragDrawable,
     AssetFragment,
+    AssetTextureDictionary,
     FragmentTemplateAsset,
     PhysLod,
     PhysLodGroup,
@@ -68,13 +69,20 @@ from .yftexport import locate_fragment_objects, FragmentObjects
 
 def export_yft(obj: Object) -> ExportBundle:
     embedded_tex = []
-    frag, hi_frag = create_fragment_asset(obj, out_embedded_textures=embedded_tex)
-    return export_context().make_bundle(frag, ("_hi", hi_frag), extra_files=[t.data for t in embedded_tex])
+    hd_tex: dict[str, EmbeddedTexture] = {}
+    frag, hi_frag = create_fragment_asset(obj, out_embedded_textures=embedded_tex, out_hd_textures=hd_tex)
+    hd_txd = AssetTextureDictionary(textures=hd_tex) if hd_tex else None
+    return export_context().make_bundle(
+        frag, ("_hi", hi_frag), ("+hifr", hd_txd),
+        extra_files=[t.data for t in embedded_tex],
+        secondary_extra_files=[("+hifr", [t.data for t in hd_tex.values()])],
+    )
 
 
 def create_fragment_asset(
     frag_obj: Object,
     out_embedded_textures: list[EmbeddedTexture] | None = None,
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
 ) -> tuple[AssetFragment | None, AssetFragment | None]:
     """Create the export asset for a fragment. Returns a tuple with non-hi and hi (optional) assets. If non-hi is None,
     the export failed.
@@ -84,7 +92,7 @@ def create_fragment_asset(
         return None, None
 
     return create_fragment_asset_core(
-        frag_objs, export_context().settings.apply_transforms, out_embedded_textures
+        frag_objs, export_context().settings.apply_transforms, out_embedded_textures, out_hd_textures
     )
 
 
@@ -92,6 +100,7 @@ def create_fragment_asset_core(
     frag_objs: FragmentObjects,
     apply_transforms: bool = False,
     out_embedded_textures: list[EmbeddedTexture] | None = None,
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
 ) -> tuple[AssetFragment | None, AssetFragment | None]:
     """Create an XML parsable Fragment object. Returns the XML object and the hi XML object (if hi lods are present)."""
     frag_obj = frag_objs.fragment
@@ -131,7 +140,9 @@ def create_fragment_asset_core(
     original_pose = frag_armature.pose_position
     frag_armature.pose_position = "REST"
 
-    drawable = create_frag_drawable(frag_objs, materials, out_embedded_textures=out_embedded_textures)
+    drawable = create_frag_drawable(
+        frag_objs, materials, out_embedded_textures=out_embedded_textures, out_hd_textures=out_hd_textures,
+    )
     hi_drawable = create_frag_drawable(
         frag_objs, hi_materials, out_embedded_textures=out_embedded_textures, hi=True,
     ) if hi_frag else None
@@ -227,6 +238,7 @@ def create_frag_drawable(
     frag_objs: FragmentObjects,
     materials: list[Material],
     out_embedded_textures: list[EmbeddedTexture] | None = None,
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
     hi: bool = False,
 ) -> AssetFragDrawable | None:
     drawable = create_drawable_asset(
@@ -234,6 +246,7 @@ def create_frag_drawable(
         materials,
         is_frag=True,
         out_embedded_textures=out_embedded_textures,
+        out_hd_textures=out_hd_textures,
         hi=hi
     )
     if drawable is None:

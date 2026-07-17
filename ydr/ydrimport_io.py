@@ -27,6 +27,8 @@ from szio.gta5 import (
     AssetBound,
     BoundType,
     AssetDrawable,
+    AssetFormat,
+    AssetWithDependencies,
     Skeleton,
     SkelBone,
     SkelBoneTranslationLimit,
@@ -37,6 +39,7 @@ from szio.gta5 import (
     LodLevel as IOLodLevel,
     Model,
     ShaderManager,
+    AssetTextureDictionary,
 )
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..shared.shader_nodes import SzShaderNodeParameter
@@ -51,11 +54,22 @@ from ..iecontext import import_context, ImportTexturesMode
 from .. import logger
 
 
-def import_ydr(asset: AssetDrawable, name: str) -> Object:
-    if import_context().settings.import_as_asset:
-        return create_drawable_as_asset(asset, name)
+def find_ydr_external_dependencies(asset: AssetDrawable, name: str) -> AssetWithDependencies:
+    from ..ytd.ytdimport import try_load_hd_txd
+    prefers_xml = import_context().asset_target.format == AssetFormat.CWXML
+    hd_txd = try_load_hd_txd(name, prefers_xml, "+hidr")
+    return AssetWithDependencies(name, asset, {"hd_txd": hd_txd} if hd_txd else {})
 
-    return create_drawable(asset, name=name)
+
+def import_ydr(asset: AssetWithDependencies, name: str) -> Object:
+    drw = asset.main_asset
+    hd_txd = asset.dependencies.get("hd_txd", None)
+    extract_embedded_textures_from_hd_txd(hd_txd, "+hidr")
+
+    if import_context().settings.import_as_asset:
+        return create_drawable_as_asset(drw, name, hd_txd=hd_txd, hd_txd_suffix="+hidr")
+
+    return create_drawable(drw, name=name, hd_txd=hd_txd, hd_txd_suffix="+hidr")
 
 
 def create_drawable(
@@ -66,14 +80,16 @@ def create_drawable(
     hi_materials: list[Material] = None,
     external_armature: Optional[Object] = None,
     external_skeleton: Optional[Skeleton] = None,
-    skip_models: bool = False
+    skip_models: bool = False,
+    hd_txd: AssetTextureDictionary | None = None,
+    hd_txd_suffix: str | None = None,
 ) -> Object:
     """Create a drawable object. . ``external_armature`` allows for bones to be rigged to an armature object that is not the parent drawable."""
     name = name or drawable.name
 
     extract_embedded_textures_from_shader_group(drawable.shader_group)
 
-    materials = materials or shader_group_to_materials(drawable.shader_group)
+    materials = materials or shader_group_to_materials(drawable.shader_group, hd_txd, hd_txd_suffix)
     hi_materials = hi_materials or []
 
     skeleton = drawable.skeleton
@@ -266,13 +282,27 @@ def extract_embedded_textures_from_shader_group(shader_group: ShaderGroup | None
     extract_embedded_textures(shader_group.embedded_textures)
 
 
-def shader_group_to_materials(shader_group: ShaderGroup) -> list[Material]:
-    return shader_group_to_materials_with_hi(shader_group, None)[0]
+def extract_embedded_textures_from_hd_txd(hd_txd: AssetTextureDictionary | None, suffix: str):
+    if not hd_txd or not hd_txd.textures:
+        return
+
+    from ..ytd.ytdimport import extract_embedded_textures
+    extract_embedded_textures(hd_txd.textures, dir_suffix=suffix)
+
+
+def shader_group_to_materials(
+    shader_group: ShaderGroup,
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> list[Material]:
+    return shader_group_to_materials_with_hi(shader_group, None, hd_txd, hd_txd_suffix)[0]
 
 
 def shader_group_to_materials_with_hi(
     shader_group: ShaderGroup,
     hi_shader_group: Optional[ShaderGroup],
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
 ) -> tuple[list[Material], list[Material]]:
 
     materials_cache: dict[ShaderInst, Material] = {}
@@ -282,7 +312,7 @@ def shader_group_to_materials_with_hi(
         for shader in sg.shaders:
             material = materials_cache.get(shader, None)
             if material is None:
-                material = shader_to_material(shader, sg)
+                material = shader_to_material(shader, sg, hd_txd, hd_txd_suffix)
                 material.shader_properties.index = len(materials_cache)
                 materials_cache[shader] = material
             result.append(material)
@@ -294,9 +324,16 @@ def shader_group_to_materials_with_hi(
     return materials, hi_materials
 
 
-def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Material:
+def shader_to_material(
+    shader: ShaderInst,
+    shader_group: ShaderGroup,
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> Material:
     ctx = import_context()
     textures_dir = ctx.textures_extract_directory or ctx.textures_import_directory
+    hd_textures_dir = textures_dir.with_name(textures_dir.name + (hd_txd_suffix or ""))
+    hd_textures = hd_txd.textures if hd_txd and hd_txd.textures else {}
 
     filename = shader.preset_filename or ShaderManager.find_shader_preset_name(shader.name, shader.render_bucket.value)
     if not filename:
@@ -333,11 +370,11 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
             pack = ctx.settings.textures_mode == ImportTexturesMode.PACK
             img = None
 
-            if (
-                pack and
-                (etex := shader_group.embedded_textures.get(tex_name, None)) and
-                etex.data
-            ):
+            # Only import the HD texture if available, export rebuilds the low-resolution copy.
+            is_hd = tex_name in hd_textures and tex_name in shader_group.embedded_textures
+            etex = hd_textures[tex_name] if is_hd else shader_group.embedded_textures.get(tex_name, None)
+
+            if pack and etex and etex.data:
                 # If pack mode and we have embedded texture data, load it into a packed image directly
                 with etex.data.open() as src:
                     etex_dds = src.read()
@@ -349,7 +386,7 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
 
             if not img:
                 # Try to load texture from file
-                if texture_path := lookup_texture_file(tex_name, textures_dir):
+                if texture_path := lookup_texture_file(tex_name, hd_textures_dir if is_hd else textures_dir):
                     img = bpy.data.images.load(str(texture_path), check_existing=True)
                     if pack:
                         img.pack()
@@ -361,6 +398,9 @@ def shader_to_material(shader: ShaderInst, shader_group: ShaderGroup) -> Materia
             if not img:
                 # Create placeholder image if still not found
                 img = bpy.data.images.new(name=tex_name, width=512, height=512)
+
+            if is_hd:
+                img.sz_is_hd = True
 
             if is_non_color_texture(filename, param_name):
                 img.colorspace_settings.is_data = True
@@ -532,7 +572,12 @@ def set_drawable_properties(obj: Object, drawable: AssetDrawable):
     obj.drawable_properties.lod_dist_vlow = lod_dists[IOLodLevel.VERYLOW]
 
 
-def create_drawable_as_asset(drawable: AssetDrawable, name: str) -> Object:
+def create_drawable_as_asset(
+    drawable: AssetDrawable,
+    name: str,
+    hd_txd: AssetTextureDictionary | None = None,
+    hd_txd_suffix: str | None = None,
+) -> Object:
     """Create drawable as an asset with all the high LODs joined together."""
 
     from .ydrimport import convert_object_to_asset
@@ -547,7 +592,7 @@ def create_drawable_as_asset(drawable: AssetDrawable, name: str) -> Object:
     drawable.models = models
     drawable.bounds = None
     drawable.lights = []
-    drawable_obj = create_drawable(drawable)
+    drawable_obj = create_drawable(drawable, hd_txd=hd_txd, hd_txd_suffix=hd_txd_suffix)
     asset_obj = convert_object_to_asset(name, drawable_obj)
     serialize_lights_to_asset(asset_obj, lights)
     if bounds:

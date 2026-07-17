@@ -87,6 +87,9 @@ class ExportBundle:
     extra_files: tuple[DataSource, ...]
     """Additional files to write to a folder with same name as the asset, generally embedded textures."""
 
+    secondary_extra_files: tuple[tuple[str, tuple[DataSource, ...]], ...]
+    """Additional files to write to a folder with same name as the asset with a suffix."""
+
     def save(self, directory: Path, targets: Sequence[AssetTarget]):
         """Writes the whole bundle to disk at the specified directory."""
 
@@ -105,7 +108,10 @@ class ExportBundle:
         # We only use extra_files for embedded textures, which are only really needed for CWXML. Initially, these
         # were always copied but users requested that this not be done for native format.
         # If we start using extra_files for something else, we will need to rework this.
-        do_write_extra_files = self.extra_files and any(t.format == AssetFormat.CWXML for t in targets)
+        extra_file_groups = tuple(
+            (suffix, files) for suffix, files in (("", self.extra_files), *self.secondary_extra_files) if files
+        )
+        do_write_extra_files = extra_file_groups and any(t.format == AssetFormat.CWXML for t in targets)
 
         if do_write_extra_files:
             if len({t.version for t in targets}) > 1:
@@ -114,21 +120,22 @@ class ExportBundle:
                 output_dirs = (directory,)
 
             for d in output_dirs:
-                res_directory = d / self.asset_name
-                for src_data in self.extra_files:
-                    res_directory.mkdir(exist_ok=True)
-                    dst_file = res_directory / src_data.name
+                for suffix, extra_files in extra_file_groups:
+                    res_directory = d / (self.asset_name + suffix)
+                    for src_data in extra_files:
+                        res_directory.mkdir(exist_ok=True)
+                        dst_file = res_directory / src_data.name
 
-                    if (
-                        (src_file := getattr(src_data, "filepath", None)) and
-                        dst_file.is_file() and
-                        dst_file.samefile(src_file)
-                    ):
-                        # If src_data is a file and paths are the same, no need to copy (and would break otherwise)
-                        continue
+                        if (
+                            (src_file := getattr(src_data, "filepath", None)) and
+                            dst_file.is_file() and
+                            dst_file.samefile(src_file)
+                        ):
+                            # If src_data is a file and paths are the same, no need to copy (and would break otherwise)
+                            continue
 
-                    with src_data.open() as src, dst_file.open("wb") as dst:
-                        shutil.copyfileobj(src, dst)
+                        with src_data.open() as src, dst_file.open("wb") as dst:
+                            shutil.copyfileobj(src, dst)
 
     def is_valid(self) -> bool:
         """Checks whether the export operation was successful."""
@@ -160,6 +167,7 @@ class ExportContext:
         /,
         *secondary_assets: tuple[str, Asset | None],
         extra_files: Sequence[DataSource | None] = (),
+        secondary_extra_files: Sequence[tuple[str, Sequence[DataSource | None]]] = (),
         name_override: str | None = None,
     ) -> ExportBundle:
         """Creates an `ExportBundle` from the given assets and optional files.
@@ -170,12 +178,19 @@ class ExportContext:
                 be included in the bundle.
             extra_files: Additional files to write into a subdirectory named after the asset, typically used for
                 embedded resources like textures.
+            secondary_extra_files: Like `extra_files`, but as (suffix, files) pairs written into a subdirectory named
+                after the asset plus the suffix. Only non-None files will be included in the bundle.
         """
         return ExportBundle(
             name_override or self.asset_name,
             main_asset,
             tuple(s for s in secondary_assets if s[1] is not None),
             tuple(f for f in extra_files if f is not None),
+            tuple(
+                (suffix, files_tuple)
+                for suffix, files in secondary_extra_files
+                if (files_tuple := tuple(f for f in files if f is not None))
+            ),
         )
 
 

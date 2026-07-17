@@ -25,6 +25,13 @@ class SOLLUMZ_UL_txd_list(MultiSelectUIListMixin, UIList):
     multiselect_operator = txd_select_ops.SOLLUMZ_OT_txd_select_one.bl_idname
     default_item_icon = "TEXTURE"
 
+    def draw_item_extra(self, context, layout: UILayout, data, item, icon, active_data, active_propname, index):
+        if any(t.image and t.image.sz_is_hd for t in item.textures):
+            row = layout.row(align=True)
+            row.alignment = "RIGHT"
+            row.active = False
+            row.label(text="HD")
+
 
 class SOLLUMZ_UL_txd_texture_list(MultiSelectUIListMixin, UIList):
     bl_idname = "SOLLUMZ_UL_txd_texture_list"
@@ -82,7 +89,13 @@ class SOLLUMZ_UL_txd_texture_list(MultiSelectUIListMixin, UIList):
         self.draw_item_extra(context, layout, data, item, icon, active_data, active_propname, index)
 
     def draw_item_extra(self, context, layout: UILayout, data, item, icon, active_data, active_propname, index):
-        layout.template_ID(item, "image", open="image.open")
+        row = layout.row(align=True)
+        row.template_ID(item, "image", open="image.open")
+        if image := item.image:
+            subrow = row.row(align=True)
+            subrow.alignment = "RIGHT"
+            subrow.scale_x = 0.65
+            subrow.prop(image, "sz_is_hd", toggle=True, text="HD")
 
     def get_item_icon(self, item) -> str | int:
         return UILayout.icon(item.image) if item.image is not None else "ERROR"

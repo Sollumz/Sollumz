@@ -1,9 +1,19 @@
+import shutil
+from pathlib import Path
+
 import bpy
+import pytest
 
 from .shared import (
+    assert_dds_is_full_res,
     assert_logs_no_warnings_or_errors,
+    dropped_mip,
     load_blend_data,
+    make_bc1_dds,
+    new_packed_dds_image,
+    requires_szio_native,
 )
+
 
 @assert_logs_no_warnings_or_errors
 def test_txd_create_from_object_source(context, tmp_path):
@@ -136,3 +146,163 @@ def test_txd_create_from_collection_source(context, tmp_path):
     ]:
         assert expected_file.is_file()
         assert expected_file.read_bytes() == expected_contents
+
+
+def _setup_and_export_hi_txd(context, tmp_path) -> tuple[bytes, bytes]:
+    """Creates a txd with an HD texture and a normal texture, then exports it.
+    Returns the full-resolution DDS bytes of the HD texture and of the normal texture.
+    """
+    from .test_import_export import DEFAULT_EXPORT_SETTINGS
+
+    bpy.ops.wm.read_homefile()
+
+    full_dds = make_bc1_dds(16, 16, 3)
+    sd_dds = make_bc1_dds(16, 16, 1)
+    hd_img = new_packed_dds_image("hd_tex.dds", full_dds)
+    hd_img.sz_is_hd = True
+    sd_img = new_packed_dds_image("sd_tex.dds", sd_dds)
+
+    txd = context.scene.sz_txds.new_texture_dictionary(name="test_txd")
+    txd.new_texture(hd_img)
+    txd.new_texture(sd_img)
+
+    bpy.ops.sollumz.export_ytd(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS,
+    )
+
+    return full_dds, sd_dds
+
+
+@requires_szio_native
+@pytest.mark.parametrize("textures_mode", ("PACK", "IMPORT_DIR"))
+@pytest.mark.parametrize("import_file", ("test_txd.ytd", "test_txd.ytd.xml"))
+@assert_logs_no_warnings_or_errors
+def test_txd_hi_roundtrip(context, tmp_path, import_file, textures_mode):
+    from .test_import_export import DEFAULT_IMPORT_SETTINGS
+
+    full_dds, sd_dds = _setup_and_export_hi_txd(context, tmp_path)
+
+    gen8 = tmp_path / "gen8"
+    assert (gen8 / "test_txd+hi.ytd").is_file()
+    assert (gen8 / "test_txd+hi" / "hd_tex.dds").read_bytes() == full_dds
+    assert (gen8 / "test_txd" / "hd_tex.dds").read_bytes() == dropped_mip(full_dds)
+    assert (gen8 / "test_txd" / "sd_tex.dds").read_bytes() == sd_dds
+
+    bpy.ops.wm.read_homefile()
+    bpy.ops.sollumz.import_assets(
+        directory=str(gen8),
+        files=[{"name": import_file}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS | {"textures_mode": textures_mode},
+    )
+
+    txds = context.scene.sz_txds.texture_dictionaries
+    assert len(txds) == 1
+    txd = txds[0]
+    assert txd.name == "test_txd"
+
+    slots = {t.name: t for t in txd.textures}
+    assert set(slots) == {"hd_tex", "sd_tex"}
+
+    hd_img = slots["hd_tex"].image
+    sd_img = slots["sd_tex"].image
+    assert hd_img.sz_is_hd
+    assert not sd_img.sz_is_hd
+
+    if textures_mode == "PACK":
+        assert_dds_is_full_res(hd_img.packed_file.data, (16, 16))
+        assert_dds_is_full_res(sd_img.packed_file.data, (16, 16))
+    else:
+        assert Path(hd_img.filepath).parent.name == "test_txd+hi"
+        assert Path(hd_img.filepath).read_bytes() == full_dds
+        assert Path(sd_img.filepath).parent.name == "test_txd"
+        assert Path(sd_img.filepath).read_bytes() == sd_dds
+
+    assert "hd_tex.dds.001" not in bpy.data.images
+
+
+@requires_szio_native
+@assert_logs_no_warnings_or_errors
+def test_import_hi_ytd_selects_base(context, tmp_path):
+    from .test_import_export import DEFAULT_IMPORT_SETTINGS
+
+    _setup_and_export_hi_txd(context, tmp_path)
+
+    bpy.ops.wm.read_homefile()
+    bpy.ops.sollumz.import_assets(
+        directory=str(tmp_path / "gen8"),
+        files=[{"name": "test_txd+hi.ytd"}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS,
+    )
+
+    txds = context.scene.sz_txds.texture_dictionaries
+    assert len(txds) == 1
+    txd = txds[0]
+    assert txd.name == "test_txd"
+
+    slots = {t.name: t for t in txd.textures}
+    assert set(slots) == {"hd_tex", "sd_tex"}
+    assert slots["hd_tex"].image.sz_is_hd
+    assert_dds_is_full_res(slots["hd_tex"].image.packed_file.data, (16, 16))
+    assert_dds_is_full_res(slots["sd_tex"].image.packed_file.data, (16, 16))
+
+
+@requires_szio_native
+@assert_logs_no_warnings_or_errors
+def test_import_both_base_and_hi_ytd_dedupes(context, tmp_path):
+    from .test_import_export import DEFAULT_IMPORT_SETTINGS
+
+    _setup_and_export_hi_txd(context, tmp_path)
+
+    bpy.ops.wm.read_homefile()
+    bpy.ops.sollumz.import_assets(
+        directory=str(tmp_path / "gen8"),
+        files=[{"name": "test_txd.ytd"}, {"name": "test_txd+hi.ytd"}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS,
+    )
+
+    txds = context.scene.sz_txds.texture_dictionaries
+    assert len(txds) == 1
+    assert txds[0].name == "test_txd"
+    assert "hd_tex.dds.001" not in bpy.data.images
+
+    slots = {t.name: t for t in txds[0].textures}
+    assert set(slots) == {"hd_tex", "sd_tex"}
+    assert slots["hd_tex"].image.sz_is_hd
+    assert not slots["sd_tex"].image.sz_is_hd
+
+
+@requires_szio_native
+@assert_logs_no_warnings_or_errors
+def test_import_hi_ytd_without_base(context, tmp_path):
+    from .test_import_export import DEFAULT_IMPORT_SETTINGS
+
+    _setup_and_export_hi_txd(context, tmp_path)
+
+    hi_only_dir = tmp_path / "hi_only"
+    hi_only_dir.mkdir()
+    shutil.copyfile(tmp_path / "gen8" / "test_txd+hi.ytd", hi_only_dir / "test_txd+hi.ytd")
+
+    bpy.ops.wm.read_homefile()
+    bpy.ops.sollumz.import_assets(
+        directory=str(hi_only_dir),
+        files=[{"name": "test_txd+hi.ytd"}],
+        use_custom_settings=True,
+        **DEFAULT_IMPORT_SETTINGS,
+    )
+
+    # Without the base .ytd next to it, the +hi.ytd imports as a regular texture dictionary
+    txds = context.scene.sz_txds.texture_dictionaries
+    assert len(txds) == 1
+    txd = txds[0]
+    assert txd.name == "test_txd+hi"
+
+    slots = {t.name: t for t in txd.textures}
+    assert set(slots) == {"hd_tex"}
+    assert not slots["hd_tex"].image.sz_is_hd
+    assert_dds_is_full_res(slots["hd_tex"].image.packed_file.data, (16, 16))

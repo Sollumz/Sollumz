@@ -24,12 +24,14 @@ from szio.gta5 import (
     try_load_asset,
     AssetFormat,
     LodLevel,
+    AssetTextureDictionary,
 )
-from ..ydr.ydrimport_io import create_drawable, create_drawable_models, shader_group_to_materials_with_hi, create_armature_obj_from_skel
+from ..ydr.ydrimport_io import create_drawable, create_drawable_models, shader_group_to_materials_with_hi, create_armature_obj_from_skel, extract_embedded_textures_from_hd_txd
 from ..ybn.ybnimport_io import create_bound_object, create_bound_composite
 from ..ydr.lights_io import create_light_objs, serialize_lights_to_asset
 from .properties import LODProperties, GroupFlagBit, GlassTypes
 from ..tools.blenderhelper import get_child_of_bone
+from ..ytd.ytdimport import try_load_hd_txd
 from ..iecontext import import_context
 from .. import logger
 
@@ -51,17 +53,26 @@ def find_yft_external_dependencies(asset: AssetFragment, name: str) -> AssetWith
         non_hi_frag = asset
         hi_frag = try_load_hi_frag(name, prefers_xml)
 
-    return AssetWithDependencies(name, non_hi_frag, {"hi": hi_frag} if hi_frag else {})
+    hd_txd = try_load_hd_txd(name, prefers_xml, "+hifr")
+
+    deps = {}
+    if hi_frag:
+        deps["hi"] = hi_frag
+    if hd_txd:
+        deps["hd_txd"] = hd_txd
+    return AssetWithDependencies(name, non_hi_frag, deps)
 
 
 def import_yft(asset: AssetWithDependencies, name: str) -> Object | None:
     non_hi_frag = asset.main_asset
     hi_frag = asset.dependencies.get("hi", None)
+    hd_txd = asset.dependencies.get("hd_txd", None)
+    extract_embedded_textures_from_hd_txd(hd_txd, "+hifr")
 
     if import_context().settings.import_as_asset:
-        return create_fragment_as_asset(non_hi_frag, hi_frag, name)
+        return create_fragment_as_asset(non_hi_frag, hi_frag, name, hd_txd, "+hifr")
 
-    return create_fragment(non_hi_frag, hi_frag, name)
+    return create_fragment(non_hi_frag, hi_frag, name, hd_txd, "+hifr")
 
 
 def is_hi_frag(name: str) -> bool:
@@ -113,11 +124,17 @@ def try_load_hi_frag(name: str, prefers_xml: bool) -> AssetFragment | None:
     return hi_frag
 
 
-def create_fragment(frag: AssetFragment, hi_frag: Optional[AssetFragment], name: Optional[str]) -> Object:
+def create_fragment(
+    frag: AssetFragment,
+    hi_frag: Optional[AssetFragment],
+    name: Optional[str],
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> Object:
     shader_group = frag.base_drawable.shader_group
     hi_shader_group = hi_frag.base_drawable.shader_group if hi_frag else None
 
-    materials, hi_materials = shader_group_to_materials_with_hi(shader_group, hi_shader_group)
+    materials, hi_materials = shader_group_to_materials_with_hi(shader_group, hi_shader_group, hd_txd, hd_txd_suffix)
 
     frag_obj = create_frag_armature(frag, name)
 
@@ -701,7 +718,13 @@ def shattermap_to_image(shattermap: np.ndarray, name: str) -> Image:
     return img
 
 
-def create_fragment_as_asset(frag: AssetFragment, hi_frag: Optional[AssetFragment], name: str) -> Object:
+def create_fragment_as_asset(
+    frag: AssetFragment,
+    hi_frag: Optional[AssetFragment],
+    name: str,
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> Object:
     """Create fragment as an asset with all meshes joined together."""
 
     from ..ydr.ydrimport import convert_object_to_asset
@@ -709,7 +732,7 @@ def create_fragment_as_asset(frag: AssetFragment, hi_frag: Optional[AssetFragmen
     lights = frag.lights
     bounds = frag.physics and frag.physics.lod1 and frag.physics.lod1.archetype and frag.physics.lod1.archetype.bounds
     frag.lights = []
-    frag_obj = create_fragment(frag, hi_frag, name)
+    frag_obj = create_fragment(frag, hi_frag, name, hd_txd, hd_txd_suffix)
     asset_obj = convert_object_to_asset(name, frag_obj)
     serialize_lights_to_asset(asset_obj, lights)
     if bounds:

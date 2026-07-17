@@ -225,6 +225,44 @@ def test_import_dedupe_hi_yft_files(files: str, expected_deduped_files: str):
     assert_equal(res, expected_deduped_files)
 
 
+@pytest.mark.parametrize("files, expected_deduped_files", (
+    ([], []),
+    (["test.ytd.xml", "test2.ytd"], ["test.ytd.xml", "test2.ytd"]),
+    (["test+hi.ytd.xml", "test.ytd.xml"], ["test.ytd.xml"]),
+    (["test+hi.ytd.xml", "test.ytd"], ["test.ytd"]),
+    (["test+hi.ytd", "test.ytd.xml"], ["test.ytd.xml"]),
+    (["test+hi.ytd", "test.ytd"], ["test.ytd"]),
+    (["test.ytd", "test+hi.ytd"], ["test.ytd"]),
+    (["test+hi.ytd"], ["test+hi.ytd"]),
+    (["other.ytd", "test+hi.ytd.xml", "another.ytd", "test.ytd.xml"], ["other.ytd", "another.ytd", "test.ytd.xml"]),
+))
+def test_import_dedupe_hi_ytd_files(files: str, expected_deduped_files: str):
+    from ..sollumz_operators import SOLLUMZ_OT_import_assets
+    res = SOLLUMZ_OT_import_assets._dedupe_hi_ytd_filenames(None, files)
+    assert_equal(res, expected_deduped_files)
+
+
+@pytest.mark.parametrize("ytd_files, asset_files, expected_deduped_files", (
+    ([], [], []),
+    (["test+hidr.ytd"], ["test.ydr"], []),
+    (["test+hidr.ytd.xml"], ["test.ydr"], []),
+    (["test+hidr.ytd"], ["test.ydr.xml"], []),
+    (["test+hifr.ytd"], ["test.yft"], []),
+    (["test+hifr.ytd"], ["test_hi.yft"], []),
+    (["test+hifr.ytd.xml"], ["test_hi.yft.xml"], []),
+    (["test+hidd.ytd"], ["test.ydd"], []),
+    (["test+hidr.ytd"], [], ["test+hidr.ytd"]),
+    (["test+hidr.ytd"], ["other.ydr"], ["test+hidr.ytd"]),
+    (["test+hidr.ytd"], ["test.yft"], ["test+hidr.ytd"]),
+    (["test+hi.ytd", "test.ytd"], ["test.ydr"], ["test+hi.ytd", "test.ytd"]),
+    (["test+hidr.ytd", "other.ytd"], ["test.ydr", "thing.ybn"], ["other.ytd"]),
+))
+def test_import_dedupe_hd_txd_files(ytd_files, asset_files, expected_deduped_files):
+    from ..sollumz_operators import SOLLUMZ_OT_import_assets
+    res = SOLLUMZ_OT_import_assets._dedupe_hd_txd_filenames(None, ytd_files, asset_files)
+    assert_equal(res, expected_deduped_files)
+
+
 DEFAULT_EXPORT_SETTINGS = {
     "target_formats": {"NATIVE", "CWXML"},
     "target_versions": {"GEN8", "GEN9"},

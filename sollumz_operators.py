@@ -224,11 +224,12 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                 logger.info("No file selected for import!")
                 return {"CANCELLED"}
 
-            print(f"{self.directory=}")
             self.directory = bpy.path.abspath(self.directory)
 
             filenames = [f.name for f in self.files]
             filenames, ytd_filenames = self._separate_ytd_filenames(filenames)
+            ytd_filenames = self._dedupe_hi_ytd_filenames(ytd_filenames)
+            ytd_filenames = self._dedupe_hd_txd_filenames(ytd_filenames, filenames)
             filenames, ytyp_filenames = self._separate_ytyp_filenames(filenames)
             filenames, ymap_filenames = self._separate_ymap_filenames(filenames)
             filenames = self._dedupe_hi_yft_filenames(filenames)
@@ -237,11 +238,11 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             from szio import VPath
             from szio.gta5 import try_load_asset, AssetType, AssetWithDependencies
             from .ybn.ybnimport_io import import_ybn as import_ybn_asset
-            from .ydr.ydrimport_io import import_ydr as import_ydr_asset
+            from .ydr.ydrimport_io import import_ydr as import_ydr_asset, find_ydr_external_dependencies
             from .ydd.yddimport_io import import_ydd as import_ydd_asset, find_ydd_external_dependencies
             from .yft.yftimport_io import import_yft as import_yft_asset, find_yft_external_dependencies
             from .ytyp.ytypimport_io import import_ytyp as import_ytyp_asset
-            from .ytd.ytdimport import import_ytd as import_ytd_asset
+            from .ytd.ytdimport import import_ytd as import_ytd_asset, find_ytd_external_dependencies
             from .ymap_next.ymapimport import import_ymap as import_ymap_asset, begin_import_ymap_group, end_import_ymap_group
 
             prefs_import_settings = self if self.use_custom_settings else get_import_settings()
@@ -289,10 +290,14 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                     # Search asset external dependencies
                     with import_context_scope(ImportContext(name, asset_target, directory, import_settings)):
                         match asset.ASSET_TYPE:
+                            case AssetType.DRAWABLE:
+                                asset_with_deps = find_ydr_external_dependencies(asset, name)
                             case AssetType.DRAWABLE_DICTIONARY:
                                 asset_with_deps = find_ydd_external_dependencies(asset, name)
                             case AssetType.FRAGMENT:
                                 asset_with_deps = find_yft_external_dependencies(asset, name)
+                            case AssetType.TEXTURE_DICTIONARY:
+                                asset_with_deps = find_ytd_external_dependencies(asset, name)
                             case _:
                                 asset_with_deps = AssetWithDependencies(name, asset, {})
 
@@ -312,7 +317,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                             case AssetType.BOUND:
                                 import_ybn_asset(asset, name)
                             case AssetType.DRAWABLE:
-                                import_ydr_asset(asset, name)
+                                import_ydr_asset(asset_with_deps, name)
                             case AssetType.DRAWABLE_DICTIONARY:
                                 import_ydd_asset(asset_with_deps, name)
                             case AssetType.FRAGMENT:
@@ -320,7 +325,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                             case AssetType.MAP_TYPES:
                                 import_ytyp_asset(asset, name)
                             case AssetType.TEXTURE_DICTIONARY:
-                                import_ytd_asset(asset, name)
+                                import_ytd_asset(asset_with_deps, name)
                             case AssetType.MAP_DATA:
                                 import_ymap_asset(asset, name)
                             case _:
@@ -373,6 +378,35 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                     f"{f[:-7]}.yft.xml" not in filenames and f"{f[:-7]}.yft" not in filenames))
             )
         ]
+
+    def _dedupe_hi_ytd_filenames(self, filenames: list[str]) -> list[str]:
+        """If the user selected both a base .ytd[.xml] and its +hi.ytd[.xml], remove the +hi.ytd[.xml] one to prevent
+        importing the same texture dictionary twice.
+        """
+        return [
+            f for f in filenames
+            if (
+                (not f.endswith("+hi.ytd.xml") or (
+                    f"{f[:-11]}.ytd.xml" not in filenames and f"{f[:-11]}.ytd" not in filenames)) and
+                (not f.endswith("+hi.ytd") or (
+                    f"{f[:-7]}.ytd.xml" not in filenames and f"{f[:-7]}.ytd" not in filenames))
+            )
+        ]
+
+    def _dedupe_hd_txd_filenames(self, ytd_filenames: list[str], asset_filenames: list[str]) -> list[str]:
+        """If the user selected a model along with its HD textures .ytd[.xml] (e.g. 'foo.ydr' and
+        'foo+hidr.ytd'), remove the HD .ytd so it is not also imported as a standalone texture dictionary.
+        The model import loads it by itself.
+        """
+        def _is_hd_txd_of_selected_asset(f: str) -> bool:
+            base = f.removesuffix(".xml").removesuffix(".ytd")
+            for suffix, asset_exts in (("+hidr", (".ydr",)), ("+hifr", (".yft", "_hi.yft")), ("+hidd", (".ydd",))):
+                if base.endswith(suffix):
+                    name = base.removesuffix(suffix)
+                    return any(f"{name}{e}{x}" in asset_filenames for e in asset_exts for x in ("", ".xml"))
+            return False
+
+        return [f for f in ytd_filenames if not _is_hd_txd_of_selected_asset(f)]
 
     def _separate_filenames_with_extension(self, ext: str, filenames: list[str]) -> tuple[list[str], list[str]]:
         """Separate the filenames list into two lists, one with all the assets and another one only with the specified extension."""

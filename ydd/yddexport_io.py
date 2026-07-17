@@ -6,6 +6,7 @@ from szio.gta5 import (
     EmbeddedTexture,
     AssetDrawableDictionary,
     AssetClothDictionary,
+    AssetTextureDictionary,
 )
 from ..ydr.ydrexport_io import create_drawable_asset
 from ..ydr.cloth_char_io import cloth_char_export_dictionary
@@ -20,17 +21,26 @@ from ..iecontext import export_context, ExportBundle
 
 def export_ydd(dwd_obj: Object) -> ExportBundle:
     embedded_tex = []
+    hd_tex: dict[str, EmbeddedTexture] = {}
     with cloth_enter_export_context(dwd_obj):
         cld = cloth_char_export_dictionary(dwd_obj)
-        dwd = create_drawable_dictionary_asset(dwd_obj, cld, out_embedded_textures=embedded_tex)
+        dwd = create_drawable_dictionary_asset(
+            dwd_obj, cld, out_embedded_textures=embedded_tex, out_hd_textures=hd_tex
+        )
 
-    return export_context().make_bundle(dwd, ("", cld), extra_files=[t.data for t in embedded_tex])
+    hd_txd = AssetTextureDictionary(textures=hd_tex) if hd_tex else None
+    return export_context().make_bundle(
+        dwd, ("", cld), ("+hidd", hd_txd),
+        extra_files=[t.data for t in embedded_tex],
+        secondary_extra_files=[("+hidd", [t.data for t in hd_tex.values()])],
+    )
 
 
 def create_drawable_dictionary_asset(
     dwd_obj: Object,
     cloth_dictionary: AssetClothDictionary | None,
     out_embedded_textures: list[EmbeddedTexture] | None = None,
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
 ) -> AssetDrawableDictionary | None:
     dwd_armature = find_ydd_armature(dwd_obj) if dwd_obj.type != "ARMATURE" else dwd_obj
 
@@ -55,6 +65,7 @@ def create_drawable_dictionary_asset(
                 child,
                 armature_obj=armature_obj,
                 out_embedded_textures=out_embedded_textures,
+                out_hd_textures=out_hd_textures,
                 char_cloth=cloth,
             )
 

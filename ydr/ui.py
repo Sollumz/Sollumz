@@ -734,7 +734,14 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
             split = layout.split(factor=SPLIT_FACTOR)
             split.alignment = "RIGHT"
             split.label(text=n.name)
-            split.template_ID(n, "image", open="image.open")
+            row = split.row(align=True)
+            row.template_ID(n, "image", open="image.open")
+            if n.image is not None:
+                subrow = row.row(align=True)
+                subrow.alignment = "RIGHT"
+                subrow.scale_x = 0.65
+                subrow.enabled = n.texture_properties.embedded
+                subrow.prop(n.image, "sz_is_hd", toggle=True, text="HD")
 
             if n.image is not None:
                 split = layout.split(factor=SPLIT_FACTOR)  # split to align the props with the image selector

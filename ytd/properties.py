@@ -227,6 +227,16 @@ def register():
         name="Texture Dictionaries",
     )
 
+    Image.sz_is_hd = BoolProperty(
+        name="HD",
+        description=(
+            "Export the full-resolution texture to a separate '+hi' texture dictionary. The base texture "
+            "dictionary gets a half-resolution copy with the first mip level dropped"
+        ),
+        default=False,
+    )
+
 
 def unregister():
     del Scene.sz_txds
+    del Image.sz_is_hd

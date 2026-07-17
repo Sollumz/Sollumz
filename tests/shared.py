@@ -94,6 +94,60 @@ requires_szio_native = pytest.mark.skipif(
 del _is_szio_native_available
 
 
+def make_bc1_dds(width: int, height: int, mip_count: int) -> bytes:
+    """Builds a synthetic DXT1 DDS with `mip_count` mip levels, each filled with a distinct byte."""
+    from szio.dds import DDS_HEADER
+
+    mip_sizes = []
+    w, h = width, height
+    for _ in range(mip_count):
+        mip_sizes.append(max(1, (w + 3) // 4) * max(1, (h + 3) // 4) * 8)
+        w = max(1, w // 2)
+        h = max(1, h // 2)
+
+    header = DDS_HEADER()
+    header.dwSize = 124
+    flags = 0x1 | 0x2 | 0x4 | 0x1000 | 0x80000  # CAPS | HEIGHT | WIDTH | PIXELFORMAT | LINEARSIZE
+    if mip_count > 1:
+        flags |= 0x20000  # MIPMAPCOUNT
+    header.dwFlags = flags
+    header.dwWidth = width
+    header.dwHeight = height
+    header.dwPitchOrLinearSize = mip_sizes[0]
+    header.dwMipMapCount = mip_count
+    header.ddspf.dwSize = 32
+    header.ddspf.dwFlags = 0x4  # DDPF_FOURCC
+    header.ddspf.dwFourCC = b"DXT1"
+    header.dwCaps = 0x1000 | 0x8 | 0x400000  # TEXTURE | COMPLEX | MIPMAP
+    blob = bytearray(b"DDS ") + bytes(header)
+    blob += b"".join(bytes([0x10 + i]) * size for i, size in enumerate(mip_sizes))
+    return bytes(blob)
+
+
+def new_packed_dds_image(name: str, dds: bytes) -> bpy.types.Image:
+    img = bpy.data.images.new(name=name, width=1, height=1)
+    img.source = "FILE"
+    img.filepath = f"//{name}"
+    img.pack(data=dds, data_len=len(dds))
+    return img
+
+
+def dropped_mip(dds: bytes) -> bytes:
+    """DDS bytes of `dds` with the top mip level removed."""
+    from szio.dds import DdsFile
+
+    return DdsFile.from_buffer(bytearray(dds)).drop_mip()
+
+
+def assert_dds_is_full_res(dds_bytes: bytes, expected_resolution: tuple[int, int]):
+    from szio.dds import DdsFile
+
+    dds = DdsFile.from_buffer(bytearray(dds_bytes))
+    assert dds.resolution == expected_resolution
+    # make_bc1_dds fills the base mip with 0x10; a mip-dropped copy would start with 0x11
+    assert bytes(dds.pixel_data[:8]) == b"\x10" * 8
+
+
 class TestLogger(LoggerBase):
     def __init__(self):
         self._logs: dict[str, list[str]] = defaultdict(list)

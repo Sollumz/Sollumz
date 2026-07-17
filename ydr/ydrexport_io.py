@@ -25,6 +25,7 @@ from szio.gta5 import (
     AssetBound,
     AssetDrawable,
     AssetFragDrawable,
+    AssetTextureDictionary,
     LodLevel as IOLodLevel,
     EmbeddedTexture,
     ShaderGroup,
@@ -82,8 +83,14 @@ from .. import logger
 
 def export_ydr(obj: Object) -> ExportBundle:
     embedded_tex = []
-    d = create_drawable_asset(obj, out_embedded_textures=embedded_tex)
-    return export_context().make_bundle(d, extra_files=[t.data for t in embedded_tex])
+    hd_tex: dict[str, EmbeddedTexture] = {}
+    d = create_drawable_asset(obj, out_embedded_textures=embedded_tex, out_hd_textures=hd_tex)
+    hd_txd = AssetTextureDictionary(textures=hd_tex) if hd_tex else None
+    return export_context().make_bundle(
+        d, ("+hidr", hd_txd),
+        extra_files=[t.data for t in embedded_tex],
+        secondary_extra_files=[("+hidr", [t.data for t in hd_tex.values()])],
+    )
 
 
 def create_drawable_asset(
@@ -93,6 +100,7 @@ def create_drawable_asset(
     is_frag: bool = False,
     parent_drawable: AssetDrawable | None = None,
     out_embedded_textures: list[EmbeddedTexture] | None = None,
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
     hi: bool = False,
     char_cloth: CharacterCloth | None = None,
 ) -> AssetDrawable | None:
@@ -103,7 +111,7 @@ def create_drawable_asset(
     if parent_drawable is not None:
         shader_group = None
     else:
-        shader_group = create_shader_group(materials)
+        shader_group = create_shader_group(materials, out_hd_textures=out_hd_textures)
         if not shader_group.shaders:
             logger.warning(
                 f"{drawable_obj.name} has no Sollumz materials! Aborting..."
@@ -593,10 +601,13 @@ def split_vert_buffers(
     return (split_vert_arrs, split_ind_arrs)
 
 
-def create_shader_group(materials: list[Material]) -> ShaderGroup:
+def create_shader_group(
+    materials: list[Material],
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
+) -> ShaderGroup:
     return ShaderGroup(
         shaders=[create_shader(m) for m in materials],
-        embedded_textures=get_embedded_textures_from_materials(materials),
+        embedded_textures=get_embedded_textures_from_materials(materials, out_hd_textures=out_hd_textures),
     )
 
 
@@ -689,8 +700,17 @@ def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> l
     return parameters
 
 
-def get_embedded_textures_from_materials(materials: list[Material]) -> dict[str, EmbeddedTexture]:
-    from ..ytd.ytdexport import extract_texture_dds_data_source
+def get_embedded_textures_from_materials(
+    materials: list[Material],
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
+) -> dict[str, EmbeddedTexture]:
+    """Builds the embedded texture dictionary for `materials`.
+
+    When `out_hd_textures` is given, textures flagged as HD are split: the returned dictionary
+    gets a copy with the first mip level dropped and the full-resolution texture is added to `out_hd_textures`,
+    to be exported in a separate '+hi' texture dictionary. When `None`, textures keep their full resolution.
+    """
+    from ..ytd.ytdexport import extract_texture_dds_data_source, split_embedded_texture
     textures = {}
 
     for node in get_embedded_texture_nodes_from_materials(materials):
@@ -700,9 +720,15 @@ def get_embedded_textures_from_materials(materials: list[Material]) -> dict[str,
             continue
 
         img = node.image
-        texture_data = extract_texture_dds_data_source(img, texture_name)
-        w, h = img.size
-        textures[texture_name] = EmbeddedTexture(texture_name, w, h, texture_data)
+        if out_hd_textures is None:
+            texture_data = extract_texture_dds_data_source(img, texture_name)
+            w, h = img.size
+            textures[texture_name] = EmbeddedTexture(texture_name, w, h, texture_data)
+        else:
+            texture, hd_texture = split_embedded_texture(img, texture_name)
+            textures[texture_name] = texture
+            if hd_texture is not None and texture_name not in out_hd_textures:
+                out_hd_textures[texture_name] = hd_texture
 
     return textures
 

@@ -13,14 +13,16 @@ from szio.gta5 import (
     try_load_asset,
     Skeleton,
     jenkhash,
+    AssetTextureDictionary,
 )
-from ..ydr.ydrimport_io import create_drawable, create_drawable_skel
+from ..ydr.ydrimport_io import create_drawable, create_drawable_skel, extract_embedded_textures_from_hd_txd
 from ..ydr.cloth_char_io import (
     cloth_char_import_mesh,
     cloth_char_import_bounds,
 )
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import create_empty_object, create_blender_object
+from ..ytd.ytdimport import try_load_hd_txd
 from ..iecontext import import_context, ImportExternalSkeletonMode
 from .. import logger
 
@@ -40,6 +42,10 @@ def find_ydd_external_dependencies(asset: AssetDrawableDictionary, name: str) ->
     cloth_dictionary = try_load_cloth_dictionary(name, prefers_xml)
     if cloth_dictionary is not None:
         deps["cloth"] = cloth_dictionary
+
+    hd_txd = try_load_hd_txd(name, prefers_xml, "+hidd")
+    if hd_txd is not None:
+        deps["hd_txd"] = hd_txd
 
     return AssetWithDependencies(name, asset, deps)
 
@@ -104,15 +110,19 @@ def import_ydd(asset: AssetWithDependencies, name: str) -> Object | list[Object]
     dwd = asset.main_asset
     skel_frag = asset.dependencies.get("external_skel", None)
     cloth_dictionary = asset.dependencies.get("cloth", None)
+    hd_txd = asset.dependencies.get("hd_txd", None)
+    extract_embedded_textures_from_hd_txd(hd_txd, "+hidd")
 
-    return create_drawable_dictionary(dwd, name, cloth_dictionary, skel_frag)
+    return create_drawable_dictionary(dwd, name, cloth_dictionary, skel_frag, hd_txd, "+hidd")
 
 
 def create_drawable_dictionary(
     dwd: AssetDrawableDictionary,
     name: str,
     cloth_dictionary: AssetClothDictionary | None,
-    external_skel_frag: AssetFragment | None
+    external_skel_frag: AssetFragment | None,
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
 ) -> Object | list[Object]:
     import_as_asset = import_context().settings.import_as_asset
 
@@ -147,7 +157,9 @@ def create_drawable_dictionary(
             drawable,
             name=name,
             external_armature=external_armature,
-            external_skeleton=external_skeleton
+            external_skeleton=external_skeleton,
+            hd_txd=hd_txd,
+            hd_txd_suffix=hd_txd_suffix,
         )
         drawable_obj.parent = dict_obj
         if import_as_asset:
