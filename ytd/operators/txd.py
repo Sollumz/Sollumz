@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import bpy
@@ -200,32 +201,38 @@ class SOLLUMZ_OT_txd_refresh_sources(Operator):
         return {"FINISHED"}
 
 
-class SOLLUMZ_OT_txd_update(Operator):
-    """Apply the selected texture dictionary's textures to matching images already in the scene"""
+def _has_missing_file(image: bpy.types.Image) -> bool:
+    """An image whose source file cannot be found on disk, same notion used by Blender's Find Missing Files."""
+    return (
+        not image.packed_files
+        and image.source == "FILE"
+        and not os.path.exists(bpy.path.abspath(image.filepath, library=image.library))
+    )
 
-    bl_idname = "sollumz.txd_update"
-    bl_label = "Update TXD"
+
+class SOLLUMZ_OT_txd_find_missing(Operator):
+    """Replace images with a missing file with matching textures from the scene's texture dictionaries"""
+
+    bl_idname = "sollumz.txd_find_missing"
+    bl_label = "Find Missing TXD"
     bl_options = {"UNDO"}
 
     @classmethod
     def poll(cls, context):
-        txd = get_selected_txd(context)
-        return txd is not None and len(txd.textures) > 0
+        return any(len(txd.textures) > 0 for txd in context.scene.sz_txds.texture_dictionaries)
 
     def execute(self, context):
-        txd = get_selected_txd(context)
-
         images_by_name = {}
-        for slot in txd.textures:
-            if slot.image is not None:
-                images_by_name.setdefault(normalize_texture_name(slot.name or slot.image.name), slot.image)
+        for txd in context.scene.sz_txds.texture_dictionaries:
+            for slot in txd.textures:
+                if slot.image is not None:
+                    images_by_name.setdefault(normalize_texture_name(slot.name or slot.image.name), slot.image)
 
-        if not images_by_name:
-            self.report({"WARNING"}, "The selected texture dictionary has no usable textures.")
-            return {"CANCELLED"}
-
-        remapped = 0
+        replaced = []
         for image in list(bpy.data.images):
+            if not _has_missing_file(image):
+                continue
+
             new_image = images_by_name.get(normalize_texture_name(image.name))
             if new_image is None or new_image is image:
                 continue
@@ -236,9 +243,15 @@ class SOLLUMZ_OT_txd_update(Operator):
                 logger.warning(f"Failed to update texture '{image.name}': {e}")
                 continue
 
-            remapped += 1
+            replaced.append(image)
 
-        self.report({"INFO"}, f"Updated {remapped} texture(s).")
+        # `batch_remove` requires the IDs to be fully unused. `user_remap` leaves them at zero users, but an
+        # image kept around by a fake user must not be deleted.
+        unused = [image for image in replaced if image.users == 0]
+        if unused:
+            bpy.data.batch_remove(unused)
+
+        self.report({"INFO"}, f"Found {len(replaced)} missing texture(s).")
         return {"FINISHED"}
 
 

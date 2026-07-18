@@ -3,7 +3,6 @@ from pathlib import Path
 import bpy
 from szio.gta5 import AssetTextureDictionary, EmbeddedTexture
 
-from .. import logger
 from ..iecontext import ImportTexturesMode, import_context
 from .properties import TextureDictionary
 
@@ -20,15 +19,6 @@ def import_ytd(asset: AssetTextureDictionary, name: str) -> TextureDictionary:
         txd.new_texture(img)
     if txd.textures:
         txd.textures.select(0)
-
-    from ..sollumz_preferences import get_addon_preferences
-
-    if get_addon_preferences(bpy.context).auto_update_txd:
-        # Reuse the stable "Update TXD" operator (it acts on the just-created, selected dictionary)
-        try:
-            bpy.ops.sollumz.txd_update()
-        except Exception as e:
-            logger.warning(f"Auto Update TXD failed for '{name}': {e}")
 
     return txd
 

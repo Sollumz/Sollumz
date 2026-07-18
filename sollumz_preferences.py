@@ -952,16 +952,6 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_save_preferences_on_update
     )
 
-    auto_update_txd: BoolProperty(
-        name="Auto Update TXD (Experimental)",
-        description=(
-            "Automatically apply an imported texture dictionary to matching images already in the scene, so "
-            "previously imported models pick up its textures without running 'Update TXD' manually"
-        ),
-        default=False,
-        update=_save_preferences_on_update
-    )
-
     shader_preset_apply_textures: BoolProperty(
         name="Apply Textures from Shader Preset",
         description=(
@@ -1202,7 +1192,6 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(self, "use_text_name_as_mat_name")
         layout.prop(self, "shader_preset_apply_textures")
         layout.prop(self, "default_sync_selection_enabled")
-        layout.prop(self, "auto_update_txd")
 
         col = layout.column(align=True)
         col.prop(self, "default_flags_portal", text="Default Flags for Portals")
