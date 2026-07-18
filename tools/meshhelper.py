@@ -543,3 +543,7 @@ def flip_uv(uv):
     v = (uv[1] - 1.0) * -1
 
     return [u, v]
+
+def get_mesh_tri_count(mesh: bpy.types.Mesh) -> int:
+    """Count triangles in a mesh (accounting for n-gons)."""
+    return len(mesh.loops) - len(mesh.polygons) * 2
