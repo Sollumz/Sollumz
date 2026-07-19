@@ -49,19 +49,7 @@ class SOLLUMZ_OT_txd_delete(Operator):
         return len(context.scene.sz_txds.texture_dictionaries) > 0
 
     def execute(self, context):
-        coll = context.scene.sz_txds.texture_dictionaries
-
-        indices_to_remove = sorted(coll.selected_items_indices, reverse=True)
-        if not indices_to_remove:
-            indices_to_remove = [coll.active_index]
-
-        new_active_index = max(indices_to_remove[-1] - 1, 0)
-        for idx in indices_to_remove:
-            coll.remove(idx)
-
-        if len(coll) > 0:
-            coll.select(min(new_active_index, len(coll) - 1))
-
+        context.scene.sz_txds.texture_dictionaries.remove_selected()
         return {"FINISHED"}
 
 
@@ -136,19 +124,7 @@ class SOLLUMZ_OT_txd_delete_texture(Operator):
         return txd is not None and len(txd.textures) > 0
 
     def execute(self, context):
-        txd = get_selected_txd(context)
-
-        indices_to_remove = sorted(txd.textures.selected_items_indices, reverse=True)
-        if not indices_to_remove:
-            indices_to_remove = [txd.textures.active_index]
-
-        new_active_index = max(indices_to_remove[-1] - 1, 0)
-        for idx in indices_to_remove:
-            txd.textures.remove(idx)
-
-        if len(txd.textures) > 0:
-            txd.textures.select(min(new_active_index, len(txd.textures) - 1))
-
+        get_selected_txd(context).textures.remove_selected()
         return {"FINISHED"}
 
 
@@ -180,19 +156,7 @@ class SOLLUMZ_OT_txd_delete_source(Operator):
         return txd is not None and len(txd.sources) > 0
 
     def execute(self, context):
-        txd = get_selected_txd(context)
-
-        indices_to_remove = sorted(txd.sources.selected_items_indices, reverse=True)
-        if not indices_to_remove:
-            indices_to_remove = [txd.sources.active_index]
-
-        new_active_index = max(indices_to_remove[-1] - 1, 0)
-        for idx in indices_to_remove:
-            txd.sources.remove(idx)
-
-        if len(txd.sources) > 0:
-            txd.sources.select(min(new_active_index, len(txd.sources) - 1))
-
+        get_selected_txd(context).sources.remove_selected()
         return {"FINISHED"}
 
 
