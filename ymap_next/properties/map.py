@@ -789,8 +789,16 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
         max=255,
         subtype="FACTOR",
     )
-    # TODO(ymap): sync tint_value with tint geonodes
-    tint_value: IntProperty(name="Tint Value", default=0, min=0, max=255)
+
+    def _on_tint_value_update(self, _context):
+        obj = self.linked_object
+        if not obj:
+            return
+
+        from ...ydr.shader_materials import apply_tint_preview_index
+        apply_tint_preview_index(obj, self.tint_value)
+
+    tint_value: IntProperty(name="Tint Value", default=0, min=0, max=255, update=_on_tint_value_update)
     flags: PointerProperty(type=EntityFlags, name="Flags")
 
     is_critical: BoolProperty(name="Critical", default=False)
