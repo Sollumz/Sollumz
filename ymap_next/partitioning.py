@@ -7,11 +7,12 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 import numpy as np
+from bpy.types import Object
 from mathutils import Vector
 
 from ..shared.game_assets.asset_info import AssetInfoCache
 from ..shared.geometry import KDTreeSplitStrategy, kdtree_build, kdtree_merge_leaves
-from .extents import resolve_entity_lod_dist
+from .extents import ExtentsAccumulator, entity_world_aabb, resolve_entity_lod_dist
 from .properties.map import (
     MapCarGen,
     MapData,
@@ -93,8 +94,6 @@ def _get_entity_position(entity: MapEntity) -> Vector:
 
 def _get_cargen_position(cargen: MapCarGen) -> Vector:
     """Average position of all objects in the cargen's linked collection."""
-    # TODO(ymap): should probably support map data per cargen object. Having a single map data for the whole cargen
-    # collection makes partitioning weird.
     coll = cargen.linked_collection
     if coll is not None and coll.objects:
         total = Vector((0, 0, 0))
@@ -162,26 +161,26 @@ def generate_partitions(map_group: MapGroup, map_data: MapData, settings: Partit
 
     # 3. Spatial-partition large buckets into numbered chunks
     numbered_buckets: dict[str, list] = {}
+    cargen_assignments: list[tuple[MapCarGen, list[Object], list[str]]] = []
     for key, bucket_items in buckets.items():
         if key == SELF:
             numbered_buckets[SELF] = bucket_items
         elif key == "strm":
-            # Partition entities and cargens together by entity positions,
-            # but cargens don't have a single position - partition entities first,
-            # then assign cargens to the nearest entity chunk
+            # Entities take priority: they are partitioned into chunks first, then each cargen object is
+            # placed into the chunk whose entities extents contain it; leftover objects get their own chunks
             strm_entities = [item for item in bucket_items if isinstance(item, MapEntity)]
             strm_cargens = [item for item in bucket_items if isinstance(item, MapCarGen)]
+            entity_chunks = []
             if strm_entities:
                 entity_chunks = spatial_partition_by_position(
                     strm_entities, _get_entity_position, settings.max_per_chunk
                 )
                 for i, chunk in enumerate(entity_chunks):
                     numbered_buckets[f"strm_{i}"] = chunk
-                # Distribute cargens into the chunks by proximity
-                if strm_cargens:
-                    _distribute_cargens_to_chunks(strm_cargens, entity_chunks, numbered_buckets)
-            elif strm_cargens:
-                numbered_buckets["strm_0"] = strm_cargens
+            if strm_cargens:
+                cargen_assignments = _partition_strm_cargen_objects(
+                    strm_cargens, entity_chunks, numbered_buckets, settings, map_group, cache
+                )
         elif key == "long":
             chunks = spatial_partition_by_position(bucket_items, _get_entity_position, settings.max_per_chunk)
             for i, chunk in enumerate(chunks):
@@ -209,8 +208,10 @@ def generate_partitions(map_group: MapGroup, map_data: MapData, settings: Partit
         item.map_data_uuid = map_data_uuid
 
     # 6. Create new leaf MapDatas and reassign items
+    leaf_uuid_by_key: dict[str, bytes] = {}
     for bucket_key, bucket_items in numbered_buckets.items():
         leaf_uuid = uuid4().bytes
+        leaf_uuid_by_key[bucket_key] = leaf_uuid
         leaf = map_group.maps.add()
         leaf.uuid = leaf_uuid
         leaf.name = generate_leaf_name(map_data_name, bucket_key)
@@ -219,34 +220,81 @@ def generate_partitions(map_group: MapGroup, map_data: MapData, settings: Partit
         for item in bucket_items:
             item.map_data_uuid = leaf_uuid
 
+    # 7. Rebuild the partitioned cargens' container slots from their objects' buckets
+    for cargen, objs, keys in cargen_assignments:
+        cargen.extra_map_datas.clear()
+        slot_by_key: dict[str, int] = {}
+        for obj, bucket_key in zip(objs, keys):
+            obj.sz_cargen_map_data_index = slot_by_key.setdefault(bucket_key, len(slot_by_key))
+        slot_keys = list(slot_by_key) or ["strm_0"]  # cargens with no objects stay in the first strm bucket
+        cargen.map_data_uuid = leaf_uuid_by_key[slot_keys[0]]
+        for bucket_key in slot_keys[1:]:
+            cargen.add_extra_map_data(leaf_uuid_by_key[bucket_key])
+
     map_group.refresh_ui()
 
 
-def _distribute_cargens_to_chunks(
+def _partition_strm_cargen_objects(
     cargens: list[MapCarGen],
     entity_chunks: list[list[MapEntity]],
     numbered_buckets: dict[str, list],
-):
-    """Assign cargens to the nearest entity chunk based on position proximity."""
-    # Compute center of each chunk
-    chunk_centers = []
-    for chunk in entity_chunks:
-        center = Vector((0, 0, 0))
-        for entity in chunk:
-            center += _get_entity_position(entity)
-        center /= len(chunk)
-        chunk_centers.append(center)
+    settings: PartitioningSettings,
+    map_group: MapGroup,
+    cache: AssetInfoCache,
+) -> list[tuple[MapCarGen, list[Object], list[str]]]:
+    """Assign each cargen object to a strm bucket.
 
+    Objects within an entity chunk's entities extents (XY) go to that chunk, the one with the nearest
+    extents center when several overlap. Objects outside every chunk are spatially partitioned into
+    additional strm buckets, registered in `numbered_buckets` without items so their leaf map datas
+    still get created.
+
+    Returns `(cargen, objects, bucket key per object)` tuples.
+    """
+    # XY entities extents per chunk, from the same per-entity AABBs as container extents
+    chunk_extents = []
+    for chunk in entity_chunks:
+        acc = ExtentsAccumulator()
+        for entity in chunk:
+            bb_min, bb_max, _ = entity_world_aabb(entity, map_group, cache)
+            acc.add(bb_min, bb_max)
+        chunk_extents.append(acc.entities_extents)
+
+    assignments = []
+    leftovers = []  # (object, keys list, index) to patch once the leftover buckets exist
     for cargen in cargens:
-        pos = _get_cargen_position(cargen)
-        best_i = 0
-        best_dist = float("inf")
-        for i, center in enumerate(chunk_centers):
-            dist = (pos - center).length_squared
-            if dist < best_dist:
-                best_dist = dist
-                best_i = i
-        numbered_buckets[f"strm_{best_i}"].append(cargen)
+        coll = cargen.linked_collection
+        objs = list(coll.objects) if coll is not None else []
+        keys = []
+        for obj in objs:
+            pos = obj.matrix_world.translation
+            best_i = None
+            best_dist = float("inf")
+            for i, (bb_min, bb_max) in enumerate(chunk_extents):
+                if bb_min.x <= pos.x <= bb_max.x and bb_min.y <= pos.y <= bb_max.y:
+                    dist = (pos.xy - ((bb_min + bb_max) * 0.5).xy).length_squared
+                    if dist < best_dist:
+                        best_dist = dist
+                        best_i = i
+            keys.append(None if best_i is None else f"strm_{best_i}")
+            if best_i is None:
+                leftovers.append((obj, keys, len(keys) - 1))
+        assignments.append((cargen, objs, keys))
+
+    if leftovers:
+        for n, chunk in enumerate(
+            spatial_partition_by_position(leftovers, lambda lo: lo[0].matrix_world.translation, settings.max_per_chunk)
+        ):
+            bucket_key = f"strm_{len(entity_chunks) + n}"
+            numbered_buckets[bucket_key] = []
+            for _obj, keys, i in chunk:
+                keys[i] = bucket_key
+
+    if "strm_0" not in numbered_buckets:
+        # No entities and no positioned objects, only empty cargens: keep a single strm bucket for them
+        numbered_buckets["strm_0"] = []
+
+    return assignments
 
 
 def collapse_to_auto(map_group: MapGroup, map_data: MapData):
@@ -270,6 +318,11 @@ def collapse_to_auto(map_group: MapGroup, map_data: MapData):
     for cargen in map_group.cargens:
         if cargen.map_data_uuid in leaf_uuids:
             cargen.map_data_uuid = map_data_uuid
+        # Extra slots collapse to the parent too; objects keep their slot indices (duplicate slots
+        # referencing the same container are fine, export merges them)
+        for ref in cargen.extra_map_datas:
+            if ref.map_data_uuid in leaf_uuids:
+                ref.map_data_uuid = map_data_uuid
     for tcm in map_group.timecycle_modifiers:
         if tcm.map_data_uuid in leaf_uuids:
             tcm.map_data_uuid = map_data_uuid

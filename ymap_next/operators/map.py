@@ -174,6 +174,9 @@ class SOLLUMZ_OT_map_group_delete_map_data(Operator):
         for cargen in group.cargens:
             if cargen.map_data_uuid in md_uuids:
                 cargen.map_data_uuid = b""
+            for ref in cargen.extra_map_datas:
+                if ref.map_data_uuid in md_uuids:
+                    ref.map_data_uuid = b""
         for tcm in group.timecycle_modifiers:
             if tcm.map_data_uuid in md_uuids:
                 tcm.map_data_uuid = b""

@@ -2,6 +2,7 @@ from collections import Counter
 
 import bpy
 from bpy.types import Operator
+from bpy.props import IntProperty
 
 from ...sollumz_properties import SollumType
 from ...tools.blenderhelper import create_blender_object, get_all_collections
@@ -144,6 +145,7 @@ class SOLLUMZ_OT_map_cargen_move_to_new_collection(Operator):
         src_creation_rule = source_cargen.creation_rule
         src_map_data_uuid = source_cargen.map_data_uuid
         src_map_data_name = source_cargen.map_data_name
+        src_extra_map_data_uuids = [ref.map_data_uuid for ref in source_cargen.extra_map_datas]
         src_flags = {prop_name: getattr(source_cargen, prop_name) for prop_name, _ in MAP_CARGEN_FLAG_PROPS}
 
         parent_coll = next(
@@ -153,6 +155,10 @@ class SOLLUMZ_OT_map_cargen_move_to_new_collection(Operator):
 
         new_cargen = map_group.new_cargen()
         new_cargen.map_data_uuid = src_map_data_uuid
+        # Keep the same extra container slots so the moved objects' container indices keep referencing the
+        # same containers
+        for extra_uuid in src_extra_map_data_uuids:
+            new_cargen.add_extra_map_data(extra_uuid)
         new_cargen.name = src_name
         new_cargen.model = src_model
         new_cargen.model_set = src_model_set
@@ -175,3 +181,45 @@ class SOLLUMZ_OT_map_cargen_move_to_new_collection(Operator):
 
         self.report({"INFO"}, f"Moved {len(objs_to_move)} object(s) to new car generator '{new_cargen.ui_label}'")
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_map_cargen_remove_extra_map_data(Operator):
+    bl_idname = "sollumz.map_cargen_remove_extra_map_data"
+    bl_label = "Remove Container"
+    bl_description = "Remove this extra container"
+    bl_options = {"UNDO"}
+
+    index: IntProperty(name="Index", min=0, options={"HIDDEN"})
+
+    @classmethod
+    def poll(cls, context):
+        return active_cargen(context) is not None
+
+    def execute(self, context):
+        cargen = active_cargen(context)
+        if cargen is None or not (0 <= self.index < len(cargen.extra_map_datas)):
+            return {"CANCELLED"}
+
+        removed_slot = self.index + 1
+        redirect_slot = self._find_redirect_slot(cargen.raw_slot_uuids(), removed_slot)
+        coll = cargen.linked_collection
+        if coll is not None:
+            for obj in coll.objects:
+                slot = obj.sz_cargen_map_data_index
+                if slot == removed_slot:
+                    obj.sz_cargen_map_data_index = redirect_slot
+                elif slot > removed_slot:
+                    obj.sz_cargen_map_data_index = slot - 1
+        cargen.extra_map_datas.remove(self.index)
+        return {"FINISHED"}
+
+    def _find_redirect_slot(self, raw_slot_uuids: list[bytes], removed_slot: int) -> int:
+        """Get a slot with the same container UUID, in case it was duplicated, so cargen objects keep referencing the
+        same container. Otherwise fall back to the primary (0).
+        """
+        removed_uuid = raw_slot_uuids[removed_slot]
+        if removed_uuid:
+            for i, uuid in enumerate(raw_slot_uuids):
+                if i != removed_slot and uuid == removed_uuid:
+                    return i if i < removed_slot else i - 1
+        return 0

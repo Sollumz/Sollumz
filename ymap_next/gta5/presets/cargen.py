@@ -15,19 +15,6 @@ from ....shared.presets import (
 )
 from ...context import active_cargen, active_cargens_collection
 
-# Per-instance / display fields skipped from templating.
-_SKIP_FIELDS = (
-    "name",
-    "ui_label",
-    "linked_collection",
-    "uuid",
-    "uuid_str",
-    "map_group_uuid",
-    "map_data_uuid",
-    "map_data_name",
-)
-
-
 def _poll(context):
     if active_cargen(context) is None:
         return False, "Select a car generator."
@@ -39,7 +26,6 @@ CARGEN_PRESET_CATEGORY = PresetCategory(
     label="Car Generator",
     game="gta5",
     bundled_defaults_path=Path(__file__).parent / "cargen_presets.json",
-    skip=_SKIP_FIELDS,
     get_target=active_cargen,
     get_targets=make_get_targets_from_collection(active_cargens_collection),
     poll=_poll,

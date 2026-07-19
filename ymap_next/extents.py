@@ -8,7 +8,7 @@ from collections.abc import Iterable, Sequence
 
 import bpy
 import numpy as np
-from bpy.types import Depsgraph
+from bpy.types import Depsgraph, Object
 from mathutils import Matrix, Quaternion, Vector
 
 from ..shared.game_assets.asset_info import (
@@ -20,7 +20,6 @@ from ..tools.meshhelper import get_combined_bound_box
 from .grass import evaluated_grass_batch_instances_from_object
 from .grass.geonodes import disable_grass_batch_modifier_preview
 from .properties.map import (
-    MapCarGen,
     MapEntity,
     MapGrassBatch,
     MapGroup,
@@ -111,7 +110,7 @@ def _transform_aabb(matrix: Matrix, bb_min: Vector, bb_max: Vector) -> tuple[Vec
     return center_world - extent_world, center_world + extent_world
 
 
-def _entity_world_aabb(entity: MapEntity, map_group: MapGroup, cache: AssetInfoCache) -> tuple[Vector, Vector, float]:
+def entity_world_aabb(entity: MapEntity, map_group: MapGroup, cache: AssetInfoCache) -> tuple[Vector, Vector, float]:
     """Return the entity's world AABB and its streaming distance (the AABB grown by it is the entity's
     streaming extents contribution).
 
@@ -207,7 +206,7 @@ def calc_map_data_extents(
     depsgraph: Depsgraph,
     *,
     entities: Sequence[MapEntity] = (),
-    cargens: Sequence[MapCarGen] = (),
+    cargen_objects: Sequence[Object] = (),
     tcms: Sequence[MapTimecycleModifier] = (),
     grass_batches: Sequence[MapGrassBatch] = (),
     occluders: Sequence[MapOccluder] = (),
@@ -220,17 +219,13 @@ def calc_map_data_extents(
     acc = ExtentsAccumulator()
 
     for entity in entities:
-        bb_min, bb_max, streaming_dist = _entity_world_aabb(entity, map_group, cache)
+        bb_min, bb_max, streaming_dist = entity_world_aabb(entity, map_group, cache)
         acc.add(bb_min, bb_max, streaming_dist)
 
-    for cargen in cargens:
-        coll = cargen.linked_collection
-        if coll is None:
-            continue
-        for obj in coll.objects:
-            pos = obj.matrix_world.translation
-            half = Vector(obj.dimensions) / 2
-            acc.add(pos - half, pos + half)
+    for obj in cargen_objects:
+        pos = obj.matrix_world.translation
+        half = Vector(obj.dimensions) / 2
+        acc.add(pos - half, pos + half)
 
     for tcm in tcms:
         tcm_min, tcm_max = tcm.extents
@@ -272,10 +267,11 @@ def update_maps_extents(map_group: MapGroup, map_uuids: Iterable[bytes]) -> int:
         if entity.map_data_uuid in uuids:
             entities_by_map[entity.map_data_uuid].append(entity)
 
-    cargens_by_map: dict[bytes, list[MapCarGen]] = defaultdict(list)
+    cargen_objs_by_map: dict[bytes, list[Object]] = defaultdict(list)
     for cargen in map_group.cargens:
-        if cargen.map_data_uuid in uuids:
-            cargens_by_map[cargen.map_data_uuid].append(cargen)
+        for map_uuid, objs in cargen.objects_by_map_data(map_group).items():
+            if map_uuid in uuids:
+                cargen_objs_by_map[map_uuid].extend(objs)
 
     tcms_by_map: dict[bytes, list[MapTimecycleModifier]] = defaultdict(list)
     for tcm in map_group.timecycle_modifiers:
@@ -320,7 +316,7 @@ def update_maps_extents(map_group: MapGroup, map_uuids: Iterable[bytes]) -> int:
             map_group,
             depsgraph,
             entities=entities_by_map[map_uuid],
-            cargens=cargens_by_map[map_uuid],
+            cargen_objects=cargen_objs_by_map[map_uuid],
             tcms=tcms_by_map[map_uuid],
             grass_batches=grass_by_map[map_uuid],
             occluders=occl_by_map[map_uuid],

@@ -275,15 +275,11 @@ class MapDataSelectionAccess(MultiSelectAccess):
     desc_time: MultiSelectProperty()
 
 
-class MapItemMixin:
-    uuid: UUIDProperty()
+class MapDataRefMixin:
+    """A reference to a MapData container by UUID, with a name-based get/set/search dropdown."""
+
     map_data_uuid: UUIDProperty(name="Map Data UUID")
     map_group_uuid: UUIDProperty(name="Map Group UUID")
-
-    def get_uuid_str(self) -> str:
-        return self.uuid.hex()
-
-    uuid_str: StringProperty(name="UUID", get=get_uuid_str)
 
     def get_map_data_name(self) -> str:
         map_data_uuid = self.map_data_uuid
@@ -330,6 +326,74 @@ class MapItemMixin:
         set=set_map_data_by_name,
         search=search_map_datas,
     )
+
+
+class MapDataRef(MapDataRefMixin, PropertyGroup):
+    """An extra container reference on a multi-container map item (slots 1..N)."""
+
+
+class MapItemMixin(MapDataRefMixin):
+    uuid: UUIDProperty()
+
+    def get_uuid_str(self) -> str:
+        return self.uuid.hex()
+
+    uuid_str: StringProperty(name="UUID", get=get_uuid_str)
+
+
+class MapMultiItemMixin(MapItemMixin):
+    """Map item that can span multiple containers.
+
+    Slot 0 is the primary container (`map_data_uuid`); slots 1..N are `extra_map_datas`. Sub-items (e.g. cargen
+    objects) store a slot index; invalid slots resolve to the primary.
+    """
+
+    extra_map_datas: CollectionProperty(type=MapDataRef, name="Extra Containers")
+
+    def add_extra_map_data(self, map_data_uuid: bytes = b"") -> "MapDataRef":
+        """Append an extra container slot referencing the given container."""
+        ref = self.extra_map_datas.add()
+        ref.map_group_uuid = self.map_group_uuid
+        ref.map_data_uuid = map_data_uuid
+        return ref
+
+    def add_new_map_data_by_name(self, map_data_name: str):
+        group = get_maps().find_group(self.map_group_uuid)
+        new_uuid = b""
+        if group:
+            map_data_name = map_data_name.strip()
+            for m in group.maps:
+                if m.name == map_data_name:
+                    new_uuid = m.uuid
+                    break
+
+            if not self._allow_map_data_change(group, new_uuid):
+                return
+
+        # No duplicate slots from the quick-add dropdown
+        if new_uuid and new_uuid not in self.raw_slot_uuids():
+            self.add_extra_map_data(new_uuid)
+
+    new_map_data_name: StringProperty(
+        name="Container",
+        description="Add a new container reference",
+        get=lambda c: "",
+        set=add_new_map_data_by_name,
+        search=MapDataRefMixin.search_map_datas,
+    )
+
+    def raw_slot_uuids(self) -> list[bytes]:
+        """Stored container UUID per slot, without the empty/dangling fallback of `resolve_map_data_uuids`."""
+        return [self.map_data_uuid, *(ref.map_data_uuid for ref in self.extra_map_datas)]
+
+    def resolve_map_data_uuids(self, group: "MapGroup") -> list[bytes]:
+        """Effective container UUID per slot. Extra slots with an empty or dangling UUID fall back to the primary."""
+        primary = self.map_data_uuid
+        uuids = [primary]
+        for ref in self.extra_map_datas:
+            uuid = ref.map_data_uuid
+            uuids.append(uuid if uuid and group.find_map(uuid) is not None else primary)
+        return uuids
 
 
 class MapGrassTemplate(PropertyGroup):
@@ -652,7 +716,16 @@ _CARGEN_UI_LABEL_FLAGS: tuple[tuple[str, str], ...] = (
 )
 
 
-class MapCarGen(MapItemMixin, PropertyGroup):
+class MapCarGen(MapMultiItemMixin, PropertyGroup):
+    __sz_preset_capture__ = (
+        "model",
+        "model_set",
+        "creation_rule",
+        *(prop_name for prop_name, _ in MAP_CARGEN_FLAG_PROPS),
+        "livery",
+        "body_color_remap",
+    )
+
     name: StringProperty(name="Name")
     linked_collection: PointerProperty(type=Collection, name="Linked Collection")
     model: StringProperty(name="Model", description="Use a specific vehicle model.")
@@ -705,6 +778,18 @@ class MapCarGen(MapItemMixin, PropertyGroup):
         return subject
 
     ui_label: StringProperty(get=get_ui_label)
+
+    def objects_by_map_data(self, group: "MapGroup") -> dict[bytes, list[Object]]:
+        """Objects in the linked collection grouped by their container UUID."""
+        result: dict[bytes, list[Object]] = {}
+        coll = self.linked_collection
+        if coll is not None:
+            slot_uuids = self.resolve_map_data_uuids(group)
+            for obj in coll.objects:
+                index = obj.sz_cargen_map_data_index
+                uuid = slot_uuids[index] if index < len(slot_uuids) else slot_uuids[0]
+                result.setdefault(uuid, []).append(obj)
+        return result
 
     @staticmethod
     def get_cargen_mesh() -> bpy.types.Mesh:
@@ -1213,6 +1298,54 @@ def get_maps(context: Context | None = None, create_if_missing: bool = False) ->
     return c.sz_maps if c else None
 
 
+def _resolve_cargen_for_object(obj: Object) -> "tuple[MapGroup, MapCarGen] | None":
+    from ..map_index import CACHE_NOT_READY, find_cargen_by_collection
+
+    for coll in obj.users_collection:
+        result = find_cargen_by_collection(coll)
+        if result is not None and result is not CACHE_NOT_READY:
+            return result
+    return None
+
+
+def _cargen_obj_get_map_data_name(self: Object) -> str:
+    resolved = _resolve_cargen_for_object(self)
+    if resolved is None:
+        return ""
+    group, cargen = resolved
+    uuids = cargen.resolve_map_data_uuids(group)
+    index = self.sz_cargen_map_data_index
+    uuid = uuids[index] if index < len(uuids) else uuids[0]
+    map_data = group.find_map(uuid) if uuid else None
+    return map_data.name if map_data else ""
+
+
+def _cargen_obj_set_map_data_name(self: Object, value: str):
+    resolved = _resolve_cargen_for_object(self)
+    if resolved is None:
+        return
+    group, cargen = resolved
+    value = value.strip()
+    for i, uuid in enumerate(cargen.resolve_map_data_uuids(group)):
+        map_data = group.find_map(uuid) if uuid else None
+        if map_data is not None and map_data.name == value:
+            self.sz_cargen_map_data_index = i
+            return
+
+
+def _cargen_obj_search_map_data_names(self: Object, _context: Context, _edit_text: str) -> Iterator[str]:
+    resolved = _resolve_cargen_for_object(self)
+    if resolved is None:
+        return
+    group, cargen = resolved
+    seen = set()
+    for uuid in cargen.resolve_map_data_uuids(group):
+        map_data = group.find_map(uuid) if uuid else None
+        if map_data is not None and map_data.name not in seen:
+            seen.add(map_data.name)
+            yield map_data.name
+
+
 def register():
     # Scene.sz_maps = PointerProperty(type=MapsProperties, name="Maps")
     # NOTE: we do not store the maps directly on the scene because with thousands of items (e.g. in entities collections)
@@ -1228,10 +1361,26 @@ def register():
     Text.sz_maps = PointerProperty(type=MapsProperties, name="Maps")
     Scene.sz_maps_container = PointerProperty(type=Text)
 
+    Object.sz_cargen_map_data_index = IntProperty(
+        name="Container Index",
+        description="Index into the owning car generator's container list (0 = primary container)",
+        default=0,
+        min=0,
+    )
+    Object.sz_cargen_map_data_name = StringProperty(
+        name="Container",
+        description="Map container this car generator object exports into",
+        get=_cargen_obj_get_map_data_name,
+        set=_cargen_obj_set_map_data_name,
+        search=_cargen_obj_search_map_data_names,
+    )
+
 
 def unregister():
     del Text.sz_maps
     del Scene.sz_maps_container
+    del Object.sz_cargen_map_data_index
+    del Object.sz_cargen_map_data_name
 
 
 #

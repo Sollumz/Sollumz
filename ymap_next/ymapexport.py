@@ -5,6 +5,7 @@ import bpy
 import numpy as np
 from bpy.types import (
     Depsgraph,
+    Object,
 )
 from bpy_extras.mesh_utils import mesh_linked_triangles
 from mathutils import Quaternion, Vector
@@ -133,9 +134,13 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
     for entity in map_group.entities:
         entities_by_map[entity.map_data_uuid].append(entity)
 
-    cargens_by_map: dict[bytes, list[MapCarGen]] = defaultdict(list)
+    cargens_by_map: dict[bytes, list[MapCarGenerator]] = defaultdict(list)
+    cargen_objs_by_map: dict[bytes, list[Object]] = defaultdict(list)
     for cargen in map_group.cargens:
-        cargens_by_map[cargen.map_data_uuid].append(cargen)
+        for map_uuid, exported in _export_cargens(map_group, cargen).items():
+            cargens_by_map[map_uuid].extend(exported)
+        for map_uuid, objs in cargen.objects_by_map_data(map_group).items():
+            cargen_objs_by_map[map_uuid].extend(objs)
 
     tcms_by_map: dict[bytes, list[MapTimecycleModifier]] = defaultdict(list)
     for tcm in map_group.timecycle_modifiers:
@@ -217,7 +222,7 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
                 map_group,
                 depsgraph,
                 entities=entities_by_map[map_uuid],
-                cargens=cargens_by_map[map_uuid],
+                cargen_objects=cargen_objs_by_map[map_uuid],
                 tcms=tcms_by_map[map_uuid],
                 grass_batches=grass_by_map[map_uuid],
                 occluders=occl_by_map[map_uuid],
@@ -263,10 +268,7 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
 
         # Cargens
         if map_cargens := cargens_by_map[map_uuid]:
-            exported_cargens = []
-            for cargen in map_cargens:
-                exported_cargens.extend(_export_cargens(cargen))
-            map_data_asset.car_generators = exported_cargens
+            map_data_asset.car_generators = map_cargens
 
         # Timecycle Modifiers
         if map_tcms := tcms_by_map[map_uuid]:
@@ -427,41 +429,41 @@ def _export_entity(
     return Entity(**common)
 
 
-def _export_cargens(cargen: MapCarGen) -> list[MapCarGenerator]:
-    results = []
-    coll = cargen.linked_collection
-    if coll is None:
-        return results
-
+def _export_cargens(map_group: MapGroup, cargen: MapCarGen) -> dict[bytes, list[MapCarGenerator]]:
+    """Exported car generator instances grouped by the container UUID each object is assigned to."""
     flags = MapCarGeneratorFlags(0)
     for prop_name, flag in MAP_CARGEN_FLAG_PROPS:
         if getattr(cargen, prop_name):
             flags |= flag
     creation_rule = MapCarGeneratorCreationRule[cargen.creation_rule]
 
-    for obj in coll.objects:
-        angle = -obj.rotation_euler.z
-        width, length, _ = obj.dimensions
-        orient_x = math.sin(angle) * length
-        orient_y = math.cos(angle) * length
+    results = {}
+    for map_uuid, objs in cargen.objects_by_map_data(map_group).items():
+        exported = []
+        for obj in objs:
+            angle = -obj.rotation_euler.z
+            width, length, _ = obj.dimensions
+            orient_x = math.sin(angle) * length
+            orient_y = math.cos(angle) * length
 
-        results.append(
-            MapCarGenerator(
-                position=Vector(obj.location),
-                orient_x=orient_x,
-                orient_y=orient_y,
-                perpendicular_length=width,
-                car_model=cargen.model,
-                flags=flags,
-                creation_rule=creation_rule,
-                body_color_remap_1=cargen.body_color_remap[0],
-                body_color_remap_2=cargen.body_color_remap[1],
-                body_color_remap_3=cargen.body_color_remap[2],
-                body_color_remap_4=cargen.body_color_remap[3],
-                pop_group=cargen.model_set,
-                livery=cargen.livery,
+            exported.append(
+                MapCarGenerator(
+                    position=Vector(obj.location),
+                    orient_x=orient_x,
+                    orient_y=orient_y,
+                    perpendicular_length=width,
+                    car_model=cargen.model,
+                    flags=flags,
+                    creation_rule=creation_rule,
+                    body_color_remap_1=cargen.body_color_remap[0],
+                    body_color_remap_2=cargen.body_color_remap[1],
+                    body_color_remap_3=cargen.body_color_remap[2],
+                    body_color_remap_4=cargen.body_color_remap[3],
+                    pop_group=cargen.model_set,
+                    livery=cargen.livery,
+                )
             )
-        )
+        results[map_uuid] = exported
 
     return results
 
