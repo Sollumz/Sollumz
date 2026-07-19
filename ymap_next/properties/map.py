@@ -881,6 +881,7 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
             return
 
         from ...ydr.shader_materials import apply_tint_preview_index
+
         apply_tint_preview_index(obj, self.tint_value)
 
     tint_value: IntProperty(name="Tint Value", default=0, min=0, max=255, update=_on_tint_value_update)
@@ -1250,6 +1251,7 @@ class MapGroup(PropertyGroup):
 
     def on_timecycle_modifiers_active_index_update_from_ui(self, context):
         from ..ui.map import SOLLUMZ_PT_map_tcms
+
         if SOLLUMZ_PT_map_tcms.is_active():
             tag_redraw(context, space_type="VIEW_3D", region_type="WINDOW")
 

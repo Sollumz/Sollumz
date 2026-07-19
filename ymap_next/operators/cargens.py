@@ -1,8 +1,8 @@
 from collections import Counter
 
 import bpy
-from bpy.types import Operator
 from bpy.props import IntProperty
+from bpy.types import Operator
 
 from ...sollumz_properties import SollumType
 from ...tools.blenderhelper import create_blender_object, get_all_collections
