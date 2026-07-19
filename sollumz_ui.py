@@ -155,14 +155,6 @@ class SollumzExportSettingsPanel(SollumzFileSettingsPanel):
         ...
 
 
-class SOLLUMZ_PT_import_asset(bpy.types.Panel, SollumzImportSettingsPanel):
-    bl_label = "Import Asset"
-    bl_order = 0
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
-        layout.prop(settings, "import_as_asset")
-
-
 class SOLLUMZ_PT_import_textures(bpy.types.Panel, SollumzImportSettingsPanel):
     bl_label = "Textures"
     bl_order = 1

@@ -201,6 +201,20 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
         options={"HIDDEN", "SKIP_SAVE"}
     )
 
+    import_as_asset: BoolProperty(
+        name="Import To Asset Library",
+        description="Import selected files to the current blend file asset library",
+        default=False,
+        options={"HIDDEN", "SKIP_SAVE"}
+    )
+
+    @classmethod
+    def description(cls, _context, properties) -> str:
+        if properties.import_as_asset:
+            return "Import selected files to the current blend file asset library"
+
+        return cls.bl_description
+
     def draw(self, context):
         pass
 
@@ -231,7 +245,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             from .ymap_next.ymapimport import import_ymap as import_ymap_asset, begin_import_ymap_group, end_import_ymap_group
 
             prefs_import_settings = self if self.use_custom_settings else get_import_settings()
-            import_settings = prefs_import_settings.to_import_context_settings()
+            import_settings = prefs_import_settings.to_import_context_settings(import_as_asset=self.import_as_asset)
 
             directory = Path(self.directory)
 

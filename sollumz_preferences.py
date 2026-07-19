@@ -228,13 +228,6 @@ class ImportSettingsBase:
     def _on_update(self, context):
         ...
 
-    import_as_asset: BoolProperty(
-        name="Import To Asset Library",
-        description="Imports the selected file as an asset to the current blend file asset library",
-        default=False,
-        update=_on_update_thunk,
-    )
-
     split_by_group: BoolProperty(
         name="Split Mesh by Vertex Group",
         description="Splits the mesh by the vertex groups",
@@ -344,7 +337,7 @@ class ImportSettingsBase:
         update=_on_update_thunk,
     )
 
-    def to_import_context_settings(self) -> "ImportSettings":
+    def to_import_context_settings(self, import_as_asset: bool = False) -> "ImportSettings":
         from .iecontext import ImportSettings, ImportTexturesMode, ImportExternalSkeletonMode
 
         textures_mode = ImportTexturesMode[self.textures_mode]
@@ -365,7 +358,7 @@ class ImportSettingsBase:
         )
 
         return ImportSettings(
-            import_as_asset=self.import_as_asset,
+            import_as_asset=import_as_asset,
             split_by_group=self.split_by_group,
             mlo_instance_entities=self.ytyp_mlo_instance_entities,
             dwd_import_external_skeleton=dwd_import_external_skeleton,
@@ -1340,8 +1333,9 @@ class SollumzAddonPreferences(AddonPreferences):
             layout.prop(self, "custom_procids_path")
 
     def draw_import_export(self, context, layout: UILayout):
-        def _section_header(layout: UILayout, text: str):
-            _line_separator(layout)
+        def _section_header(layout: UILayout, text: str, first: bool = False):
+            if not first:
+                _line_separator(layout)
             row = layout.row()
             row.alignment = "LEFT"
             row.label(text="", icon="BLANK1")
@@ -1358,9 +1352,8 @@ class SollumzAddonPreferences(AddonPreferences):
         box = sublayout.box()
         box.label(text="Import", icon="IMPORT")
         settings = self.import_settings
-        box.prop(settings, "import_as_asset")
 
-        _section_header(box, text="Textures")
+        _section_header(box, text="Textures", first=True)
         col = box.column(align=True)
         col.prop(settings, "textures_mode", text="Mode")
         if settings.textures_mode == "CUSTOM_DIR":

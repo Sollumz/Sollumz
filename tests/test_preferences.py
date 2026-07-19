@@ -37,7 +37,6 @@ def test_round_trip(prefs_temp_file):
     prefs.use_text_name_as_mat_name = False             # bool scalar
     prefs.default_flags_portal = 42                      # int scalar
     prefs.import_settings.split_by_group = False         # nested PointerProperty group
-    prefs.import_settings.import_as_asset = True
     prefs.theme.mlo_gizmo_room = (0.1, 0.2, 0.3, 0.4)    # FloatVectorProperty
     prefs.shared_textures_directories.clear()
     d = prefs.shared_textures_directories.add()
@@ -55,7 +54,6 @@ def test_round_trip(prefs_temp_file):
     prefs.use_text_name_as_mat_name = True
     prefs.default_flags_portal = 0
     prefs.import_settings.split_by_group = True
-    prefs.import_settings.import_as_asset = False
     prefs.theme.mlo_gizmo_room = (1.0, 1.0, 1.0, 1.0)
     prefs.shared_textures_directories.clear()
     prefs.name_table_paths.clear()
@@ -66,7 +64,6 @@ def test_round_trip(prefs_temp_file):
     assert prefs.use_text_name_as_mat_name is False
     assert prefs.default_flags_portal == 42
     assert prefs.import_settings.split_by_group is False
-    assert prefs.import_settings.import_as_asset is True
     assert tuple(prefs.theme.mlo_gizmo_room) == pytest.approx((0.1, 0.2, 0.3, 0.4), abs=1e-4)
     assert [(d.path, d.recursive) for d in prefs.shared_textures_directories] == [("C:\\textures", False)]
     assert [nt.path for nt in prefs.name_table_paths] == ["C:\\names.txt"]

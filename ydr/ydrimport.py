@@ -42,8 +42,8 @@ def import_ydr(filepath: str):
     name = get_filename(filepath)
     ydr_xml = YDR.from_xml_file(filepath)
 
-    if import_settings.import_as_asset:
-        return create_drawable_as_asset(ydr_xml, name, filepath)
+    # if import_settings.import_as_asset:
+    #     return create_drawable_as_asset(ydr_xml, name, filepath)
 
     return create_drawable_obj(ydr_xml, filepath, name)
 

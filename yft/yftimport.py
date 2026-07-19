@@ -51,8 +51,8 @@ def import_yft(filepath: str):
     # Import the _hi.yft.xml if it exists
     hi_xml = YFT.from_xml_file(hi_filepath) if os.path.exists(hi_filepath) else None
 
-    if import_settings.import_as_asset:
-        return create_fragment_as_asset(yft_xml, hi_xml, name, non_hi_filepath)
+    # if import_settings.import_as_asset:
+    #     return create_fragment_as_asset(yft_xml, hi_xml, name, non_hi_filepath)
 
     return create_fragment_obj(yft_xml, non_hi_filepath, name,
                                split_by_group=import_settings.split_by_group, hi_xml=hi_xml)
