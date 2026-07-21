@@ -2,6 +2,7 @@ import bpy
 from bpy.props import (
     EnumProperty,
     FloatVectorProperty,
+    IntProperty,
     StringProperty,
 )
 from bpy.types import (
@@ -464,6 +465,29 @@ class SOLLUMZ_OT_map_group_delete_occluder(Operator):
         # TODO(ymap): delete occluder should delete linked objects
         active_group(context).occluders.remove_selected()
         MAP_INDEX.invalidate_and_rebuild()
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_map_occluder_remove_extra_linked_object(Operator):
+    bl_idname = "sollumz.map_occluder_remove_extra_linked_object"
+    bl_label = "Remove Linked Object"
+    bl_description = "Remove this extra linked object"
+    bl_options = {"UNDO"}
+
+    index: IntProperty(name="Index", min=0, options={"HIDDEN"})
+
+    @classmethod
+    def poll(cls, context):
+        group = active_group(context)
+        return group is not None and group.occluders
+
+    def execute(self, context):
+        group = active_group(context)
+        occl = group.occluders.active_item
+        if occl is None or not (0 <= self.index < len(occl.extra_linked_objects)):
+            return {"CANCELLED"}
+
+        occl.extra_linked_objects.remove(self.index)
         return {"FINISHED"}
 
 

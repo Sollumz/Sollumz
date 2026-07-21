@@ -118,6 +118,38 @@ MapPartitionModeEnumItems = (
 )
 
 
+class MapOccluderExportMode(Enum):
+    AUTO = auto()
+    BOXES_ONLY = auto()
+    MODELS_ONLY = auto()
+
+
+MapOccluderExportModeEnumItems = (
+    (
+        MapOccluderExportMode.AUTO.name,
+        "Automatic",
+        "Box-shaped mesh islands (upright boxes or planes) export as box occluders, "
+        "everything else as model occluders",
+        "PREFERENCES",
+        0,
+    ),
+    (
+        MapOccluderExportMode.BOXES_ONLY.name,
+        "Boxes Only",
+        "All mesh islands must be box-shaped. Non-box islands are skipped with a warning",
+        "CUBE",
+        1,
+    ),
+    (
+        MapOccluderExportMode.MODELS_ONLY.name,
+        "Models Only",
+        "Export the mesh as-is as model occluders, without attempting box conversion",
+        "MESH_DATA",
+        2,
+    ),
+)
+
+
 class MapData(PropertyGroup):
     """A map."""
 
@@ -396,6 +428,57 @@ class MapMultiItemMixin(MapItemMixin):
         return uuids
 
 
+class MapObjectRef(PropertyGroup):
+    """An extra linked object on a multi-object map item (slots 1..N)."""
+
+    object: PointerProperty(type=Object, name="Object")
+
+
+class MapMultiObjectMixin:
+    """Map item that can link multiple objects.
+
+    Slot 0 is the primary object (`linked_object`); slots 1..N are `extra_linked_objects`. Empty and
+    duplicate slots are skipped by `linked_objects`.
+    """
+
+    linked_object: PointerProperty(type=Object, name="Linked Object")
+    extra_linked_objects: CollectionProperty(type=MapObjectRef, name="Extra Linked Objects")
+
+    def add_extra_linked_object(self, obj: Object | None = None) -> MapObjectRef:
+        """Append an extra linked object slot referencing the given object."""
+        ref = self.extra_linked_objects.add()
+        ref.object = obj
+        return ref
+
+    def _on_new_linked_object_update(self, _context):
+        obj = self.new_linked_object
+        if obj is None:
+            return
+        self.new_linked_object = None
+        # No duplicate slots from the quick-add selector
+        if obj not in self.raw_slot_objects():
+            self.add_extra_linked_object(obj)
+
+    new_linked_object: PointerProperty(
+        type=Object,
+        name="Linked Object",
+        description="Add a new linked object",
+        update=_on_new_linked_object_update,
+    )
+
+    def raw_slot_objects(self) -> list[Object | None]:
+        """Stored object per slot, without the empty/duplicate filtering of `linked_objects`."""
+        return [self.linked_object, *(ref.object for ref in self.extra_linked_objects)]
+
+    def linked_objects(self) -> list[Object]:
+        """All linked objects (primary + extras), skipping empty and duplicate slots."""
+        objs = []
+        for obj in self.raw_slot_objects():
+            if obj is not None and obj not in objs:
+                objs.append(obj)
+        return objs
+
+
 class MapGrassTemplate(PropertyGroup):
     archetype_name: StringProperty(name="Archetype Name")
     scale_range: FloatVectorProperty(
@@ -452,9 +535,8 @@ class MapGrassBatchSelectionAccess(MultiSelectAccess):
     name: MultiSelectProperty()
 
 
-class MapOccluder(MapItemMixin, PropertyGroup):
+class MapOccluder(MapMultiObjectMixin, MapItemMixin, PropertyGroup):
     name: StringProperty(name="Name")
-    linked_object: PointerProperty(type=Object, name="Linked Object")
 
 
 class MapOccluderSelectionAccess(MultiSelectAccess):
@@ -1377,12 +1459,20 @@ def register():
         search=_cargen_obj_search_map_data_names,
     )
 
+    Object.sz_occluder_export_mode = EnumProperty(
+        items=MapOccluderExportModeEnumItems,
+        name="Export Mode",
+        description="How this object's mesh is converted into occluders on export",
+        default=MapOccluderExportMode.AUTO.name,
+    )
+
 
 def unregister():
     del Text.sz_maps
     del Scene.sz_maps_container
     del Object.sz_cargen_map_data_index
     del Object.sz_cargen_map_data_name
+    del Object.sz_occluder_export_mode
 
 
 #

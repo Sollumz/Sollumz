@@ -520,6 +520,16 @@ def _box_occluder_keys(path: Path) -> list:
     return [_box_occluder_key(item) for item in _parse_xml(path).findall("./boxOccluders/Item")]
 
 
+def _make_occluder_object(name: str, verts, faces):
+    """Create a mesh object linked to the scene collection from the given mesh data."""
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
 def _make_occluder_group(name: str, verts, faces):
     """Create a map group with a single occluder object built from the given mesh data."""
     maps = get_maps(bpy.context, create_if_missing=True)
@@ -529,11 +539,7 @@ def _make_occluder_group(name: str, verts, faces):
     md.name = name
     md_uuid = md.uuid
 
-    mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-    obj = bpy.data.objects.new(name, mesh)
-    bpy.context.scene.collection.objects.link(obj)
+    obj = _make_occluder_object(name, verts, faces)
 
     occl = group.new_occluder()
     occl.name = name
@@ -633,6 +639,171 @@ def test_ymap_box_shaped_model_stays_model_occluder(tmp_path: Path):
     original_boxes = _box_occluder_keys(YMAP_ASSETS_DIR / "test_occluders_box_shaped_models.ymap.xml")
     assert len(exported_boxes) == len(original_boxes), "The genuine box occluders must be preserved"
     assert sorted(exported_boxes) == sorted(original_boxes)
+
+
+@assert_logs_no_errors
+def test_ymap_import_occluders_split_boxes_and_models():
+    """Import creates a separate Boxes Only mesh and Models Only mesh per occluder."""
+    _import_ymaps("test_occluders_box_shaped_models.ymap.xml")
+
+    occl = _last_map_group().occluders[0]
+    objs = occl.linked_objects()
+    assert len(objs) == 2, f"Expected a boxes object and a models object, got {len(objs)}"
+    assert occl.linked_object.sz_occluder_export_mode == "BOXES_ONLY"
+    assert ".boxes" in occl.linked_object.name
+    assert objs[1].sz_occluder_export_mode == "MODELS_ONLY"
+    assert ".models" in objs[1].name
+
+
+@assert_logs_no_errors
+def test_ymap_occluder_box_shaped_model_roundtrips_as_model(tmp_path: Path):
+    """A closed box-shaped model occluder must stay a model occluder across import/export cycles
+    (a merged Automatic mesh would convert it to a box occluder on re-export)."""
+    import math
+
+    from ..ymap_next.occluders.box import box_occluder_world_geometry
+
+    cos, sin = math.cos(0.3), math.sin(0.3)
+    verts, quads = box_occluder_world_geometry((10.0, 20.0, 5.0), (4.0, 2.0, 3.0), cos, sin)
+    group = _make_occluder_group("test_box_shaped_model_rt", verts, quads.tolist())
+    group.occluders[0].linked_object.sz_occluder_export_mode = "MODELS_ONLY"
+
+    _export_last_map_group(tmp_path)
+    root = _parse_xml(tmp_path / "test_box_shaped_model_rt.ymap.xml")
+    assert root.findall("./boxOccluders/Item") == []
+    assert len(root.findall("./occludeModels/Item")) == 1
+
+    # Second cycle: the model mesh must come back as Models Only and re-export as a model occluder.
+    bpy.ops.sollumz.import_ymap(
+        directory=str(tmp_path) + "/",
+        files=[{"name": "test_box_shaped_model_rt.ymap.xml"}],
+    )
+    occl = _last_map_group().occluders[0]
+    assert occl.linked_object.sz_occluder_export_mode == "MODELS_ONLY"
+
+    second_export_dir = tmp_path / "second_export"
+    second_export_dir.mkdir()
+    _export_last_map_group(second_export_dir)
+    root2 = _parse_xml(second_export_dir / "test_box_shaped_model_rt.ymap.xml")
+    assert root2.findall("./boxOccluders/Item") == [], "The box-shaped model occluder must not degrade to a box"
+    assert len(root2.findall("./occludeModels/Item")) == 1
+
+
+def _horizontal_plane_verts(center):
+    """4 x 2 axis-aligned horizontal rectangle centered at `center` (a valid height-0 box occluder)."""
+    cx, cy, cz = center
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+    return [(cx + bx, cy + by, cz) for bx, by in base]
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_multiple_linked_objects(tmp_path: Path):
+    """Every linked object (primary + extra slots) contributes its mesh islands; empty and duplicate
+    slots must not add or double geometry."""
+    group = _make_occluder_group(
+        "test_multi_obj_occluder", _horizontal_plane_verts((10.0, 20.0, 5.0)), [(0, 1, 2, 3)]
+    )
+    occl = group.occluders[0]
+    obj2 = _make_occluder_object(
+        "test_multi_obj_occluder_2", _horizontal_plane_verts((40.0, -10.0, 2.0)), [(0, 1, 2, 3)]
+    )
+
+    occl.add_extra_linked_object(obj2)
+    occl.add_extra_linked_object(occl.linked_object)  # duplicate slot, must export only once
+    occl.add_extra_linked_object()  # empty slot, skipped
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_multi_obj_occluder.ymap.xml")
+    boxes = root.findall("./boxOccluders/Item")
+    assert len(boxes) == 2, f"Expected one box occluder per linked object, got {len(boxes)}"
+    assert root.findall("./occludeModels/Item") == [], "Both planes must stay box occluders"
+    centers = sorted((int(_get_value(b, "iCenterX")), int(_get_value(b, "iCenterY"))) for b in boxes)
+    assert centers[0][0] != centers[1][0], "Each linked object must contribute its own box"
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_models_merged_across_linked_objects(tmp_path: Path):
+    """Non-box triangles of all linked objects are merged together (if same flags), exporting fewer model occluders."""
+    import math
+
+    angle = math.radians(30.0)
+    cos, sin = math.cos(angle), math.sin(angle)
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+
+    def _tilted_verts(cx, cy, cz):
+        # Tilted about X -> normal is neither vertical nor horizontal, never a box occluder.
+        return [(cx + bx, cy + by * cos, cz + by * sin) for bx, by in base]
+
+    group = _make_occluder_group("test_multi_obj_model_occluder", _tilted_verts(30.0, 30.0, 10.0), [(0, 1, 2, 3)])
+    occl = group.occluders[0]
+    obj2 = _make_occluder_object("test_multi_obj_model_occluder_2", _tilted_verts(-15.0, 60.0, 4.0), [(0, 1, 2, 3)])
+    occl.add_extra_linked_object(obj2)
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_multi_obj_model_occluder.ymap.xml")
+    assert root.findall("./boxOccluders/Item") == [], "Tilted planes must not become box occluders"
+    models = root.findall("./occludeModels/Item")
+    assert len(models) == 1, f"Both objects' triangles must merge into one model occluder, got {len(models)}"
+
+
+def test_ymap_export_occluder_boxes_only_skips_non_box_islands(tmp_path: Path):
+    """In Boxes Only mode, non-box islands are skipped with a warning instead of becoming model occluders."""
+    import math
+
+    angle = math.radians(30.0)
+    cos, sin = math.cos(angle), math.sin(angle)
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+    # Island 1: valid box-shaped horizontal plane. Island 2: tilted plane, never a box.
+    verts = _horizontal_plane_verts((10.0, 20.0, 5.0))
+    verts += [(30.0 + bx, 30.0 + by * cos, 10.0 + by * sin) for bx, by in base]
+    group = _make_occluder_group("test_boxes_only_occluder", verts, [(0, 1, 2, 3), (4, 5, 6, 7)])
+    group.occluders[0].linked_object.sz_occluder_export_mode = "BOXES_ONLY"
+
+    with log_capture() as logs:
+        _export_last_map_group(tmp_path)
+    logs.assert_no_errors()
+    logs.assert_warning(match="not box-shaped")
+
+    root = _parse_xml(tmp_path / "test_boxes_only_occluder.ymap.xml")
+    assert len(root.findall("./boxOccluders/Item")) == 1, "The box-shaped island must still export"
+    assert root.findall("./occludeModels/Item") == [], "The non-box island must be skipped, not exported as a model"
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_models_only_keeps_box_shaped_mesh(tmp_path: Path):
+    """Models Only skips box conversion even for perfectly box-shaped islands."""
+    group = _make_occluder_group(
+        "test_models_only_occluder", _horizontal_plane_verts((10.0, 20.0, 5.0)), [(0, 1, 2, 3)]
+    )
+    group.occluders[0].linked_object.sz_occluder_export_mode = "MODELS_ONLY"
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_models_only_occluder.ymap.xml")
+    assert root.findall("./boxOccluders/Item") == [], "Models Only must not produce box occluders"
+    assert len(root.findall("./occludeModels/Item")) == 1, "The mesh must export as a model occluder"
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_mixed_modes_per_object(tmp_path: Path):
+    """Each linked object's export mode applies independently."""
+    group = _make_occluder_group(
+        "test_mixed_modes_occluder", _horizontal_plane_verts((10.0, 20.0, 5.0)), [(0, 1, 2, 3)]
+    )
+    occl = group.occluders[0]
+    obj2 = _make_occluder_object(
+        "test_mixed_modes_occluder_2", _horizontal_plane_verts((40.0, -10.0, 2.0)), [(0, 1, 2, 3)]
+    )
+    obj2.sz_occluder_export_mode = "MODELS_ONLY"
+    occl.add_extra_linked_object(obj2)
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_mixed_modes_occluder.ymap.xml")
+    assert len(root.findall("./boxOccluders/Item")) == 1, "The Automatic object's plane must export as a box"
+    assert len(root.findall("./occludeModels/Item")) == 1, "The Models Only object's plane must export as a model"
 
 
 # Incomplete LOD hierarchy

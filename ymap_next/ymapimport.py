@@ -7,6 +7,7 @@ import bpy
 import numpy as np
 from bpy.types import (
     Material,
+    Object,
 )
 from mathutils import Euler, Quaternion, Vector
 from szio.gta5 import (
@@ -49,6 +50,7 @@ from .properties.map import (
     MapGrassBatch,
     MapGroup,
     MapOccluder,
+    MapOccluderExportMode,
     MapTimecycleModifier,
     get_maps,
 )
@@ -523,6 +525,10 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
         map_group.name = occl_map.name
         map_data = map_group.new_map()
         map_data.name = occl_map.name
+        map_data.streaming_extents = occl_map.streaming_extents
+        map_data.entities_extents = occl_map.entities_extents
+        # Keep the original extents on re-export instead of recalculating them
+        map_data.extents_manual = True
         box_occluders = occl_map.box_occluders
         model_occluders = occl_map.model_occluders
         if box_occluders or model_occluders:
@@ -788,16 +794,20 @@ def _get_occluder_material() -> Material:
     return material
 
 
-def _create_map_occluder(
-    map_group: MapGroup,
-    map_data: MapData,
-    box_occluders: list[MapBoxOccluder],
-    model_occluders: list[MapModelOccluder],
-) -> MapOccluder:
+def _new_occluder_object(name: str, vertices, faces, export_mode: MapOccluderExportMode) -> Object:
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+
+    obj = create_blender_object(SollumType.NONE, name, mesh)
+    obj.active_material = _get_occluder_material()
+    obj.show_wire = True
+    obj.sz_occluder_export_mode = export_mode.name
+    return obj
+
+
+def _create_box_occluders_object(map_data: MapData, box_occluders: list[MapBoxOccluder]) -> Object | None:
     all_verts = []
-    all_faces_quads = []
-    all_faces_tris = []
-    num_box_faces = 0
+    all_quads = []
     offset = 0
     dropped_boxes = 0
 
@@ -811,8 +821,7 @@ def _create_map_occluder(
             continue
 
         all_verts.append(verts)
-        all_faces_quads.append(quads + offset)
-        num_box_faces += len(quads)
+        all_quads.append(quads + offset)
         offset += vert_count
 
     if dropped_boxes:
@@ -821,54 +830,66 @@ def _create_map_occluder(
             "(two or more zero dimensions). These occlude nothing and were skipped."
         )
 
-    # Box occluders cannot have flags, always 0
-    box_face_flags = np.zeros(num_box_faces, dtype=np.int32)
+    if not all_verts:
+        return None
 
-    if model_occluders:
-        sizes = [len(m.vertices) for m in model_occluders]
-        model_offsets = np.cumsum([0] + sizes[:-1])
-        verts = np.concatenate([m.vertices for m in model_occluders])
-        tris = np.concatenate([m.indices.astype(np.int32) + off for m, off in zip(model_occluders, model_offsets)])
-        tri_flags = np.repeat(
-            np.array([m.flags.value for m in model_occluders], dtype=np.int32),
-            [len(m.indices) for m in model_occluders],
-        )
-
-        # Dedupe vertices across all models
-        unique_verts, unique_inverse_index = np.unique(verts, axis=0, return_inverse=True)
-        tris = unique_inverse_index[tris]
-
-        # Remove triangles using the same vertex 2+ times, not valid in Blender meshes
-        valid_tris_mask = (tris[:, 0] != tris[:, 1]) & (tris[:, 0] != tris[:, 2]) & (tris[:, 1] != tris[:, 2])
-        tris = tris[valid_tris_mask]
-        tri_flags = tri_flags[valid_tris_mask]
-
-        all_verts.append(unique_verts)
-        all_faces_tris.append(tris + offset)
-        offset += len(unique_verts)
-        model_face_flags = tri_flags
-    else:
-        model_face_flags = np.empty(0, dtype=np.int32)
-
-    vertices = np.concatenate(all_verts) if all_verts else np.empty((0, 3), dtype=np.float32)
-    faces = (np.concatenate(all_faces_quads).tolist() if all_faces_quads else []) + (
-        np.concatenate(all_faces_tris).tolist() if all_faces_tris else []
+    return _new_occluder_object(
+        f"{map_data.name}.boxes",
+        np.concatenate(all_verts),
+        np.concatenate(all_quads).tolist(),
+        MapOccluderExportMode.BOXES_ONLY,
     )
-    face_flags = np.concatenate([box_face_flags, model_face_flags])
 
-    occl_mesh = bpy.data.meshes.new(map_data.name)
-    occl_mesh.from_pydata(vertices, [], faces)
-    mesh_attr = occl_mesh.attributes.new(".occl.flags", "INT", "FACE")
-    mesh_attr.data.foreach_set("value", face_flags)
 
-    occl_obj = create_blender_object(SollumType.NONE, map_data.name, occl_mesh)
-    occl_obj.active_material = _get_occluder_material()
-    occl_obj.show_wire = True
+def _create_model_occluders_object(map_data: MapData, model_occluders: list[MapModelOccluder]) -> Object:
+    sizes = [len(m.vertices) for m in model_occluders]
+    model_offsets = np.cumsum([0] + sizes[:-1])
+    verts = np.concatenate([m.vertices for m in model_occluders])
+    tris = np.concatenate([m.indices.astype(np.int32) + off for m, off in zip(model_occluders, model_offsets)])
+    tri_flags = np.repeat(
+        np.array([m.flags.value for m in model_occluders], dtype=np.int32),
+        [len(m.indices) for m in model_occluders],
+    )
+
+    # Dedupe vertices across all models
+    unique_verts, unique_inverse_index = np.unique(verts, axis=0, return_inverse=True)
+    tris = unique_inverse_index[tris]
+
+    # Remove triangles using the same vertex 2+ times, not valid in Blender meshes
+    valid_tris_mask = (tris[:, 0] != tris[:, 1]) & (tris[:, 0] != tris[:, 2]) & (tris[:, 1] != tris[:, 2])
+    tris = tris[valid_tris_mask]
+    tri_flags = tri_flags[valid_tris_mask]
+
+    obj = _new_occluder_object(
+        f"{map_data.name}.models", unique_verts, tris.tolist(), MapOccluderExportMode.MODELS_ONLY
+    )
+    mesh_attr = obj.data.attributes.new(".occl.flags", "INT", "FACE")
+    mesh_attr.data.foreach_set("value", tri_flags)
+    return obj
+
+
+def _create_map_occluder(
+    map_group: MapGroup,
+    map_data: MapData,
+    box_occluders: list[MapBoxOccluder],
+    model_occluders: list[MapModelOccluder],
+) -> MapOccluder:
+    """Create an occluder with separate Boxes Only and Models Only meshes so both occluder kinds
+    round-trip exactly (a box-shaped model occluder must not turn into a box occluder on export).
+    """
+    objs = []
+    if box_occluders and (boxes_obj := _create_box_occluders_object(map_data, box_occluders)) is not None:
+        objs.append(boxes_obj)
+    if model_occluders:
+        objs.append(_create_model_occluders_object(map_data, model_occluders))
 
     occl = map_group.new_occluder()
     occl.map_data_uuid = map_data.uuid
     occl.name = map_data.name
-    occl.linked_object = occl_obj
+    if objs:
+        occl.linked_object = objs[0]
+        for obj in objs[1:]:
+            occl.add_extra_linked_object(obj)
     return occl
 
 
@@ -1008,7 +1029,7 @@ def _organize_map_in_collections(map_group: MapGroup):
         occluders_collection = bpy.data.collections.new(occluders_collection_name)
         base_collection.children.link(occluders_collection)
         for occluder in map_group.occluders:
-            if obj := occluder.linked_object:
+            for obj in occluder.linked_objects():
                 _link_to_collection_recursive(obj, occluders_collection)
 
     if map_group.lod_lights:

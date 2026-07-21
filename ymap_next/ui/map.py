@@ -331,7 +331,7 @@ class SOLLUMZ_PT_map_occluders(MapChildTabPanel, Panel):
             return
 
         has_multiple_selection = occluders.has_multiple_selection
-        selection = occluders.selection
+        # selection = occluders.selection
         active = occluders.active_item
 
         if DEV_MODE:
@@ -339,9 +339,34 @@ class SOLLUMZ_PT_map_occluders(MapChildTabPanel, Panel):
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))
-        row = layout.row()
+        col = layout.column(align=True)
+        row = col.row(align=True)
         row.enabled = not has_multiple_selection
         row.prop(active, "linked_object")
+        if obj := active.linked_object:
+            self._draw_occluder_object_export_mode(row, obj)
+        self._draw_extra_linked_objects(col, active, enabled=not has_multiple_selection)
+
+    def _draw_occluder_object_export_mode(self, row, obj):
+        row.prop(obj, "sz_occluder_export_mode", text="", icon_only=True)
+
+    def _draw_extra_linked_objects(self, layout, occl, enabled: bool = True):
+        """Draw the extra linked object rows (object selector + export mode + remove button) and the quick-add selector
+        of an occluder."""
+        if not occl.linked_object and not occl.extra_linked_objects:
+            return
+
+        col = layout.column(align=True)
+        col.enabled = enabled
+        for i, ref in enumerate(occl.extra_linked_objects):
+            row = col.row(align=True)
+            row.prop(ref, "object", text=" ")
+            op = row.operator(map_ops.SOLLUMZ_OT_map_occluder_remove_extra_linked_object.bl_idname, text="", icon="X")
+            op.index = i
+            if obj := ref.object:
+                self._draw_occluder_object_export_mode(row, obj)
+
+        col.prop(occl, "new_linked_object", text=" ")
 
 
 class SOLLUMZ_PT_map_lod_lights(MapChildTabPanel, Panel):

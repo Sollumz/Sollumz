@@ -40,6 +40,7 @@ from szio.gta5 import (
 )
 from szio.gta5.maps import MAP_DISTANT_LOD_LIGHT_DTYPE, MAP_GRASS_INSTANCES_UNPACKED_DTYPE, MAP_LOD_LIGHT_DTYPE
 
+from .. import logger
 from ..iecontext import ExportBundle, export_context
 from ..shared.game_assets.asset_info import AssetInfoCache
 from ..tools.blenderhelper import remove_number_suffix
@@ -56,6 +57,7 @@ from .properties.map import (
     MapGroup,
     MapLodLights,
     MapOccluder,
+    MapOccluderExportMode,
     MapPartitionMode,
     MapTimecycleModifier,
 )
@@ -534,16 +536,58 @@ _MODEL_OCCLUDER_MAX_VERTS = 255
 
 
 def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[MapBoxOccluder], list[MapModelOccluder]]:
-    obj = occl.linked_object
-    if obj is None or obj.data is None:
-        return [], []
+    boxes: list[MapBoxOccluder] = []
+    models: list[MapModelOccluder] = []
+
+    # Non-box triangles are pooled by flag (each MapModelOccluder has a single flag) across all
+    # linked objects, then the pool is combined and greedily split so chunks can pack triangles
+    # across original islands and objects and produce fewer occluders than splitting each island
+    # in isolation.
+    model_pool: dict[int, list[tuple[np.ndarray, np.ndarray]]] = defaultdict(list)
+
+    for obj in occl.linked_objects():
+        if obj.data is None:
+            continue
+        skipped = _collect_occluder_object_geometry(obj, depsgraph, boxes, model_pool)
+        if skipped:
+            logger.warning(
+                f"Occluder '{occl.name}': {skipped} mesh island(s) in object '{obj.name}' are not box-shaped "
+                "and were skipped (export mode is Boxes Only)"
+            )
+
+    for flag_value, parts in model_pool.items():
+        tris_list = []
+        offset = 0
+        for v, t in parts:
+            tris_list.append(t + offset)
+            offset += len(v)
+        combined_verts = np.concatenate([v for v, _ in parts])
+        combined_tris = np.concatenate(tris_list)
+        models.extend(_export_model_occluders(combined_verts, combined_tris, flag_value))
+
+    return boxes, models
+
+
+def _collect_occluder_object_geometry(
+    obj: Object,
+    depsgraph: Depsgraph,
+    boxes: list[MapBoxOccluder],
+    model_pool: dict[int, list[tuple[np.ndarray, np.ndarray]]],
+) -> int:
+    """Split one linked object's mesh islands into box occluders and pooled model-occluder triangles,
+    honoring the object's export mode. Returns the number of islands skipped by the Boxes Only mode.
+    """
+    mode = obj.sz_occluder_export_mode
+    try_boxes = mode != MapOccluderExportMode.MODELS_ONLY.name
+    boxes_only = mode == MapOccluderExportMode.BOXES_ONLY.name
+    skipped_non_box_islands = 0
 
     obj_eval = obj.evaluated_get(depsgraph)
     mesh_eval = obj_eval.to_mesh()
     try:
         num_verts = len(mesh_eval.vertices)
         if num_verts == 0:
-            return [], []
+            return 0
 
         local_co = np.empty((num_verts, 3), dtype=np.float32)
         mesh_eval.vertices.foreach_get("co", local_co.ravel())
@@ -558,14 +602,6 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
         mesh_eval.calc_loop_triangles()
         islands = mesh_linked_triangles(mesh_eval)
 
-        boxes = []
-        models = []
-
-        # Non-box triangles are pooled by flag (each MapModelOccluder has a single flag), then
-        # the pool is combined and greedily split so chunks can pack triangles across original
-        # islands and produce fewer occluders than splitting each island in isolation.
-        model_pool: dict[int, list[tuple[np.ndarray, np.ndarray]]] = defaultdict(list)
-
         for island in islands:
             if not island:
                 continue
@@ -576,13 +612,18 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
             )
             uniq_vert_indices_in_island_tris, uniq_inverse = np.unique(island_tris, return_inverse=True)
 
-            # A box occluder is a cube (8 verts) or a plane (4 verts).
-            if len(uniq_vert_indices_in_island_tris) in (4, 8) and bool(np.all(tri_flags == 0)):
+            # A box occluder is a cube (8 verts) or a plane (4 verts). Flagged islands are never
+            # boxes, box occluders cannot carry flags.
+            if try_boxes and len(uniq_vert_indices_in_island_tris) in (4, 8) and bool(np.all(tri_flags == 0)):
                 box_verts = world_co[uniq_vert_indices_in_island_tris]
                 box_tris = uniq_inverse.reshape(-1, 3)  # island_tris remapped to 0..len(uniq)-1
                 if box := _try_export_box_occluder(box_verts, box_tris):
                     boxes.append(box)
                     continue
+
+            if boxes_only:
+                skipped_non_box_islands += 1
+                continue
 
             # A single island may have multiple flag values, split the triangles by flag
             for flag_val in np.unique(tri_flags):
@@ -590,20 +631,10 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
                 sub_tris = island_tris[mask]
                 sub_tris_uniq, sub_tris_inverse_index = np.unique(sub_tris, return_inverse=True)
                 model_pool[int(flag_val)].append((world_co[sub_tris_uniq], sub_tris_inverse_index.reshape(-1, 3)))
-
-        for flag_value, parts in model_pool.items():
-            tris_list = []
-            offset = 0
-            for v, t in parts:
-                tris_list.append(t + offset)
-                offset += len(v)
-            combined_verts = np.concatenate([v for v, _ in parts])
-            combined_tris = np.concatenate(tris_list)
-            models.extend(_export_model_occluders(combined_verts, combined_tris, flag_value))
-
-        return boxes, models
     finally:
         obj_eval.to_mesh_clear()
+
+    return skipped_non_box_islands
 
 
 def _try_export_box_occluder(verts: np.ndarray, tris: np.ndarray) -> MapBoxOccluder | None:

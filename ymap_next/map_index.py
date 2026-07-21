@@ -136,6 +136,7 @@ class MapSessionIndex:
         for group in maps.groups:
             total += len(group.maps) + len(group.entities) + len(group.grass_batches)
             total += len(group.cargens) + len(group.occluders) + len(group.lod_lights)
+            total += sum(len(occ.extra_linked_objects) for occ in group.occluders)
         return total
 
     def _structural_fingerprint(self) -> int:
@@ -155,6 +156,7 @@ class MapSessionIndex:
                     len(group.cargens),
                     len(group.grass_batches),
                     len(group.occluders),
+                    sum(len(occ.extra_linked_objects) for occ in group.occluders),
                     len(group.lod_lights),
                 )
             )
@@ -200,9 +202,9 @@ class MapSessionIndex:
                 uid = _session_uid(linked) if linked is not None else None
                 yield guuid, i, cg.uuid, uid, CacheObjectData.CARGEN
             for i, occ in enumerate(group.occluders):
-                linked = occ.linked_object
-                uid = _session_uid(linked) if linked is not None else None
-                yield guuid, i, occ.uuid, uid, CacheObjectData.OCCLUDER
+                for linked in occ.raw_slot_objects():
+                    uid = _session_uid(linked) if linked is not None else None
+                    yield guuid, i, occ.uuid, uid, CacheObjectData.OCCLUDER
             for i, ll in enumerate(group.lod_lights):
                 linked = ll.linked_object
                 uid = _session_uid(linked) if linked is not None else None

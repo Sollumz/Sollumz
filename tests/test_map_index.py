@@ -317,6 +317,26 @@ def test_find_by_id_occluder_data_type():
 
 
 @assert_logs_no_errors
+def test_find_by_id_occluder_extra_linked_objects():
+    group = _new_group()
+    obj1 = _add_cube("occluder_obj1")
+    obj2 = _add_cube("occluder_obj2")
+    occ = group.new_occluder()
+    occ.linked_object = obj1
+    occ.add_extra_linked_object(obj2)
+    occ.add_extra_linked_object()  # empty slot must not break the build
+    MAP_INDEX.invalidate()
+
+    MAP_INDEX.ensure_ready()
+
+    for obj in (obj1, obj2):
+        cached = MAP_INDEX.find_by_id(obj)
+        assert cached is not None
+        assert cached.data_type == CacheObjectData.OCCLUDER
+        assert cached.data_uuid == occ.uuid
+
+
+@assert_logs_no_errors
 def test_find_by_id_lod_lights_data_type():
     group = _new_group()
     obj = _add_cube("lod_lights_obj")

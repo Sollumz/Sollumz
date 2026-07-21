@@ -159,24 +159,26 @@ def _add_grass_batch(acc: ExtentsAccumulator, batch: MapGrassBatch, depsgraph: D
 
 
 def _add_occluder(acc: ExtentsAccumulator, occl: MapOccluder, depsgraph: Depsgraph):
-    obj = occl.linked_object
-    if obj is None or obj.data is None:
-        return
+    OCCL_STREAMING_DIST = 100.0
 
-    obj_eval = obj.evaluated_get(depsgraph)
-    mesh_eval = obj_eval.to_mesh()
-    try:
-        num_verts = len(mesh_eval.vertices)
-        if num_verts == 0:
-            return
+    for obj in occl.linked_objects():
+        if obj.data is None:
+            continue
 
-        local_co = np.empty((num_verts, 3), dtype=np.float32)
-        mesh_eval.vertices.foreach_get("co", local_co.ravel())
-        mw = np.array(obj.matrix_world, dtype=np.float32)
-        world_co = local_co @ mw[:3, :3].T + mw[:3, 3]
-        acc.add(Vector(world_co.min(axis=0)), Vector(world_co.max(axis=0)))
-    finally:
-        obj_eval.to_mesh_clear()
+        obj_eval = obj.evaluated_get(depsgraph)
+        mesh_eval = obj_eval.to_mesh()
+        try:
+            num_verts = len(mesh_eval.vertices)
+            if num_verts == 0:
+                continue
+
+            local_co = np.empty((num_verts, 3), dtype=np.float32)
+            mesh_eval.vertices.foreach_get("co", local_co.ravel())
+            mw = np.array(obj.matrix_world, dtype=np.float32)
+            world_co = local_co @ mw[:3, :3].T + mw[:3, 3]
+            acc.add(Vector(world_co.min(axis=0)), Vector(world_co.max(axis=0)), OCCL_STREAMING_DIST)
+        finally:
+            obj_eval.to_mesh_clear()
 
 
 def _lod_lights_world_positions(ll: MapLodLights) -> np.ndarray | None:
