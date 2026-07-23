@@ -7,6 +7,7 @@ from bpy.types import (
 )
 
 from ...icons import icon
+from ...meta import DEV_MODE
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -101,7 +102,8 @@ class SOLLUMZ_PT_map_cargens(MapChildTabPanel, Panel):
         row.alignment = "RIGHT"
         SOLLUMZ_PT_cargen_presets.draw_panel_header(row)
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         col = layout.column(align=True)
         row = col.row(align=True)
         row.enabled = not has_multiple_selection

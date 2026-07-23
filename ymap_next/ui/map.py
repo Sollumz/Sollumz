@@ -12,6 +12,7 @@ from bpy.types import (
 )
 
 from ...icons import icon
+from ...meta import DEV_MODE
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -270,7 +271,8 @@ class SOLLUMZ_PT_map_tcms(MapChildTabPanel, Panel):
         row.alignment = "RIGHT"
         SOLLUMZ_PT_timecycle_modifier_presets.draw_panel_header(row)
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))
@@ -332,7 +334,8 @@ class SOLLUMZ_PT_map_occluders(MapChildTabPanel, Panel):
         selection = occluders.selection
         active = occluders.active_item
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))
@@ -493,7 +496,8 @@ class SOLLUMZ_PT_map_lod_lights(MapChildTabPanel, Panel):
         selection = lod_lights.selection
         active = lod_lights.active_item
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))

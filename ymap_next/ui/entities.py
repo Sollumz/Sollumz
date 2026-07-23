@@ -5,6 +5,7 @@ from bpy.types import (
 )
 
 from ...icons import icon
+from ...meta import DEV_MODE
 from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
     MultiSelectUIListMixin,
@@ -175,7 +176,8 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
         row.alignment = "RIGHT"
         SOLLUMZ_PT_entity_presets.draw_panel_header(row)
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         layout.prop(selection.owner, selection.propnames.map_data_name, icon_value=icon("map_container"))
         row = layout.row()
         row.enabled = not has_multiple_selection
