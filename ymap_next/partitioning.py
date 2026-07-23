@@ -40,7 +40,7 @@ def classify_entity(
     if entity.lod_level in ("LOD", "SLOD1", "SLOD2", "SLOD3", "SLOD4"):
         return SELF
     if entity.is_mlo:
-        return f"interior_{entity.archetype_name.lower()}"
+        return f"interior_{entity.archetype_name.lower()}_milo_"
     if entity.is_critical:
         return "critical"
 
@@ -61,13 +61,6 @@ def classify_tcm(tcm: MapTimecycleModifier) -> str:
 
 def classify_grass(batch: MapGrassBatch) -> str:
     return "grass"
-
-
-def generate_leaf_name(parent_name: str, bucket_key: str) -> str:
-    """Generate the name for an auto-generated leaf map data."""
-    if bucket_key.startswith("interior_"):
-        return f"{parent_name}_{bucket_key}_milo_"
-    return f"{parent_name}_{bucket_key}"
 
 
 def spatial_partition_by_position(
@@ -196,7 +189,9 @@ def generate_partitions(map_group: MapGroup, map_data: MapData, settings: Partit
             # for i, chunk in enumerate(chunks):
             #     numbered_buckets[f"grass_{i}"] = chunk
         elif key.startswith("interior_"):
-            numbered_buckets[key] = bucket_items
+            numbered_buckets[key] = [bucket_items[0]]
+            for i, interior_item in enumerate(bucket_items[1:]):
+                numbered_buckets[f"{key}_{i+1}"] = [interior_item]
         else:
             numbered_buckets[f"{key}_0"] = bucket_items
 
@@ -214,7 +209,7 @@ def generate_partitions(map_group: MapGroup, map_data: MapData, settings: Partit
         leaf_uuid_by_key[bucket_key] = leaf_uuid
         leaf = map_group.maps.add()
         leaf.uuid = leaf_uuid
-        leaf.name = generate_leaf_name(map_data_name, bucket_key)
+        leaf.name = f"{map_data_name}_{bucket_key}"
         leaf.parent_uuid = map_data_uuid
         leaf.is_auto_generated = True
         for item in bucket_items:

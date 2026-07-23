@@ -159,6 +159,24 @@ def _make_map_group_with_mixed_entities():
     mlo.position = (400, 400, 50)
     mlo.map_data_uuid = logical_uuid
 
+    # MLO entity (should go into _interior_, separate from previous one even if using same archetype)
+    mlo = group.new_entity()
+    mlo.archetype_name = "v_test_shop"
+    mlo.lod_level = "HD"
+    mlo.lod_dist = 60
+    mlo.is_mlo = True
+    mlo.position = (500, 500, 50)
+    mlo.map_data_uuid = logical_uuid
+
+    # MLO entity (should go into another _interior_)
+    mlo = group.new_entity()
+    mlo.archetype_name = "v_test_garage"
+    mlo.lod_level = "HD"
+    mlo.lod_dist = 60
+    mlo.is_mlo = True
+    mlo.position = (600, 600, 50)
+    mlo.map_data_uuid = logical_uuid
+
     return group, logical_uuid
 
 
@@ -173,6 +191,7 @@ def test_auto_partition_generates_leaves():
     # Re-lookup after generate_partitions (collection may have been reallocated)
     children = [m for m in group.maps if m.parent_uuid == logical_uuid and m.is_auto_generated]
     child_names = {m.name for m in children}
+    child_by_uuid = {m.uuid: m for m in children}
 
     # Should have strm, long, critical, and interior leaves
     assert any("strm" in n for n in child_names), f"Missing _strm_ leaf in {child_names}"
@@ -208,15 +227,22 @@ def test_auto_partition_generates_leaves():
     assert len(crit) == 1
     assert crit[0].map_data_uuid in crit_maps
 
-    # MLO entity should be in interior
+    # MLO entities should be in interiors, each in its own map
     interior_maps = {m.uuid for m in children if "interior" in m.name}
-    mlo = [e for e in group.entities if e.archetype_name == "v_test_shop"]
-    assert len(mlo) == 1
-    assert mlo[0].map_data_uuid in interior_maps
+    assert len(interior_maps) == 3
 
-    # Interior leaf name should contain archetype
-    interior_leaf = [m for m in children if "interior" in m.name][0]
-    assert "v_test_shop" in interior_leaf.name
+    mlos = [e for e in group.entities if e.is_mlo]
+    assert len(mlos) == 3
+    assert [m.archetype_name for m in mlos] == ["v_test_shop", "v_test_shop", "v_test_garage"]
+
+    mlo_maps = [m.map_data_uuid for m in mlos]
+    assert set(mlo_maps) <= interior_maps       # all MLOs live in interior maps
+    assert len(set(mlo_maps)) == 3              # each MLO in a separate map
+
+    # Interior leaf name should contain the archetype, with numbered suffix for duplicates
+    assert child_by_uuid[mlo_maps[0]].name.endswith("v_test_shop_milo_")
+    assert child_by_uuid[mlo_maps[1]].name.endswith("v_test_shop_milo__1")
+    assert child_by_uuid[mlo_maps[2]].name.endswith("v_test_garage_milo_")
 
 
 @assert_logs_no_errors
@@ -250,7 +276,7 @@ def test_auto_partition_regenerate():
 
     # All entities still accounted for
     total_entities = len(group.entities)
-    assert total_entities == 8  # 7 original + 1 new
+    assert total_entities == 10  # 9 original + 1 new
 
 
 @assert_logs_no_errors
