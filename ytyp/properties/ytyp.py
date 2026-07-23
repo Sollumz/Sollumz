@@ -575,7 +575,12 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         num_exit_portals = 0
         for p in self.portals:
             link_interiors = p.flags.flag2
-            if (not link_interiors and (p.room_to_index == 0 or p.room_from_index == 0)):
+            # Note, cannot use `room_to/from_index/id` properties here because their getters depend on having the
+            # correct context such that this archetype is the currently selected one, which may not be the case when
+            # this function is called (e.g. it is used from maps UI, so archetypes UI may be in whatever random state
+            # with something else selected).
+            # The name properties store the names themselves and should be in sync with the other properties
+            if (not link_interiors and (p.room_to_name == "limbo" or p.room_from_name == "limbo")):
                 num_exit_portals += 1
 
         return num_exit_portals
