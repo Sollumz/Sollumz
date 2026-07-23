@@ -1,30 +1,9 @@
-from bpy.types import Operator, Object
+from bpy.types import Operator
 import bpy
 from ...sollumz_properties import SollumType
+from ...shared.object_hierarchy import ObjectHierarchySnapshot
 from ..utils import get_selected_archetype
 from ..properties.ytyp import ArchetypeType
-
-
-class ObjectHierarchySnapshot:
-    def __init__(self):
-        parent_child_map = {}
-        for child in bpy.data.objects:
-            if (parent := child.parent) is not None:
-                parent_child_map.setdefault(parent, []).append(child)
-
-        self._parent_child_map = parent_child_map
-
-    def get_children_recursive(self, obj: Object) -> list[Object]:
-        parent_child_map = self._parent_child_map
-        children_recursive = []
-
-        def _recurse(parent):
-            for child in parent_child_map.get(parent, ()):
-                children_recursive.append(child)
-                _recurse(child)
-
-        _recurse(obj)
-        return children_recursive
 
 
 class SOLLUMZ_OT_mlo_create_instance(Operator):

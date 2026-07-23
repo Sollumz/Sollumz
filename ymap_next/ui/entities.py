@@ -104,6 +104,10 @@ class SOLLUMZ_PT_map_entities(MapChildTabPanel, Panel):
         row.operator(instancing_ops.SOLLUMZ_OT_map_instance_entities.bl_idname, icon="LINKED")
         row.operator(instancing_ops.SOLLUMZ_OT_map_remove_entity_instances.bl_idname, icon="UNLINKED")
 
+        row = layout.row(align=True)
+        row.operator(map_ops.SOLLUMZ_OT_map_show_entities.bl_idname, icon="HIDE_OFF")
+        row.operator(map_ops.SOLLUMZ_OT_map_hide_entities.bl_idname, icon="HIDE_ON")
+
 
 class SOLLUMZ_PT_map_entity_tabs(TabbedPanelHelper, Panel):
     bl_label = "Entities"

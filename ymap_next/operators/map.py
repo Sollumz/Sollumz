@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import (
+    EnumProperty,
     FloatVectorProperty,
     StringProperty,
 )
@@ -14,6 +15,7 @@ from ...shared.game_assets.asset_info import (
     try_get_asset_metadata_archetype_info,
 )
 from ...shared.multiselection import SelectMode
+from ...shared.object_hierarchy import ObjectHierarchySnapshot
 from ...tools.blenderhelper import remove_number_suffix, tag_redraw
 from ..context import (
     active_entities_collection,
@@ -27,7 +29,7 @@ from ..map_index import (
     MAP_INDEX,
     CacheObjectData,
 )
-from ..properties.map import MapPartitionMode, get_maps
+from ..properties.map import MapLodLevelEnumFlagItems, MapPartitionMode, get_maps
 
 
 def _parents_locked_map_entities(group, entity_uuids: set[bytes]) -> bool:
@@ -779,6 +781,141 @@ class SOLLUMZ_OT_map_go_to_entity(Operator):
             context.region_data.view_location = entity.position
             bpy.ops.object.select_all(action="DESELECT")
 
+        return {"FINISHED"}
+
+
+MapEntityLodCategoryEnumFlagItems = (("ORPHAN_HD", "Orphan HD", "", 1),) + MapLodLevelEnumFlagItems
+MapEntityVisibilityScopeEnumItems = (
+    ("ACTIVE", "Active Map Group", "Only affect entities of the active map group"),
+    ("ALL", "All Map Groups", "Affect entities of all map groups"),
+)
+
+
+def _apply_entities_visibility(context, groups, lod_categories: set[str], hide: bool) -> int:
+    """Hide/show the linked object (and its children) of every entity in `groups` whose LOD category
+    is in `lod_categories`. Returns number of entities affected.
+    """
+
+    def _entity_lod_category(entity) -> str:
+        return "ORPHAN_HD" if entity.is_orphan_hd else entity.lod_level
+
+    h = ObjectHierarchySnapshot()
+    view_layer_objects = set(o.name for o in context.view_layer.objects)
+    num_affected = 0
+    for group in groups:
+        if group is None:
+            continue
+
+        for entity in group.entities:
+            if _entity_lod_category(entity) not in lod_categories:
+                continue
+
+            obj = entity.linked_object
+            if obj is None:
+                continue
+
+            for o in (obj, *h.get_children_recursive(obj)):
+                if o.name in view_layer_objects:
+                    o.hide_set(hide)
+
+            num_affected += 1
+
+    return num_affected
+
+
+class SOLLUMZ_OT_map_hide_entities(Operator):
+    bl_idname = "sollumz.map_hide_entities"
+    bl_label = "Hide Entities"
+    bl_description = "Hide the linked objects of map entities of the selected LOD levels"
+    bl_options = {"REGISTER", "UNDO"}
+
+    lod_levels: EnumProperty(
+        name="LOD Levels",
+        description="Only hide entities of the selected LOD levels",
+        items=MapEntityLodCategoryEnumFlagItems,
+        options={"ENUM_FLAG"},
+        default={item[0] for item in MapEntityLodCategoryEnumFlagItems},  # all levels
+    )
+    scope: EnumProperty(
+        name="Scope",
+        description="Map groups whose entities are affected",
+        items=MapEntityVisibilityScopeEnumItems,
+        default="ACTIVE",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return get_maps(context) is not None
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="LOD Levels")
+        layout.props_enum(self, "lod_levels")
+        layout.separator()
+        layout.label(text="Scope")
+        layout.row().prop(self, "scope", expand=True)
+
+    def execute(self, context):
+        selected = set(self.lod_levels)
+        if not self.options.is_repeat and not selected:
+            self.report({"WARNING"}, "No LOD levels selected")
+            return {"CANCELLED"}
+
+        groups = list(get_maps(context).groups) if self.scope == "ALL" else [active_group(context)]
+        num_hidden = _apply_entities_visibility(context, groups, selected, hide=True)
+
+        self.report({"INFO"} if num_hidden else {"WARNING"}, f"Hid {num_hidden} entity object(s)")
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_map_show_entities(Operator):
+    bl_idname = "sollumz.map_show_entities"
+    bl_label = "Show Entities"
+    bl_description = "Show the linked objects of map entities of the selected LOD levels"
+    bl_options = {"REGISTER", "UNDO"}
+
+    lod_levels: EnumProperty(
+        name="LOD Levels",
+        description="Only show entities of the selected LOD levels",
+        items=MapEntityLodCategoryEnumFlagItems,
+        options={"ENUM_FLAG"},
+        default={item[0] for item in MapEntityLodCategoryEnumFlagItems},  # all levels
+    )
+    scope: EnumProperty(
+        name="Scope",
+        description="Map groups whose entities are affected",
+        items=MapEntityVisibilityScopeEnumItems,
+        default="ACTIVE",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return get_maps(context) is not None
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="LOD Levels")
+        layout.props_enum(self, "lod_levels")
+        layout.separator()
+        layout.label(text="Scope")
+        layout.row().prop(self, "scope", expand=True)
+
+    def execute(self, context):
+        selected = set(self.lod_levels)
+        if not self.options.is_repeat and not selected:
+            self.report({"WARNING"}, "No LOD levels selected")
+            return {"CANCELLED"}
+
+        groups = list(get_maps(context).groups) if self.scope == "ALL" else [active_group(context)]
+        num_shown = _apply_entities_visibility(context, groups, selected, hide=False)
+
+        self.report({"INFO"} if num_shown else {"WARNING"}, f"Showed {num_shown} entity object(s)")
         return {"FINISHED"}
 
 
