@@ -2,6 +2,7 @@ import bpy
 from bpy.types import (
     Object,
     PropertyGroup,
+    Collection,
 )
 from bpy.props import (
     BoolProperty,
@@ -476,6 +477,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     entities: MultiSelectCollection[MloEntityProperties, MloEntitySelectionAccess]
     timecycle_modifiers: MultiSelectCollection[TimecycleModifierProperties, TimecycleModifierSelectionAccess]
     entity_sets: MultiSelectCollection[EntitySetProperties, EntitySetSelectionAccess]
+
+    mlo_collection_for_instancing: bpy.props.PointerProperty(type=Collection, name="Collection for Instancing")
 
     id: bpy.props.IntProperty(default=-1)
     uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
