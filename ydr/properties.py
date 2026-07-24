@@ -653,6 +653,47 @@ def on_blend_file_loaded(_):
     refresh_ui_collections()
 
 
+@persistent
+def on_blender_version_update(_):
+    """When loading a file saved by Blender < 5.0 in Blender >= 5.0, rebuild custom RNA
+    properties on shader parameter nodes (``is_sollumz``, ``num_cols``, ``num_rows``,
+    ``display_type``) from the shader definition. Blender 5.x does not restore those
+    properties from 4.x .blend files, which hides texture samplers and breaks the
+    value parameter layout in the Sollumz material panel.
+    """
+    if bpy.app.version < (5, 0, 0):
+        return
+    if bpy.data.version >= (5, 0, 0):
+        return
+
+    from szio.gta5.shader import ShaderManager
+    from ..sollumz_properties import MaterialType
+    from ..shared.shader_nodes import SzShaderNodeParameter
+    from .shader_materials import get_shader_parameter_layout
+
+    for material in bpy.data.materials:
+        if material.sollum_type != MaterialType.SHADER:
+            continue
+        node_tree = material.node_tree
+        if node_tree is None:
+            continue
+        shader_def = ShaderManager.find_shader(material.shader_properties.filename)
+        if shader_def is None:
+            continue
+        for node in node_tree.nodes:
+            param = shader_def.parameter_map.get(node.name, None)
+            if param is None:
+                continue
+            if isinstance(node, bpy.types.ShaderNodeTexImage):
+                node.is_sollumz = True
+            elif isinstance(node, SzShaderNodeParameter):
+                node.is_sollumz = True
+                cols, rows, display_type = get_shader_parameter_layout(param)
+                node.num_cols = cols
+                node.num_rows = rows
+                node.display_type = int(display_type)
+
+
 def register():
     bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(
         name="Shader Material Index", min=0, max=len(shadermats) - 1)
@@ -834,6 +875,7 @@ def register():
     # )
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
+    bpy.app.handlers.version_update.append(on_blender_version_update)
     refresh_ui_collections()
 
 
@@ -886,3 +928,4 @@ def unregister():
     # del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)
+    bpy.app.handlers.version_update.remove(on_blender_version_update)
