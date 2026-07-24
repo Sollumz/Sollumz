@@ -39,13 +39,13 @@ def _brightened(colors: dict[str, tuple]) -> dict[str, tuple]:
 
 # Marker size multiplier per visual category (base * factor)
 LOD_SIZE_FACTORS = {
-    "ORPHAN_HD": 0.5,
-    "HD": 0.7,
+    "ORPHAN_HD": 0.65,
+    "HD": 0.8,
     "LOD": 1.0,
-    "SLOD1": 1.4,
-    "SLOD2": 1.8,
-    "SLOD3": 2.2,
-    "SLOD4": 2.8,
+    "SLOD1": 1.1,
+    "SLOD2": 1.3,
+    "SLOD3": 1.5,
+    "SLOD4": 1.7,
 }
 
 # Width of the entity mesh outline glow, in screen pixels
@@ -308,7 +308,7 @@ class LodHierarchyOverlayDrawHandler:
         for vis, coords in highlight_by_vis.items():
             b = batch_for_shader(point_shader, "POINTS", {"pos": coords})
             bright = (*self.lod_colors_bright[vis], min(1.0, self.lod_colors[vis][3] * marker_alpha + 0.2))
-            batches.append((b, bright, marker_size * LOD_SIZE_FACTORS[vis] * 2.0))
+            batches.append((b, bright, marker_size * LOD_SIZE_FACTORS[vis] * 1.5))
         self._marker_batches = batches
 
         # Line batches
