@@ -110,13 +110,8 @@ def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties, entitie
     e.scale_xy = entity.scale_xy
     e.scale_z = entity.scale_z
     e.flags.total = str(entity.flags.value)
-    e.guid = entity.guid
-    e.parent_index = entity.parent_index
     e.lod_dist = entity.lod_dist
-    e.child_lod_dist = entity.child_lod_dist
-    e.lod_level = f"sollumz_lodtypes_depth_{entity.lod_level.name.lower()}"
     e.priority_level = f"sollumz_pri_{entity.priority_level.name.lower()}"
-    e.num_children = entity.num_children
     e.ambient_occlusion_multiplier = entity.ambient_occlusion_multiplier
     e.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
     e.tint_value = entity.tint_value

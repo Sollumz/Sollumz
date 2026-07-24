@@ -6,7 +6,7 @@ from szio.gta5.cwxml import (
     ytyp as ytypxml,
     ymap as ymapxml,
 )
-from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
+from ..sollumz_properties import ArchetypeType, AssetType, EntityPriorityLevel
 from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
@@ -107,18 +107,17 @@ def create_entity_xml(entity: MloEntityProperties, archetype: ArchetypePropertie
 
     entity_xml.archetype_name = entity.archetype_name
     entity_xml.flags = entity.flags.total
-    entity_xml.parent_index = entity.parent_index
     entity_xml.lod_dist = entity.lod_dist
-    entity_xml.child_lod_dist = entity.child_lod_dist
     entity_xml.ambient_occlusion_multiplier = entity.ambient_occlusion_multiplier
     entity_xml.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
     entity_xml.tint_value = entity.tint_value
 
-    lod_level = next(name for name, value in vars(
-        EntityLodLevel).items() if value == (entity.lod_level))
+    entity_xml.parent_index = -1
+    entity_xml.child_lod_dist = 0
+    entity_xml.lod_level = "LODTYPES_DEPTH_ORPHANHD"
+
     priority_level = next(name for name, value in vars(
         EntityPriorityLevel).items() if value == (entity.priority_level))
-    entity_xml.lod_level = lod_level
     entity_xml.priority_level = priority_level
 
     for extension in entity.extensions:

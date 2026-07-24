@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 import bpy
 from mathutils import Vector
-from ...sollumz_properties import EntityProperties
+from ...sollumz_properties import EntityPriorityLevel, items_from_enums
 from ...tools.utils import get_list_item
 from ..utils import get_selected_ytyp, get_selected_archetype
 from .flags import EntityFlags, RoomFlags, PortalFlags
@@ -300,13 +300,13 @@ class TimecycleModifierProperties(bpy.types.PropertyGroup, MloArchetypeChild):
     )
 
 
-class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetypeChild, ExtensionsContainer):
+class MloEntityProperties(bpy.types.PropertyGroup, MloArchetypeChild, ExtensionsContainer):
     IS_ARCHETYPE = False
     DEFAULT_EXTENSION_TYPE = ExtensionType.DOOR
 
     __sz_preset_capture__ = (
         "flags",
-        "lod_dist", "child_lod_dist", "lod_level", "priority_level",
+        "lod_dist", "priority_level",
         "ambient_occlusion_multiplier", "artificial_ambient_occlusion", "tint_value",
     )
 
@@ -433,6 +433,8 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
 
         return True
 
+    archetype_name: bpy.props.StringProperty(name="Archetype Name")
+
     # Transforms unused if no linked object
     position: bpy.props.FloatVectorProperty(name="Position")
     rotation: bpy.props.FloatVectorProperty(
@@ -460,6 +462,20 @@ class MloEntityProperties(bpy.types.PropertyGroup, EntityProperties, MloArchetyp
         name="Attached EntitySet Index", get=get_entityset_index)
 
     flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
+
+    lod_dist: bpy.props.FloatProperty(name="LOD Distance", default=200)
+    priority_level: bpy.props.EnumProperty(
+        items=items_from_enums(EntityPriorityLevel),
+        name="Priority Level",
+        default=EntityPriorityLevel.PRI_REQUIRED,
+        options={"HIDDEN"}
+    )
+    # TODO(ymap-next): make ambient_occlusion_multiplier, artificial_ambient_occlusion, and tint_value integers
+    ambient_occlusion_multiplier: bpy.props.FloatProperty(
+        name="Ambient Occlusion Multiplier", default=255)
+    artificial_ambient_occlusion: bpy.props.FloatProperty(
+        name="Artificial Ambient Occlusion", default=255)
+    tint_value: bpy.props.FloatProperty(name="Tint Value")
 
     linked_object: bpy.props.PointerProperty(
         type=bpy.types.Object, name="Linked Object")

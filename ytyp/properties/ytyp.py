@@ -221,20 +221,13 @@ class MloEntityFlagsSelectionAccess(MultiSelectNestedAccess):
 
 
 class MloEntitySelectionAccess(MultiSelectAccess):
-    # from EntityProperties
     archetype_name: MultiSelectProperty()
-    guid: MultiSelectProperty()
-    parent_index: MultiSelectProperty()
     lod_dist: MultiSelectProperty()
-    child_lod_dist: MultiSelectProperty()
-    lod_level: MultiSelectProperty()
-    num_children: MultiSelectProperty()
     priority_level: MultiSelectProperty()
     ambient_occlusion_multiplier: MultiSelectProperty()
     artificial_ambient_occlusion: MultiSelectProperty()
     tint_value: MultiSelectProperty()
 
-    # from MloEntityProperties
     attached_portal_id: MultiSelectProperty()
     attached_room_id: MultiSelectProperty()
     attached_entity_set_id: MultiSelectProperty()
