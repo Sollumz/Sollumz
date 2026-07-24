@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import bpy
@@ -11,6 +12,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
 from ...sollumz_operators import ExportAssetsOperatorImpl, ImportAssetsOperatorImpl
+from ..properties import normalize_texture_name
 from ..utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -196,6 +198,60 @@ class SOLLUMZ_OT_txd_refresh_sources(Operator):
         for src in txd.sources:
             src.refresh(context)
         txd.refresh_from_sources()
+        return {"FINISHED"}
+
+
+def _has_missing_file(image: bpy.types.Image) -> bool:
+    """An image whose source file cannot be found on disk, same notion used by Blender's Find Missing Files."""
+    return (
+        not image.packed_files
+        and image.source == "FILE"
+        and not os.path.exists(bpy.path.abspath(image.filepath, library=image.library))
+    )
+
+
+class SOLLUMZ_OT_txd_find_missing(Operator):
+    """Replace images with a missing file with matching textures from the scene's texture dictionaries"""
+
+    bl_idname = "sollumz.txd_find_missing"
+    bl_label = "Find Missing TXD"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return any(len(txd.textures) > 0 for txd in context.scene.sz_txds.texture_dictionaries)
+
+    def execute(self, context):
+        images_by_name = {}
+        for txd in context.scene.sz_txds.texture_dictionaries:
+            for slot in txd.textures:
+                if slot.image is not None:
+                    images_by_name.setdefault(normalize_texture_name(slot.name or slot.image.name), slot.image)
+
+        replaced = []
+        for image in list(bpy.data.images):
+            if not _has_missing_file(image):
+                continue
+
+            new_image = images_by_name.get(normalize_texture_name(image.name))
+            if new_image is None or new_image is image:
+                continue
+
+            try:
+                image.user_remap(new_image)
+            except Exception as e:
+                logger.warning(f"Failed to update texture '{image.name}': {e}")
+                continue
+
+            replaced.append(image)
+
+        # `batch_remove` requires the IDs to be fully unused. `user_remap` leaves them at zero users, but an
+        # image kept around by a fake user must not be deleted.
+        unused = [image for image in replaced if image.users == 0]
+        if unused:
+            bpy.data.batch_remove(unused)
+
+        self.report({"INFO"}, f"Found {len(replaced)} missing texture(s).")
         return {"FINISHED"}
 
 
