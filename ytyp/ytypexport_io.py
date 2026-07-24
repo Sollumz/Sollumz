@@ -146,9 +146,9 @@ def create_mlo_entity(entity: MloEntityProperties, archetype: ArchetypePropertie
         num_children=0,
         lod_dist=entity.lod_dist,
         priority_level=EntityPriorityLevel[entity.priority_level[len("sollumz_pri_"):].upper()],
-        ambient_occlusion_multiplier=int(entity.ambient_occlusion_multiplier),
-        artificial_ambient_occlusion=int(entity.artificial_ambient_occlusion),
-        tint_value=int(entity.tint_value),
+        ambient_occlusion_multiplier=entity.ambient_occlusion_multiplier,
+        artificial_ambient_occlusion=entity.artificial_ambient_occlusion,
+        tint_value=entity.tint_value,
         extensions=[create_extension(e) for e in entity.extensions],
     )
 

@@ -470,12 +470,23 @@ class MloEntityProperties(bpy.types.PropertyGroup, MloArchetypeChild, Extensions
         default=EntityPriorityLevel.PRI_REQUIRED,
         options={"HIDDEN"}
     )
-    # TODO(ymap-next): make ambient_occlusion_multiplier, artificial_ambient_occlusion, and tint_value integers
-    ambient_occlusion_multiplier: bpy.props.FloatProperty(
-        name="Ambient Occlusion Multiplier", default=255)
-    artificial_ambient_occlusion: bpy.props.FloatProperty(
-        name="Artificial Ambient Occlusion", default=255)
-    tint_value: bpy.props.FloatProperty(name="Tint Value")
+    ambient_occlusion_multiplier: bpy.props.IntProperty(
+        name="Natural AO Multiplier",
+        description="Natural Ambient Occlusion Multiplier",
+        default=255,
+        min=0,
+        max=255,
+        subtype="FACTOR",
+    )
+    artificial_ambient_occlusion: bpy.props.IntProperty(
+        name="Artificial AO Multiplier",
+        description="Artificial Ambient Occlusion Multiplier",
+        default=255,
+        min=0,
+        max=255,
+        subtype="FACTOR",
+    )
+    tint_value: bpy.props.IntProperty(name="Tint Value", default=0, min=0, max=255)
 
     linked_object: bpy.props.PointerProperty(
         type=bpy.types.Object, name="Linked Object")

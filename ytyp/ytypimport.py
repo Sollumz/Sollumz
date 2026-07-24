@@ -131,9 +131,9 @@ def create_mlo_entity(entity_xml: ymapxml.Entity, archetype: ArchetypeProperties
     entity.flags.total = str(entity_xml.flags)
     entity.lod_dist = entity_xml.lod_dist
     entity.priority_level = EntityPriorityLevel[entity_xml.priority_level]
-    entity.ambient_occlusion_multiplier = entity_xml.ambient_occlusion_multiplier
-    entity.artificial_ambient_occlusion = entity_xml.artificial_ambient_occlusion
-    entity.tint_value = entity_xml.tint_value
+    entity.ambient_occlusion_multiplier = int(entity_xml.ambient_occlusion_multiplier)
+    entity.artificial_ambient_occlusion = int(entity_xml.artificial_ambient_occlusion)
+    entity.tint_value = int(entity_xml.tint_value)
 
     for extension_xml in entity_xml.extensions:
         create_extension(extension_xml, entity)

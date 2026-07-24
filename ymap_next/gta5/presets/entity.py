@@ -53,14 +53,6 @@ def _entity_capture(target):
         if "priority_level" in data:
             data["priority_level"] = _PRIORITY_TO_MAP.get(data["priority_level"], data["priority_level"])
 
-        # MLO entities store these values as floats but are actually ints...
-        if "ambient_occlusion_multiplier" in data:
-            data["ambient_occlusion_multiplier"] = int(data["ambient_occlusion_multiplier"])
-        if "artificial_ambient_occlusion" in data:
-            data["artificial_ambient_occlusion"] = int(data["artificial_ambient_occlusion"])
-        if "tint_value" in data:
-            data["tint_value"] = int(data["tint_value"])
-
     return data
 
 
