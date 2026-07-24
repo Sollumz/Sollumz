@@ -463,7 +463,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, MloArchetypeChild, Extensions
 
     flags: bpy.props.PointerProperty(type=EntityFlags, name="Flags")
 
-    lod_dist: bpy.props.FloatProperty(name="LOD Distance", default=200)
+    lod_dist: bpy.props.FloatProperty(name="LOD Distance", default=-1.0)
     priority_level: bpy.props.EnumProperty(
         items=items_from_enums(EntityPriorityLevel),
         name="Priority Level",
