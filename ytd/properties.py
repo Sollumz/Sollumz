@@ -192,8 +192,7 @@ class GtxdNode(PropertyGroup):
     ui_tree_depth: IntProperty(min=0, max=2)
 
     def get_ui_label(self) -> str:
-        name = self.name or GtxdNode.PLACEHOLDERS[self.ui_tree_depth]
-        return "    " * self.ui_tree_depth + name
+        return self.name or GtxdNode.PLACEHOLDERS[self.ui_tree_depth]
 
     def set_ui_label(self, s: str):
         s = s.strip()

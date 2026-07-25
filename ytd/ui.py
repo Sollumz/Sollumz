@@ -388,7 +388,10 @@ class SOLLUMZ_UL_gtxd_list(UIList):
         is_duplicate = index in self.duplicate_indices
         row = layout.row(align=True)
         row.alert = is_duplicate
-        row.prop(item, "ui_label", text="", emboss=False, icon=self._ICONS[item.ui_tree_depth])
+        if depth := item.ui_tree_depth:
+            row.separator(factor=depth * 2.0)
+
+        row.prop(item, "ui_label", text="", emboss=False, icon=self._ICONS[depth])
         if is_duplicate:
             sub = row.row(align=True)
             sub.alignment = "RIGHT"
