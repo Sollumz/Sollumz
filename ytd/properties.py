@@ -5,7 +5,9 @@ from collections.abc import Iterator
 import bpy
 from bpy.props import (
     BoolProperty,
+    CollectionProperty,
     EnumProperty,
+    IntProperty,
     PointerProperty,
     StringProperty,
 )
@@ -176,6 +178,31 @@ class TextureDictionarySelectionAccess(MultiSelectAccess):
     name: MultiSelectProperty()
 
 
+class GtxdNode(PropertyGroup):
+    """A row of the GTXD tree: a gtxd file (depth 0), a parent texture dictionary (depth 1)
+    or a child texture dictionary (depth 2)."""
+
+    FILE = 0
+    PARENT = 1
+    CHILD = 2
+
+    PLACEHOLDERS = ("Set name...", "Set parent...", "Set child...")
+
+    name: StringProperty(name="Name", default="")
+    ui_tree_depth: IntProperty(min=0, max=2)
+
+    def get_ui_label(self) -> str:
+        name = self.name or GtxdNode.PLACEHOLDERS[self.ui_tree_depth]
+        return "    " * self.ui_tree_depth + name
+
+    def set_ui_label(self, s: str):
+        s = s.strip()
+        # Only the placeholder of this depth clears the name, so a real name is never swallowed
+        self.name = "" if s == GtxdNode.PLACEHOLDERS[self.ui_tree_depth] else s
+
+    ui_label: StringProperty(get=get_ui_label, set=set_ui_label)
+
+
 @define_multiselect_collection("texture_dictionaries", {"name": "Texture Dictionaries"})
 class TextureDictionaries(PropertyGroup):
     texture_dictionaries: MultiSelectCollection[TextureDictionary, TextureDictionarySelectionAccess]
@@ -196,7 +223,11 @@ def register():
         type=TextureDictionaries,
         name="Texture Dictionaries",
     )
+    Scene.sz_gtxds = CollectionProperty(type=GtxdNode, name="GTXDs")
+    Scene.sz_gtxd_index = IntProperty(name="GTXD")
 
 
 def unregister():
     del Scene.sz_txds
+    del Scene.sz_gtxds
+    del Scene.sz_gtxd_index

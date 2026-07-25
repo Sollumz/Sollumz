@@ -1,3 +1,5 @@
+import traceback
+
 from bpy.types import (
     Menu,
     Panel,
@@ -5,9 +7,13 @@ from bpy.types import (
     UIList,
 )
 
+from .. import logger
 from ..shared.multiselection import MultiSelectUIListMixin, multiselect_ui_draw_list
 from .operators import (
     selection as txd_select_ops,
+)
+from .operators import (
+    gtxd as gtxd_ops,
 )
 from .operators import (
     txd as txd_ops,
@@ -368,6 +374,78 @@ class SOLLUMZ_PT_txd_textures_panel(TxdToolChildPanel, Panel):
         row = col.row(align=True)
         row.alignment = "RIGHT"
         row.label(text=f"{w} × {h}")
+
+
+class SOLLUMZ_UL_gtxd_list(UIList):
+    bl_idname = "SOLLUMZ_UL_gtxd_list"
+
+    _ICONS = ("FILE_FOLDER", "TEXTURE", "CON_CHILDOF")
+
+    # Computed once per redraw by the panel, to avoid checking the whole tree on every row
+    duplicate_indices: set[int] = set()
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        is_duplicate = index in self.duplicate_indices
+        row = layout.row(align=True)
+        row.alert = is_duplicate
+        row.prop(item, "ui_label", text="", emboss=False, icon=self._ICONS[item.ui_tree_depth])
+        if is_duplicate:
+            sub = row.row(align=True)
+            sub.alignment = "RIGHT"
+            sub.label(text="Duplicate", icon="ERROR")
+
+
+class SOLLUMZ_PT_gtxd_panel(TxdToolChildPanel, Panel):
+    bl_label = "GTXD"
+    bl_idname = "SOLLUMZ_PT_gtxd_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 3
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        try:
+            SOLLUMZ_UL_gtxd_list.duplicate_indices = gtxd_ops.find_duplicate_nodes(scene.sz_gtxds)
+        except Exception:
+            # Never let the duplicate check break the panel, but don't hide the error either
+            SOLLUMZ_UL_gtxd_list.duplicate_indices = set()
+            logger.error(f"GTXD duplicate check failed:\n{traceback.format_exc()}")
+
+        row = layout.row()
+        row.template_list(SOLLUMZ_UL_gtxd_list.bl_idname, "", scene, "sz_gtxds",
+                          scene, "sz_gtxd_index", rows=6)
+        col = row.column(align=True)
+        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_create.bl_idname, text="", icon="FILE_FOLDER")
+        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_add_parent.bl_idname, text="", icon="TEXTURE")
+        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_add_child.bl_idname, text="", icon="CON_CHILDOF")
+        col.separator()
+        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_delete.bl_idname, text="", icon="REMOVE")
+
+        if duplicates := SOLLUMZ_UL_gtxd_list.duplicate_indices:
+            box = layout.box()
+            box.alert = True
+            box.label(text=f"{len(duplicates)} node(s) with duplicate names, rename them before exporting",
+                      icon="ERROR")
+
+        index = scene.sz_gtxd_index
+        if 0 <= index < len(scene.sz_gtxds):
+            node = scene.sz_gtxds[index]
+            col = layout.column()
+            col.use_property_split = True
+            col.use_property_decorate = False
+            if node.ui_tree_depth == 0:
+                col.prop(node, "name", text="Name", icon="FILE_FOLDER")
+            else:
+                col.prop_search(node, "name", scene.sz_txds, "texture_dictionaries_",
+                                text="Parent" if node.ui_tree_depth == 1 else "Child",
+                                icon="TEXTURE" if node.ui_tree_depth == 1 else "CON_CHILDOF",
+                                results_are_suggestions=True)
+
+        row = layout.row(align=True)
+        row.operator(gtxd_ops.SOLLUMZ_OT_gtxd_import.bl_idname, text="Import", icon="IMPORT")
+        row.operator(gtxd_ops.SOLLUMZ_OT_gtxd_export.bl_idname, text="Export Meta").file_extension = ".meta"
+        row.operator(gtxd_ops.SOLLUMZ_OT_gtxd_export.bl_idname, text="Export XML").file_extension = ".ymt.rbf.xml"
 
 
 class SOLLUMZ_PT_txd_sources_panel(TxdToolChildPanel, Panel):
