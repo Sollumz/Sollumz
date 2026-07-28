@@ -8,6 +8,7 @@ from bpy.props import (
     BoolProperty,
 )
 from enum import IntEnum
+from collections.abc import Iterator
 from typing import Union, Optional, Sequence
 from uuid import uuid4
 
@@ -443,18 +444,24 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         if context.scene.show_mlo_tcm_gizmo:
             tag_redraw(context, space_type="VIEW_3D", region_type="WINDOW")
 
+    def _on_texture_dictionary_search(self, context, _edit_text: str) -> Iterator[str]:
+        yield from (txd.name for txd in context.scene.sz_txds.texture_dictionaries)
+
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
     bs_center: bpy.props.FloatVectorProperty(name="Bound Center")
     bs_radius: bpy.props.FloatProperty(name="Bound Radius")
     type: bpy.props.EnumProperty(items=items_from_enums(ArchetypeType), name="Type")
-    lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200, min=-1)
+    lod_dist: bpy.props.FloatProperty(name="LOD Distance", default=200, min=-1)
     flags: bpy.props.PointerProperty(type=ArchetypeFlags, name="Flags")
     special_attribute: bpy.props.EnumProperty(
         name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
     hd_texture_dist: bpy.props.FloatProperty(name="HD Texture Distance", default=100, min=0)
     name: bpy.props.StringProperty(name="Name")
-    texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary")
+    texture_dictionary: bpy.props.StringProperty(
+        name="Texture Dictionary",
+        search=_on_texture_dictionary_search, search_options={"SUGGESTION"},
+    )
     clip_dictionary: bpy.props.StringProperty(name="Clip Dictionary")
     drawable_dictionary: bpy.props.StringProperty(name="Drawable Dictionary")
     physics_dictionary: bpy.props.StringProperty(name="Physics Dictionary")
