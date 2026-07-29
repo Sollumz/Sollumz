@@ -145,6 +145,7 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable: AssetFragDr
             f"{num_vertices} vertices.\n"
             f"Cloth won't be exported!"
         )
+        cloth_obj_eval.to_mesh_clear()
         return None
 
     pinned = np.array(mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PINNED)) != 0
