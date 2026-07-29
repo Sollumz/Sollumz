@@ -379,23 +379,34 @@ class SOLLUMZ_PT_txd_textures_panel(TxdToolChildPanel, Panel):
 class SOLLUMZ_UL_gtxd_list(UIList):
     bl_idname = "SOLLUMZ_UL_gtxd_list"
 
-    _ICONS = ("FILE_FOLDER", "TEXTURE", "CON_CHILDOF")
-
     # Computed once per redraw by the panel, to avoid checking the whole tree on every row
     duplicate_indices: set[int] = set()
+    incomplete_indices: set[int] = set()
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         is_duplicate = index in self.duplicate_indices
+        # A node without a parent is a root of the tree, it is never missing anything
+        is_orphan = item.ui_is_orphan and bool(item.parent.strip())
         row = layout.row(align=True)
-        row.alert = is_duplicate
-        if depth := item.ui_tree_depth:
-            row.separator(factor=depth * 2.0)
-
-        row.prop(item, "ui_label", text="", emboss=False, icon=self._ICONS[depth])
+        row.prop(item, "ui_label", text="", emboss=False, icon="TEXTURE")
         if is_duplicate:
+            warning = "Duplicate"
+        elif is_orphan:
+            warning = "Missing parent"
+        elif index in self.incomplete_indices:
+            warning = "Not linked"
+        else:
+            warning = ""
+
+        row.alert = bool(warning)
+        if warning:
             sub = row.row(align=True)
             sub.alignment = "RIGHT"
-            sub.label(text="Duplicate", icon="ERROR")
+            sub.label(text=warning, icon="ERROR")
+
+    def filter_items(self, context, data, propname):
+        # Display the nodes in tree order, as computed by `refresh_gtxd_ui`
+        return [], [node.ui_tree_sort_id for node in getattr(data, propname)]
 
 
 class SOLLUMZ_PT_gtxd_panel(TxdToolChildPanel, Panel):
@@ -410,26 +421,26 @@ class SOLLUMZ_PT_gtxd_panel(TxdToolChildPanel, Panel):
 
         try:
             SOLLUMZ_UL_gtxd_list.duplicate_indices = gtxd_ops.find_duplicate_nodes(scene.sz_gtxds)
+            SOLLUMZ_UL_gtxd_list.incomplete_indices = gtxd_ops.find_incomplete_nodes(scene.sz_gtxds)
         except Exception:
             # Never let the duplicate check break the panel, but don't hide the error either
             SOLLUMZ_UL_gtxd_list.duplicate_indices = set()
-            logger.error(f"GTXD duplicate check failed:\n{traceback.format_exc()}")
+            SOLLUMZ_UL_gtxd_list.incomplete_indices = set()
+            logger.error(f"GTXD duplicate check failed: {traceback.format_exc()}")
 
         row = layout.row()
         row.template_list(SOLLUMZ_UL_gtxd_list.bl_idname, "", scene, "sz_gtxds",
                           scene, "sz_gtxd_index", rows=6)
         col = row.column(align=True)
-        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_create.bl_idname, text="", icon="FILE_FOLDER")
-        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_add_parent.bl_idname, text="", icon="TEXTURE")
-        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_add_child.bl_idname, text="", icon="CON_CHILDOF")
+        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_create.bl_idname, text="", icon="ADD")
         col.separator()
         col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_delete.bl_idname, text="", icon="REMOVE")
 
-        if duplicates := SOLLUMZ_UL_gtxd_list.duplicate_indices:
+        issues = SOLLUMZ_UL_gtxd_list.duplicate_indices | SOLLUMZ_UL_gtxd_list.incomplete_indices
+        if issues:
             box = layout.box()
             box.alert = True
-            box.label(text=f"{len(duplicates)} node(s) with duplicate names, rename them before exporting",
-                      icon="ERROR")
+            box.label(text=f"{len(issues)} texture dictionary(s) need attention before exporting", icon="ERROR")
 
         index = scene.sz_gtxd_index
         if 0 <= index < len(scene.sz_gtxds):
@@ -437,13 +448,8 @@ class SOLLUMZ_PT_gtxd_panel(TxdToolChildPanel, Panel):
             col = layout.column()
             col.use_property_split = True
             col.use_property_decorate = False
-            if node.ui_tree_depth == 0:
-                col.prop(node, "name", text="Name", icon="FILE_FOLDER")
-            else:
-                col.prop_search(node, "name", scene.sz_txds, "texture_dictionaries_",
-                                text="Parent" if node.ui_tree_depth == 1 else "Child",
-                                icon="TEXTURE" if node.ui_tree_depth == 1 else "CON_CHILDOF",
-                                results_are_suggestions=True)
+            col.prop(node, "name", text="Name", icon="TEXTURE")
+            col.prop(node, "parent", text="Parent", icon="CON_CHILDOF")
 
         row = layout.row(align=True)
         row.operator(gtxd_ops.SOLLUMZ_OT_gtxd_import.bl_idname, text="Import", icon="IMPORT")

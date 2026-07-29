@@ -1,13 +1,13 @@
 import bpy
 from szio.gta5 import AssetMapParentTxds
 
-FILE, PARENT, CHILD = 0, 1, 2
+from .properties import refresh_gtxd_ui
 
 
 def unique_gtxd_name(nodes, name: str) -> str:
-    """Make ``name`` unique among the gtxd names, so creating and importing never produce duplicates."""
-    name = name.strip() or "gtxd"
-    taken = {n.name.strip().lower() for n in nodes if n.ui_tree_depth == FILE}
+    """Make ``name`` unique among the texture dictionary names, so nothing collides in the tree."""
+    name = name.strip() or "txd"
+    taken = {n.name.strip().lower() for n in nodes}
     if name.lower() not in taken:
         return name
 
@@ -17,28 +17,31 @@ def unique_gtxd_name(nodes, name: str) -> str:
     return f"{name}.{n:03d}"
 
 
-def import_gtxd(asset: AssetMapParentTxds, name: str) -> int:
-    """Create a GTXD tree in the Blender scene from a gtxd asset. Returns the number of relationships."""
-    children_by_parent = {}
+def import_gtxd(asset: AssetMapParentTxds, name: str = "") -> int:
+    """Add the relationships of a gtxd asset to the GTXD tree. Returns the number of relationships."""
+    scene = bpy.context.scene
+    nodes = scene.sz_gtxds
+    first_index = len(nodes)
+
+    # Each texture dictionary becomes a single node pointing at its parent, so hierarchies of any depth are kept
+    existing = {n.name.strip().lower() for n in nodes}
     for child, parent in asset.parents.items():
         parent, child = parent.strip(), child.strip()
-        if parent and child:
-            children_by_parent.setdefault(parent.lower(), (parent, []))[1].append(child)
+        if not parent or not child or child.lower() in existing:
+            continue
 
-    nodes = bpy.context.scene.sz_gtxds
-    file_index = len(nodes)
-
-    def _append(depth: int, node_name: str):
         node = nodes.add()
-        node.name = node_name
-        node.ui_tree_depth = depth
+        node["name_"] = child
+        node["parent_"] = parent
+        existing.add(child.lower())
 
-    # The nodes are appended in tree order: the gtxd file, then each parent followed by its children
-    _append(FILE, unique_gtxd_name(nodes, name))
-    for parent, children in children_by_parent.values():
-        _append(PARENT, parent)
-        for child in children:
-            _append(CHILD, child)
+    # Parents that are not a child of anything else are the roots of the tree
+    for parent in {p.strip() for p in asset.parents.values() if p.strip()}:
+        if parent.lower() not in existing:
+            node = nodes.add()
+            node["name_"] = parent
+            existing.add(parent.lower())
 
-    bpy.context.scene.sz_gtxd_index = file_index
+    scene.sz_gtxd_index = first_index
+    refresh_gtxd_ui(scene)
     return len(asset.parents)
