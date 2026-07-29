@@ -160,6 +160,7 @@ def cloth_char_export(
             f"{num_vertices} vertices.\n"
             f"Cloth won't be exported!"
         )
+        cloth_obj_eval.to_mesh_clear()
         return None
 
     pinned = np.array(mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PINNED)) != 0

@@ -1235,12 +1235,14 @@ def create_frag_glass_window(
     if len(mesh_planes) != 2:
         logger.warning(f"Glass window '{glass_window_bone.name}' requires 2 separate planes in mesh.")
         if len(mesh_planes) < 2:
+            mesh_obj_eval.to_mesh_clear()
             return None  # need at least 2 planes to continue
 
     plane_a, plane_b = mesh_planes[:2]
     if len(plane_a) != 2 or len(plane_b) != 2:
         logger.warning(f"Glass window '{glass_window_bone.name}' mesh planes need to be made up of 2 triangles each.")
         if len(plane_a) < 2 or len(plane_b) < 2:
+            mesh_obj_eval.to_mesh_clear()
             return None  # need at least 2 tris in each plane to continue
 
     normals = (plane_a[0].normal, plane_a[1].normal, plane_b[0].normal, plane_b[1].normal)
