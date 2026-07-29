@@ -3,6 +3,10 @@ from pathlib import Path
 
 import bpy
 import pytest
+from bpy.types import (
+    Image,
+    ShaderNodeTexImage,
+)
 
 from .shared import (
     assert_dds_is_full_res,
@@ -306,3 +310,112 @@ def test_import_hi_ytd_without_base(context, tmp_path):
     assert set(slots) == {"hd_tex"}
     assert not slots["hd_tex"].image.sz_is_hd
     assert_dds_is_full_res(slots["hd_tex"].image.packed_file.data, (16, 16))
+
+
+def _new_missing_image(name: str, tmp_path: Path, filename: str) -> Image:
+    """Creates an image whose source file does not exist, like the placeholders the importers create
+    for textures that could not be found.
+    """
+    img = bpy.data.images.new(name=name, width=1, height=1)
+    img.source = "FILE"
+    img.filepath = str(tmp_path / "does_not_exist" / filename)
+    return img
+
+
+def _new_material_using_image(name: str, img: Image) -> ShaderNodeTexImage:
+    """Creates a material with a texture node referencing `img` and returns the node."""
+    mat = bpy.data.materials.new(name)
+    if bpy.app.version < (5, 0, 0):
+        mat.use_nodes = True
+    node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+    node.image = img
+    return node
+
+
+def _new_txd_with_packed_texture(context, name: str):
+    txd = context.scene.sz_txds.new_texture_dictionary(name="test_txd")
+    img = new_packed_dds_image(name, make_bc1_dds(4, 4, 1))
+    txd.new_texture(img)
+    return txd, img
+
+
+@assert_logs_no_warnings_or_errors
+def test_txd_find_missing_replaces_missing_images(context, tmp_path):
+    bpy.ops.wm.read_homefile()
+    _, txd_img = _new_txd_with_packed_texture(context, "tex_a.dds")
+
+    missing = _new_missing_image("missing_placeholder_a", tmp_path, "tex_a.dds")
+    node_a = _new_material_using_image("mat_a", missing)
+    node_b = _new_material_using_image("mat_b", missing)
+
+    unmatched = _new_missing_image("missing_placeholder_b", tmp_path, "tex_b.dds")
+    node_c = _new_material_using_image("mat_c", unmatched)
+
+    assert bpy.ops.sollumz.txd_find_missing() == {"FINISHED"}
+
+    # all users of the missing image are remapped to the txd texture and the placeholder is deleted
+    assert node_a.image == txd_img
+    assert node_b.image == txd_img
+    assert "missing_placeholder_a" not in bpy.data.images
+
+    # missing images without a matching texture are left untouched
+    assert node_c.image == unmatched
+    assert "missing_placeholder_b" in bpy.data.images
+
+
+@pytest.mark.parametrize("tex_filename", ("tex.dds", "TEX.dds", "tex.png"))
+@pytest.mark.parametrize("missing_filename", ("tex.dds", "TEX.DDS", "tex.png"))
+@assert_logs_no_warnings_or_errors
+def test_txd_find_missing_name_matching(context, tmp_path, tex_filename, missing_filename):
+    bpy.ops.wm.read_homefile()
+    _, txd_img = _new_txd_with_packed_texture(context, tex_filename)
+
+    missing = _new_missing_image("missing", tmp_path, missing_filename)
+    orig_name = missing.name
+    node = _new_material_using_image("mat", missing)
+
+    bpy.ops.sollumz.txd_find_missing()
+
+    assert node.image == txd_img
+    assert orig_name not in bpy.data.images
+
+
+@assert_logs_no_warnings_or_errors
+def test_txd_find_missing_skips_images_that_are_not_missing(context, tmp_path):
+    bpy.ops.wm.read_homefile()
+    _new_txd_with_packed_texture(context, "tex.dds")
+
+    # an image whose file exists on disk is not missing, even if a texture with the same name exists
+    on_disk_path = tmp_path / "tex.dds"
+    on_disk_path.write_bytes(b"content does not matter")
+    on_disk = bpy.data.images.new(name="tex", width=1, height=1)
+    on_disk.source = "FILE"
+    on_disk.filepath = str(on_disk_path)
+    node_a = _new_material_using_image("mat_a", on_disk)
+
+    # a packed image is not missing either
+    packed = new_packed_dds_image("packed_tex", make_bc1_dds(4, 4, 1), filename="tex.dds")
+    node_b = _new_material_using_image("mat_b", packed)
+
+    bpy.ops.sollumz.txd_find_missing()
+
+    assert node_a.image == on_disk
+    assert node_b.image == packed
+    assert "tex" in bpy.data.images
+    assert "packed_tex" in bpy.data.images
+
+
+@assert_logs_no_warnings_or_errors
+def test_txd_find_missing_never_replaces_txd_images(context, tmp_path):
+    bpy.ops.wm.read_homefile()
+    txd, _ = _new_txd_with_packed_texture(context, "tex.dds")
+
+    # a txd texture whose own file is missing must not be replaced or deleted, even though the
+    # packed "tex.dds" texture has the same name
+    missing_txd_img = _new_missing_image("tex_missing", tmp_path, "tex.dds")
+    txd.new_texture(missing_txd_img)
+
+    bpy.ops.sollumz.txd_find_missing()
+
+    assert "tex_missing" in bpy.data.images
+    assert txd.textures[1].image == missing_txd_img

@@ -12,7 +12,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
 from ...sollumz_operators import ExportAssetsOperatorImpl, ImportAssetsOperatorImpl
-from ...tools.blenderhelper import remove_number_suffix
+from ..properties import get_texture_name
 from ..utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -218,7 +218,8 @@ class SOLLUMZ_OT_txd_find_missing(Operator):
         for txd in context.scene.sz_txds.texture_dictionaries:
             for slot in txd.textures:
                 if slot.image is not None:
-                    txd_images_by_name.setdefault(slot.name, slot.image)
+                    if name := slot.name:
+                        txd_images_by_name.setdefault(name, slot.image)
                     txd_images.add(slot.image)
 
         replaced = []
@@ -226,7 +227,7 @@ class SOLLUMZ_OT_txd_find_missing(Operator):
             if image in txd_images or not self._has_missing_file(image):
                 continue
 
-            new_image = txd_images_by_name.get(self._normalize_texture_name(image.name))
+            new_image = txd_images_by_name.get(get_texture_name(image))
             if new_image is None or new_image is image:
                 continue
 
@@ -247,7 +248,6 @@ class SOLLUMZ_OT_txd_find_missing(Operator):
         self.report({"INFO"}, f"Found {len(replaced)} missing texture(s).")
         return {"FINISHED"}
 
-
     def _has_missing_file(self, image: bpy.types.Image) -> bool:
         """An image whose source file is neither on disk nor packed."""
         return (
@@ -255,15 +255,6 @@ class SOLLUMZ_OT_txd_find_missing(Operator):
             and image.source == "FILE"
             and not os.path.exists(bpy.path.abspath(image.filepath, library=image.library))
         )
-
-    def _normalize_texture_name(self, name: str) -> str:
-        """Normalize a texture/image name for matching purposes: lowercase, strip Blender's `.001` duplicate
-        suffix and a trailing `.dds` extension. Lets a placeholder image (`metal`, `metal.dds`, `metal.dds.001`)
-        match the same texture in a dictionary."""
-        name = remove_number_suffix(name).lower()
-        if name.endswith(".dds"):
-            name = name[: -len(".dds")]
-        return name
 
 
 class SOLLUMZ_OT_import_ytd(ImportAssetsOperatorImpl, Operator):
