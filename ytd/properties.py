@@ -25,23 +25,11 @@ from ..shared.multiselection import (
     define_multiselect_collection,
 )
 
-_TRAILING_BLENDER_SUFFIX_RE = re.compile(r"\.\d{3}$")
-
 
 def get_texture_name(image: Image | None) -> str:
     if image:
         return os.path.splitext(bpy.path.basename(image.filepath))[0]
     return ""
-
-
-def normalize_texture_name(name: str) -> str:
-    """Normalize a texture/image name for matching purposes: lowercase, strip Blender's `.001` duplicate
-    suffix and a trailing `.dds` extension. Lets a placeholder image (`metal`, `metal.dds`, `metal.dds.001`)
-    match the same texture in a dictionary."""
-    name = _TRAILING_BLENDER_SUFFIX_RE.sub("", name.lower())
-    if name.endswith(".dds"):
-        name = name[: -len(".dds")]
-    return name
 
 
 class TextureSlot(PropertyGroup):

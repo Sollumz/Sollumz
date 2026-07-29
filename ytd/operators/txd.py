@@ -12,7 +12,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
 from ...sollumz_operators import ExportAssetsOperatorImpl, ImportAssetsOperatorImpl
-from ..properties import normalize_texture_name
+from ...tools.blenderhelper import remove_number_suffix
 from ..utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -201,20 +201,11 @@ class SOLLUMZ_OT_txd_refresh_sources(Operator):
         return {"FINISHED"}
 
 
-def _has_missing_file(image: bpy.types.Image) -> bool:
-    """An image whose source file cannot be found on disk, same notion used by Blender's Find Missing Files."""
-    return (
-        not image.packed_files
-        and image.source == "FILE"
-        and not os.path.exists(bpy.path.abspath(image.filepath, library=image.library))
-    )
-
-
 class SOLLUMZ_OT_txd_find_missing(Operator):
-    """Replace images with a missing file with matching textures from the scene's texture dictionaries"""
+    """Find images whose files are missing and replace them with matching textures from the available texture dictionaries"""
 
     bl_idname = "sollumz.txd_find_missing"
-    bl_label = "Find Missing TXD"
+    bl_label = "Find Missing Textures using TXDs"
     bl_options = {"UNDO"}
 
     @classmethod
@@ -222,18 +213,20 @@ class SOLLUMZ_OT_txd_find_missing(Operator):
         return any(len(txd.textures) > 0 for txd in context.scene.sz_txds.texture_dictionaries)
 
     def execute(self, context):
-        images_by_name = {}
+        txd_images = set()
+        txd_images_by_name = {}
         for txd in context.scene.sz_txds.texture_dictionaries:
             for slot in txd.textures:
                 if slot.image is not None:
-                    images_by_name.setdefault(normalize_texture_name(slot.name or slot.image.name), slot.image)
+                    txd_images_by_name.setdefault(slot.name, slot.image)
+                    txd_images.add(slot.image)
 
         replaced = []
         for image in list(bpy.data.images):
-            if not _has_missing_file(image):
+            if image in txd_images or not self._has_missing_file(image):
                 continue
 
-            new_image = images_by_name.get(normalize_texture_name(image.name))
+            new_image = txd_images_by_name.get(self._normalize_texture_name(image.name))
             if new_image is None or new_image is image:
                 continue
 
@@ -253,6 +246,24 @@ class SOLLUMZ_OT_txd_find_missing(Operator):
 
         self.report({"INFO"}, f"Found {len(replaced)} missing texture(s).")
         return {"FINISHED"}
+
+
+    def _has_missing_file(self, image: bpy.types.Image) -> bool:
+        """An image whose source file is neither on disk nor packed."""
+        return (
+            not image.packed_files
+            and image.source == "FILE"
+            and not os.path.exists(bpy.path.abspath(image.filepath, library=image.library))
+        )
+
+    def _normalize_texture_name(self, name: str) -> str:
+        """Normalize a texture/image name for matching purposes: lowercase, strip Blender's `.001` duplicate
+        suffix and a trailing `.dds` extension. Lets a placeholder image (`metal`, `metal.dds`, `metal.dds.001`)
+        match the same texture in a dictionary."""
+        name = remove_number_suffix(name).lower()
+        if name.endswith(".dds"):
+            name = name[: -len(".dds")]
+        return name
 
 
 class SOLLUMZ_OT_import_ytd(ImportAssetsOperatorImpl, Operator):
