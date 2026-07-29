@@ -71,7 +71,7 @@ def entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
                     found = True
                     apply_entity_properties(obj, entity)
         if found:
-            logger.info(f"Succesfully imported: {ymap.name}.ymap")
+            logger.info(f"Successfully imported: {ymap.name}.ymap")
             return True
         else:
             logger.info(
@@ -129,7 +129,7 @@ def instanced_entity_to_obj(ymap_obj: bpy.types.Object, ymap: CMapData):
                         f"'{entity.archetype_name}' is missing in scene, creating an empty drawable instead.")
         if count > 0:
             logger.info(
-                f"Succesfully placed {count}/{entities_amount} entities from scene!")
+                f"Successfully placed {count}/{entities_amount} entities from scene!")
             return group_obj
         else:
             logger.info(

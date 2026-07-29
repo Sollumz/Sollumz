@@ -39,7 +39,7 @@ class CableMeshBuilder:
 
         if ind_arr.ndim > 1 or ind_arr.size % 3 != 0:
             raise ValueError(
-                "Indices array should be a 1D array in triangle order and it's size should be divisble by 3!")
+                "Indices array should be a 1D array in triangle order and it's size should be divisible by 3!")
 
         self.vertex_arr = vertex_arr
         self.ind_arr = ind_arr

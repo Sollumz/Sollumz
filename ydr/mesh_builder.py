@@ -19,7 +19,7 @@ class MeshBuilder:
 
         if ind_arr.ndim > 1 or ind_arr.size % 3 != 0:
             raise ValueError(
-                "Indices array should be a 1D array in triangle order and it's size should be divisble by 3!")
+                "Indices array should be a 1D array in triangle order and it's size should be divisible by 3!")
 
         # Triangles using the same vertex 2+ times are not valid topology for Blender and can potentially crash/hang
         # Blender before we have a chance to call `Mesh.validate()`. Some vanilla models and, often, modded models have

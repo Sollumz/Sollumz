@@ -133,7 +133,7 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
             if do_center:
                 center_composite_to_children(composite_obj)
 
-        self.report({"INFO"}, f"Succesfully converted all selected objects to a Composite.")
+        self.report({"INFO"}, f"Successfully converted all selected objects to a Composite.")
 
         return {"FINISHED"}
 
@@ -172,7 +172,7 @@ class CreateCollisionMatHelper:
         obj.data.materials.append(mat)
 
         self.report(
-            {"INFO"}, f"Succesfully added {mat.name} material to {obj.name}")
+            {"INFO"}, f"Successfully added {mat.name} material to {obj.name}")
 
     def execute(self, context):
         selected = context.selected_objects
