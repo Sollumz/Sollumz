@@ -187,21 +187,16 @@ class VertexBufferBuilder:
         self.mesh.loops.foreach_get("vertex_index", self._loop_to_vert_inds)
 
         if domain == VBBuilderDomain.VERTEX:
-            # Build vert->loops mapping by sorting loop indices by their vertex index
+            # Find each vertex's first loop by sorting loop indices by their vertex index, then
+            # locating the boundaries between vertices
             num_verts = len(mesh.vertices)
             sorted_loop_indices = np.argsort(self._loop_to_vert_inds)
             sorted_vert_indices = self._loop_to_vert_inds[sorted_loop_indices]
 
-            # Find boundaries between vertices using searchsorted
             vert_boundaries = np.searchsorted(sorted_vert_indices, np.arange(num_verts + 1))
 
-            self._vert_to_loops = [
-                sorted_loop_indices[vert_boundaries[i]:vert_boundaries[i + 1]].tolist()
-                for i in range(num_verts)
-            ]
             self._vert_to_first_loop = sorted_loop_indices[vert_boundaries[:-1]]
         else:
-            self._vert_to_loops = None
             self._vert_to_first_loop = None
 
         self._char_cloth = char_cloth
