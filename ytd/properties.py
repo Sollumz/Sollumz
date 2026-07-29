@@ -12,10 +12,10 @@ from bpy.props import (
 from bpy.types import (
     Context,
     Image,
+    Object,
     PropertyGroup,
     Scene,
     ShaderNodeTexImage,
-    Object,
 )
 
 from ..shared.multiselection import (
@@ -25,12 +25,10 @@ from ..shared.multiselection import (
     define_multiselect_collection,
 )
 
-_TRAILING_BLENDER_SUFFIX_RE = re.compile(r"\.\d{3}$")
-
 
 def get_texture_name(image: Image | None) -> str:
     if image:
-        return os.path.splitext(bpy.path.basename(image.filepath))[0]
+        return os.path.splitext(bpy.path.basename(image.filepath))[0].lower()
     return ""
 
 
@@ -128,6 +126,7 @@ class TextureImageSource(PropertyGroup):
         self, obj: Object, include_children: bool, found_images: set[Image], images: list[tuple[Image, bool]]
     ):
         from ..sollumz_helper import get_sollumz_materials
+
         mat_to_model = {}
         mats = get_sollumz_materials(obj, out_material_to_models=mat_to_model, include_root_obj=True)
         for mat in mats:

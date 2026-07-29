@@ -124,10 +124,10 @@ def make_bc1_dds(width: int, height: int, mip_count: int) -> bytes:
     return bytes(blob)
 
 
-def new_packed_dds_image(name: str, dds: bytes) -> bpy.types.Image:
+def new_packed_dds_image(name: str, dds: bytes, filename: str = "") -> bpy.types.Image:
     img = bpy.data.images.new(name=name, width=1, height=1)
     img.source = "FILE"
-    img.filepath = f"//{name}"
+    img.filepath = f"//{filename or name}"
     img.pack(data=dds, data_len=len(dds))
     return img
 

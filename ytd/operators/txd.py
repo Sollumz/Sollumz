@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import bpy
@@ -11,6 +12,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
 from ...sollumz_operators import ExportAssetsOperatorImpl, ImportAssetsOperatorImpl
+from ..properties import get_texture_name
 from ..utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -197,6 +199,62 @@ class SOLLUMZ_OT_txd_refresh_sources(Operator):
             src.refresh(context)
         txd.refresh_from_sources()
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_txd_find_missing(Operator):
+    """Find images whose files are missing and replace them with matching textures from the available texture dictionaries"""
+
+    bl_idname = "sollumz.txd_find_missing"
+    bl_label = "Find Missing Textures using TXDs"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return any(len(txd.textures) > 0 for txd in context.scene.sz_txds.texture_dictionaries)
+
+    def execute(self, context):
+        txd_images = set()
+        txd_images_by_name = {}
+        for txd in context.scene.sz_txds.texture_dictionaries:
+            for slot in txd.textures:
+                if slot.image is not None:
+                    if name := slot.name:
+                        txd_images_by_name.setdefault(name, slot.image)
+                    txd_images.add(slot.image)
+
+        replaced = []
+        for image in list(bpy.data.images):
+            if image in txd_images or not self._has_missing_file(image):
+                continue
+
+            new_image = txd_images_by_name.get(get_texture_name(image))
+            if new_image is None or new_image is image:
+                continue
+
+            try:
+                image.user_remap(new_image)
+            except Exception as e:
+                logger.warning(f"Failed to update texture '{image.name}': {e}")
+                continue
+
+            replaced.append(image)
+
+        # `batch_remove` requires the IDs to be fully unused. `user_remap` leaves them at zero users, but an
+        # image kept around by a fake user must not be deleted.
+        unused = [image for image in replaced if image.users == 0]
+        if unused:
+            bpy.data.batch_remove(unused)
+
+        self.report({"INFO"}, f"Found {len(replaced)} missing texture(s).")
+        return {"FINISHED"}
+
+    def _has_missing_file(self, image: bpy.types.Image) -> bool:
+        """An image whose source file is neither on disk nor packed."""
+        return (
+            not image.packed_files
+            and image.source == "FILE"
+            and not os.path.exists(bpy.path.abspath(image.filepath, library=image.library))
+        )
 
 
 class SOLLUMZ_OT_import_ytd(ImportAssetsOperatorImpl, Operator):
