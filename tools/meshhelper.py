@@ -453,7 +453,7 @@ def get_total_bounds(obj):
 
 
 def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()):
-    """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returhs bbmin, bbmax"""
+    """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returns bbmin, bbmax"""
     total_bounds: list[Vector] = []
 
     for child in [obj, *obj.children_recursive]:
@@ -478,16 +478,21 @@ def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matri
 
 
 def get_combined_bound_box_tight(obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()):
-    """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returhs bbmin, bbmax.
+    """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returns bbmin, bbmax.
     This applies the transforms to the mesh vertices instead of the local AABB corners. Slower but produces smaller
     world AABBs, specially when the transforms include rotation.
     """
     # TODO: for now this is separate from get_combined_bound_box because it was needed to fix an issue with bound BVH
     # export, and I'm not sure if the other usages of get_combined_bound_box would keep working with this change
-    total_bounds: list[Vector] = []
+    bbmin = None
+    bbmax = None
 
     for child in [obj, *obj.children_recursive]:
         if child.type != "MESH":
+            continue
+
+        num_verts = len(child.data.vertices)
+        if num_verts == 0:
             continue
 
         if use_world:
@@ -498,13 +503,22 @@ def get_combined_bound_box_tight(obj: bpy.types.Object, use_world: bool = False,
             else:
                 child_matrix = matrix @ child.matrix_basis
 
-        total_bounds.extend([child_matrix @ Vector(v.co)
-                            for v in child.data.vertices])
+        coords = np.empty(num_verts * 3, dtype=np.float32)
+        child.data.vertices.foreach_get("co", coords)
+        coords = coords.reshape(num_verts, 3)
 
-    if not total_bounds:
+        m = np.array(child_matrix, dtype=np.float64)
+        coords = coords @ m[:3, :3].T + m[:3, 3]
+
+        child_min = coords.min(axis=0)
+        child_max = coords.max(axis=0)
+        bbmin = child_min if bbmin is None else np.minimum(bbmin, child_min)
+        bbmax = child_max if bbmax is None else np.maximum(bbmax, child_max)
+
+    if bbmin is None:
         return Vector(), Vector()
 
-    return get_min_vector_list(total_bounds), get_max_vector_list(total_bounds)
+    return Vector(bbmin), Vector(bbmax)
 
 
 def get_bound_center(obj):
