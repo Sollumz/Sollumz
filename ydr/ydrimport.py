@@ -148,7 +148,7 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
             lod_mesh = mesh_builder.build()
         except:
             logger.error(
-                f"Error occured during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
+                f"Error occurred during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
             continue
 
         lods.get_lod(lod_level).mesh = lod_mesh

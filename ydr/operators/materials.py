@@ -494,10 +494,10 @@ class SOLLUMZ_OT_set_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator)
 
 
 class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Remove all embeded textures on the selected objects active material"""
+    """Remove all embedded textures on the selected objects active material"""
     bl_idname = "sollumz.removeallembedded"
-    bl_label = "Remove all Embeded Textures"
-    bl_action = "Remove all Embeded Textures"
+    bl_label = "Remove all Embedded Textures"
+    bl_action = "Remove all Embedded Textures"
 
     def set_textures_unembedded(self, obj):
         mat = obj.active_material

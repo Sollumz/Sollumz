@@ -75,7 +75,7 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
         else:
             self.convert_to_single_drawable(context, selected_meshes, auto_embed_col, do_center)
 
-        self.report({"INFO"}, "Succesfully converted all selected objects to a Drawable.")
+        self.report({"INFO"}, "Successfully converted all selected objects to a Drawable.")
 
         return {"FINISHED"}
 

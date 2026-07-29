@@ -1201,7 +1201,7 @@ class SOLLUMZ_OT_set_sollum_type(Operator):
             obj.sollum_type = sollum_type
 
         self.report(
-            {"INFO"}, f"Sollum Type successfuly set to {SOLLUMZ_UI_NAMES[sollum_type]}.")
+            {"INFO"}, f"Sollum Type successfully set to {SOLLUMZ_UI_NAMES[sollum_type]}.")
 
         return {"FINISHED"}
 
