@@ -37,3 +37,14 @@ def test_versioning_mlo_entity_ao_and_tint():
         assert isinstance(e.ambient_occlusion_multiplier, int)
         assert isinstance(e.artificial_ambient_occlusion, int)
         assert isinstance(e.tint_value, int)
+
+
+def test_versioning_frag_vehicle_window_shattermap_mode():
+    data = load_blend_data("v280_shattermaps.blend")
+
+    # bounds with is_veh_window=True become manual shattermap windows
+    assert data.objects["windscreen.col"].child_properties.shattermap_mode == "MANUAL"
+    assert data.objects["window_lf.col"].child_properties.shattermap_mode == "MANUAL"
+
+    # bounds without is_veh_window keep the default mode
+    assert data.objects["test.col"].child_properties.shattermap_mode == "AUTO"

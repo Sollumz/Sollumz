@@ -153,8 +153,7 @@ def create_fragment(
 
     create_frag_env_cloth(frag, frag_obj, drawable_obj, materials)
 
-    if import_context().settings.frag_import_vehicle_windows:
-        create_frag_vehicle_windows(frag, frag_obj, materials)
+    create_frag_vehicle_windows(frag, frag_obj)
 
     if (lights := frag.lights):
         lights_obj = create_light_objs(lights, frag_obj, f"{frag_obj.name}.lights")
@@ -575,7 +574,7 @@ def create_frag_env_cloth(frag: AssetFragment, frag_obj: Object, drawable_obj: O
     return model_obj
 
 
-def create_frag_vehicle_windows(frag: AssetFragment, frag_obj: Object, materials: list[Material]):
+def create_frag_vehicle_windows(frag: AssetFragment, frag_obj: Object):
     vehicle_windows = frag.vehicle_windows
     if not vehicle_windows:
         return
@@ -590,17 +589,19 @@ def create_frag_vehicle_windows(frag: AssetFragment, frag_obj: Object, materials
             )
             continue
 
-        col_obj.child_properties.is_veh_window = True
+        has_shattermap = vw.shattermap.shape != (0, 0)
+        if has_shattermap:
+            if import_context().settings.frag_import_vehicle_windows:
+                mode = "MANUAL"
+                shattermap_name = f"{window_bone.name}_shattermap"
+                shattermap_obj = create_frag_vehicle_window_shattermap(vw, shattermap_name, window_bone.matrix_local)
+                shattermap_obj.parent = col_obj
+            else:
+                mode = "AUTO"
+        else:
+            mode = "MANUAL_NO_SHATTERMAP"
 
-        window_mat = find_frag_vehicle_window_material(vw, frag.drawable, materials)
-
-        if window_mat is not None:
-            col_obj.child_properties.window_mat = window_mat
-
-        shattermap_name = f"{window_bone.name}_shattermap"
-        shattermap_obj = create_frag_vehicle_window_shattermap(vw, shattermap_name, window_bone.matrix_local)
-        shattermap_obj.parent = col_obj
-
+        col_obj.child_properties.shattermap_mode = mode
         col_obj.vehicle_window_properties.data_min = vw.data_min
         col_obj.vehicle_window_properties.data_max = vw.data_max
         col_obj.vehicle_window_properties.cracks_texture_tiling = vw.scale
@@ -633,27 +634,6 @@ def find_frag_vehicle_window_col(frag_obj: Object, bone_name: str) -> Object | N
                 return obj
 
     return None
-
-
-def find_frag_vehicle_window_material(window: FragVehicleWindow, drawable: AssetDrawable, materials: list[Material]) -> Material | None:
-    """Find the material used by a vehicle window based on its geometry index."""
-    models = drawable.models.get(LodLevel.HIGH, [])
-    if not models:
-        return None
-
-    model = models[0]
-    geometries = model.geometries
-
-    if not (0 <= window.geometry_index < len(geometries)):
-        return None
-
-    geometry = geometries[window.geometry_index]
-    shader_index = geometry.shader_index
-
-    if not (0 <= shader_index < len(materials)):
-        return None
-
-    return materials[shader_index]
 
 
 def create_frag_vehicle_window_shattermap(window: FragVehicleWindow, name: str, transform: Matrix) -> Object:

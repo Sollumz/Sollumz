@@ -116,10 +116,16 @@ class ChildProperties(bpy.types.PropertyGroup):
     mass: bpy.props.FloatProperty(name="Mass", min=0)
     damaged: bpy.props.BoolProperty(name="Damaged")
 
-    window_mat: bpy.props.PointerProperty(
-        type=bpy.types.Material, name="Window Material", description="The material of the window mesh (usually a vehglass shader)")
-    is_veh_window: bpy.props.BoolProperty(
-        name="Is Glass Window")
+    shattermap_mode: bpy.props.EnumProperty(
+        items=[
+            ("NO", "No", "Never export as a breakable vehicle window"),
+            ("AUTO", "Auto", "Automatically detect if this is a vehicle window and make it breakable with a generated shattermap. Skipped if not detected as a window"),
+            ("MANUAL_NO_SHATTERMAP", "Simple", "Breakable vehicle window without a shattermap. When broken, leaves no residual glass around the frame. Mainly used for siren glass"),
+            ("MANUAL", "Manual", "Breakable vehicle window with a shattermap created from the provided image"),
+        ],
+        name="Mode",
+        default="AUTO",
+    )
 
 
 class VehicleWindowProperties(bpy.types.PropertyGroup):

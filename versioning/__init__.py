@@ -12,7 +12,7 @@ from bpy.app.handlers import persistent
 SOLLUMZ_INTERNAL_VERSION_MISSING = -1
 """Represents a .blend file not yet saved or saved before versioning system."""
 
-SOLLUMZ_INTERNAL_VERSION = 10
+SOLLUMZ_INTERNAL_VERSION = 11
 """Current internal version for Sollumz data stored in .blend files. Independent
 of release versions.
 
@@ -39,6 +39,7 @@ Version History:
  == v2.8.0 ==
   - 9: fixed Spawn Point extension (required_map -> required_imap, start/end float -> int)
   - 10: MLO entity ambient_occlusion_multiplier/artificial_ambient_occlusion/tint_value float -> int
+  - 11: fragment is_veh_window/window_mat replaced with shattermap_mode enum
   - <next>: <describe changes>
 """
 

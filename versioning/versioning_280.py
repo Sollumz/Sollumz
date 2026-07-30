@@ -1,7 +1,9 @@
 """Handle changes between 2.8.0 and 2.9.0."""
 
+import bpy
 from bpy.types import (
     BlendData,
+    Object,
     Scene,
 )
 
@@ -36,6 +38,26 @@ def update_mlo_entity_ao_and_tint(scene: Scene):
                     move_renamed_prop(entity, src_props, prop_name, prop_name, to_uint8)
 
 
+def update_frag_vehicle_window_shattermap_mode(obj: Object):
+    from .versioning_230 import get_src_props
+
+    src_props = get_src_props(obj)
+    if src_props is None:
+        return
+
+    src_child_props = src_props.get("child_properties", None)
+    if src_child_props is None:
+        return
+
+    if src_child_props.get("is_veh_window", False):
+        obj.child_properties.shattermap_mode = "MANUAL"
+
+    if bpy.app.version < (5, 0, 0):
+        for old_prop in ("is_veh_window", "window_mat"):
+            if old_prop in src_child_props:
+                del src_child_props[old_prop]
+
+
 def do_versions(data_version: int, data: BlendData):
     if data_version < 9:
         for scene in data.scenes:
@@ -44,3 +66,7 @@ def do_versions(data_version: int, data: BlendData):
     if data_version < 10:
         for scene in data.scenes:
             update_mlo_entity_ao_and_tint(scene)
+
+    if data_version < 11:
+        for obj in data.objects:
+            update_frag_vehicle_window_shattermap_mode(obj)

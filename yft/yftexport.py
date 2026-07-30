@@ -206,15 +206,6 @@ def create_fragment_asset_core(
     materials = get_sollumz_materials(frag_obj, GetSollumzMaterialsMode.BASE)
     hi_materials = get_sollumz_materials(frag_obj, GetSollumzMaterialsMode.HI) if has_hi else None
 
-    # Check if we going to automatically generate vehicle windows
-    has_vehglass_material = any("vehicle_vehglass" in mat.shader_properties.name for mat in materials)
-    has_manual_shattermaps = (
-        any(bound.child_properties.is_veh_window for bound in frag_objs.composite.children)
-        if frag_objs.composite
-        else False
-    )
-    gen_vehicle_windows = has_vehglass_material and not has_manual_shattermaps
-
     frag = AssetFragment()
     frag.name = f"pack:/{remove_number_suffix(frag_obj.name)}"
     frag.flags = 1  # all fragments need this flag (uses cache entry)
@@ -268,12 +259,8 @@ def create_fragment_asset_core(
             hi_frag.physics = hi_physics
             hi_frag.flags |= frag_flags
 
-        vehicle_windows = (
-            generate_frag_vehicle_windows(frag)
-            if gen_vehicle_windows
-            else create_frag_vehicle_windows(frag_obj, drawable, physics.lod1.children, materials)
-        )
-        frag.vehicle_windows = vehicle_windows
+        has_vehglass_material = any("vehicle_vehglass" in mat.shader_properties.name for mat in materials)
+        frag.vehicle_windows = create_frag_vehicle_windows(frag, frag_objs) if has_vehglass_material else []
     else:
         frag.physics = None
         if hi_frag:
@@ -1160,57 +1147,107 @@ def generate_frag_vehicle_windows(frag: AssetFragment) -> list[FragVehicleWindow
     return generate_vehicle_windows(frag)
 
 
-def create_frag_vehicle_windows(frag_obj: Object, main_drawable: AssetFragDrawable, phys_children: list[PhysChild], materials: list[Material]) -> list[FragVehicleWindow]:
-    """Exports all the manually defined vehicle windows found in ``frag_obj`` hierarchy."""
+def create_frag_vehicle_window_no_shattermap(component_id: int, geometry_index: int, scale: float) -> FragVehicleWindow:
+    return FragVehicleWindow(
+        basis=Matrix(
+            (
+                (-0.0, -0.0, -0.0, 0.5),
+                (-0.0, -0.0, -0.0, 0.5),
+                (0.0, 0.0, 0.0, 0.0),
+                (0.0, 0.0, 0.0, 1.0)
+            )
+        ),
+        component_id=component_id,
+        geometry_index=geometry_index,
+        width=1,
+        height=1,
+        scale=scale,
+        flags=0x20000,
+        data_min=0.0,
+        data_max=0.0,
+        shattermap=np.empty((0, 0), dtype=np.float32),
+    )
+
+
+def create_frag_vehicle_windows(frag: AssetFragment, frag_objs: FragmentObjects) -> list[FragVehicleWindow]:
+    """Exports all the vehicle windows found in the fragment."""
+    main_drawable = frag.drawable
+    phys_children = frag.physics.lod1.children
     child_id_by_bone_tag: dict[str, int] = {c.bone_tag: i for i, c in enumerate(phys_children)}
-    mat_ind_by_name: dict[str, int] = {mat.name: i for i, mat in enumerate(materials)}
     bones = main_drawable.skeleton.bones
 
+    generated_vehicle_windows = None
+
     vehicle_windows = []
-    for obj in frag_obj.children_recursive:
-        if not obj.child_properties.is_veh_window:
+    for obj in frag_objs.composite.children_recursive:
+        mode = obj.child_properties.shattermap_mode
+        if mode == "NO":
             continue
+
+        is_auto = mode == "AUTO"
+        is_manual = mode == "MANUAL"
+        is_manual_no_shattermap = mode == "MANUAL_NO_SHATTERMAP"
 
         bone = get_child_of_bone(obj)
         if bone is None or not bone.sollumz_use_physics:
-            logger.warning(
-                f"Vehicle window '{obj.name}' is not attached to a bone, or the attached bone does not have physics "
-                "enabled! Attach the bone via a Copy Transforms constraint."
-            )
+            if is_manual or is_manual_no_shattermap:
+                logger.warning(
+                    f"Vehicle window '{obj.name}' is not attached to a bone, or the attached bone does not have physics "
+                    "enabled! Attach the bone via a Copy Transforms constraint."
+                )
             continue
 
-        bone_index = get_bone_index(frag_obj.data, bone)
+        bone_index = get_bone_index(frag_objs.fragment.data, bone)
         bone_tag = bones[bone_index].tag
         if bone_tag not in child_id_by_bone_tag:
-            logger.warning(f"No physics child for the vehicle window '{obj.name}'!")
+            if is_manual or is_manual_no_shattermap:
+                logger.warning(f"No physics child for the vehicle window '{obj.name}'!")
             continue
 
-        window_mat = obj.child_properties.window_mat
-        if window_mat is None:
-            logger.warning(f"Vehicle window '{obj.name}' has no material with the vehicle_vehglass shader!")
+        geometry_index = find_frag_geometry_index_for_vehicle_window(main_drawable, bone_index)
+        if geometry_index == -1:
+            if is_manual or is_manual_no_shattermap:
+                logger.warning(
+                    f"Vehicle window '{obj.name}' has no geometry using the 'VEHICLE VEHGLASS' shader! "
+                    f"Make sure there is a mesh skinned to bone '{bone.name}' that uses the 'VEHICLE VEHGLASS' shader."
+                )
             continue
 
-        if window_mat.name not in mat_ind_by_name:
-            logger.warning(
-                f"Vehicle window '{obj.name}' is using a vehicle_vehglass material '{window_mat.name}' that is not "
-                f"used in the Drawable! This material should be added to the mesh object attached to the bone '{bone.name}'."
+        component_id = child_id_by_bone_tag[bone_tag]
+
+        if is_manual:
+            # Window with shattermap from a user-provided image
+            shattermap, basis = create_frag_vehicle_window_shattermap(obj)
+            height, width = shattermap.shape
+            vw = FragVehicleWindow(
+                basis=basis,
+                component_id=component_id,
+                geometry_index=geometry_index,
+                width=width,
+                height=height,
+                scale=obj.vehicle_window_properties.cracks_texture_tiling,
+                flags=0x20000,
+                data_min=obj.vehicle_window_properties.data_min,
+                data_max=obj.vehicle_window_properties.data_max,
+                shattermap=shattermap,
             )
-            continue
+        elif is_manual_no_shattermap:
+            # Window without shattermap, still breakable but without glass-remains around the window border
+            vw = create_frag_vehicle_window_no_shattermap(component_id, geometry_index, obj.vehicle_window_properties.cracks_texture_tiling)
+        elif is_auto:
+            # Window with automatically generated shattermap
+            if generated_vehicle_windows is None:
+                generated_vehicle_windows = generate_frag_vehicle_windows(frag)
 
-        shattermap, basis = create_frag_vehicle_window_shattermap(obj)
-        height, width = shattermap.shape
-        vehicle_windows.append(FragVehicleWindow(
-            basis=basis,
-            component_id=child_id_by_bone_tag[bone_tag],
-            geometry_index=get_frag_vehicle_window_geometry_index(main_drawable, mat_ind_by_name[window_mat.name]),
-            width=width,
-            height=height,
-            scale=obj.vehicle_window_properties.cracks_texture_tiling,
-            flags=0,
-            data_min=obj.vehicle_window_properties.data_min,
-            data_max=obj.vehicle_window_properties.data_max,
-            shattermap=shattermap,
-        ))
+            for gvw in generated_vehicle_windows:
+                if gvw.component_id == component_id and gvw.geometry_index == geometry_index:
+                    vw = gvw
+                    break
+            else:
+                # No generated window, skip
+                continue
+
+        vehicle_windows.append(vw)
 
     vehicle_windows.sort(key=lambda w: w.component_id)
     return vehicle_windows
@@ -1300,18 +1337,18 @@ def find_frag_vehicle_window_shattermap_image(obj: Object) -> Image | None:
     return None
 
 
-def get_frag_vehicle_window_geometry_index(drawable: AssetFragDrawable, window_shader_index: int) -> int:
-    """Get index of the geometry using the window material."""
+def find_frag_geometry_index_for_vehicle_window(drawable: AssetFragDrawable, bone_index: int) -> int:
     models = drawable.models.get(IOLodLevel.HIGH, [])
     if not models:
-        return 0
+        return -1
 
     model = models[0]
     for (index, geometry) in enumerate(model.geometries):
-        if geometry.shader_index == window_shader_index:
+        shader = drawable.shader_group.shaders[geometry.shader_index]
+        if shader.name == "vehicle_vehglass" and (geometry.vertex_buffer["BlendIndices"] == bone_index).any():
             return index
 
-    return 0
+    return -1
 
 
 def create_frag_glass_window(

@@ -17,7 +17,7 @@ from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_ui import FlagsPanel
 from ..icons import icon
 from .properties import (
-    GroupProperties, FragmentProperties, VehicleWindowProperties, VehicleLightID,
+    GroupProperties, FragmentProperties, VehicleLightID,
     GroupFlagBit,
     VehiclePaintLayer,
 )
@@ -503,7 +503,7 @@ class SOLLUMZ_PT_PHYSICS_CHILD_PANEL(bpy.types.Panel):
 
 
 class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
-    bl_label = "Manual Shattermap"
+    bl_label = "Vehicle Window Shattermap"
     bl_idname = "SOLLUMZ_PT_VEHICLE_WINDOW_PANEL"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -523,17 +523,18 @@ class SOLLUMZ_PT_VEH_WINDOW_PANEL(bpy.types.Panel):
         obj = context.active_object
         child_props = obj.child_properties
 
-        layout.prop(child_props, "is_veh_window")
+        layout.prop(child_props, "shattermap_mode", expand=True)
 
-        if not child_props.is_veh_window:
-            return
+        mode = child_props.shattermap_mode
+        if mode == "MANUAL" or mode == "MANUAL_NO_SHATTERMAP":
+            layout.separator()
 
-        layout.separator()
-
-        layout.prop(child_props, "window_mat")
-
-        for prop in VehicleWindowProperties.__annotations__:
-            self.layout.prop(obj.vehicle_window_properties, prop)
+            vw_props = obj.vehicle_window_properties
+            if mode == "MANUAL":
+                col = layout.column(align=True)
+                col.prop(vw_props, "data_min")
+                col.prop(vw_props, "data_max", text="Max")
+            layout.prop(vw_props, "cracks_texture_tiling")
 
 
 class SOLLUMZ_PT_FRAGMENT_GEOMETRY_PANEL(bpy.types.Panel):
