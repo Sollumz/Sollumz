@@ -1,3 +1,4 @@
+import bpy
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -6,8 +7,7 @@ from pathlib import Path
 from functools import cache
 from xml.etree import ElementTree as ET
 from .shared import is_tmp_dir_available, tmp_path, glob_assets
-from ..yft.yftimport import import_yft
-from ..yft.yftexport import export_yft
+from ..sollumz_properties import SollumType
 
 
 def elem_to_vec(e: ET.Element):
@@ -74,6 +74,8 @@ if is_tmp_dir_available():  # need the temp directory to store exported .yfts
         This function is cached, so only the first call does the actual import/export process inside Blender.
         """
 
+        from .test_import_export import DEFAULT_IMPORT_SETTINGS, DEFAULT_EXPORT_SETTINGS
+
         file_test_cases = []
         test_cases = []
         for yft_path, yft_path_str in glob_assets("yft"):
@@ -81,19 +83,43 @@ if is_tmp_dir_available():  # need the temp directory to store exported .yfts
                 continue
 
             if "cwxml" in yft_path_str or "gen8" in yft_path_str or "gen9" in yft_path_str:
-                # These tests still use old import code and these folders contain some cloth models that it doesn't
-                # really handle well
+                # These folders contain cloth-only test models, not physics fixtures
                 continue
 
             if yft_path_str.endswith("_hi.yft.xml"):
                 continue
 
-            obj = import_yft(yft_path_str)
-            assert obj is not None
+            bpy.ops.wm.read_homefile()
+            res = bpy.ops.sollumz.import_assets(
+                directory=str(yft_path.parent),
+                files=[{"name": yft_path.name}],
+                use_custom_settings=True,
+                **DEFAULT_IMPORT_SETTINGS,
+            )
+            assert res == {"FINISHED"}
 
-            out_path = tmp_path(yft_path.name, "export_physics_properties_yfts")
-            success = export_yft(obj, str(out_path))
-            assert success
+            asset_name = yft_path.name.split(".", 1)[0]
+            obj = bpy.data.objects.get(asset_name)
+            assert obj is not None
+            assert obj.sollum_type == SollumType.FRAGMENT
+
+            obj.select_set(True)
+
+            out_dir = tmp_path(asset_name, "export_physics_properties_yfts")
+            out_dir.mkdir(parents=True, exist_ok=True)
+            res = bpy.ops.sollumz.export_assets(
+                directory=str(out_dir),
+                direct_export=True,
+                use_custom_settings=True,
+                **DEFAULT_EXPORT_SETTINGS | {
+                    "target_formats": {"CWXML"},
+                    "target_versions": {"GEN8"},
+                },
+            )
+            assert res == {"FINISHED"}
+
+            # With a single target version the bundle is saved directly in the directory, no gen8/gen9 subdirectories
+            out_path = out_dir / f"{asset_name}.yft.xml"
             assert out_path.exists()
 
             input_tree = ET.ElementTree()

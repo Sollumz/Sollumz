@@ -18,15 +18,9 @@ from szio.gta5 import (
     STANDARD_VERTEX_ATTR_DTYPES,
     CharacterCloth as IOCharacterCloth,
 )
-from szio.gta5.cwxml import (
-    CharacterCloth as CWXMLCharacterCloth,
-)
 from .cloth_char_io import (
     CLOTH_CHAR_VERTEX_GROUP_NAME,
     cloth_char_get_mesh_to_cloth_bindings,
-)
-from .cloth_char import (
-    cloth_char_get_mesh_to_cloth_bindings as legacy_cloth_char_get_mesh_to_cloth_bindings,
 )
 from .cloth_diagnostics import (
     ClothDiagMeshMaterialError,
@@ -174,7 +168,7 @@ class VertexBufferBuilder:
         bone_by_vgroup: Optional[dict[int, int]] = None,
         domain: VBBuilderDomain = VBBuilderDomain.FACE_CORNER,
         materials: Optional[list[bpy.types.Material]] = None,
-        char_cloth: IOCharacterCloth | CWXMLCharacterCloth | None = None,  # legacy export still passes cwxml instance directly
+        char_cloth: IOCharacterCloth | None = None,
     ):
         self.mesh = mesh
         self.domain = domain
@@ -428,15 +422,9 @@ class VertexBufferBuilder:
             cloth_bind_verts_pos = mesh_verts_pos.reshape((num_verts, 3))[cloth_bind_verts_mask]
             cloth_bind_verts_normal = mesh_verts_normal.reshape((num_verts, 3))[cloth_bind_verts_mask]
 
-            if isinstance(self._char_cloth, IOCharacterCloth):
-                cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = cloth_char_get_mesh_to_cloth_bindings(
-                    self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
-                )
-            else:
-                assert isinstance(self._char_cloth, CWXMLCharacterCloth)
-                cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = legacy_cloth_char_get_mesh_to_cloth_bindings(
-                    self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
-                )
+            cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = cloth_char_get_mesh_to_cloth_bindings(
+                self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
+            )
 
             if cloth_bind_errors:
                 n = len(cloth_bind_errors)

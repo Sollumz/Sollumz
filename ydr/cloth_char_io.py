@@ -25,6 +25,12 @@ from ..tools.blenderhelper import (
     create_blender_object,
     add_child_of_bone_constraint,
 )
+from ..shared.geometry import (
+    tris_normals,
+    tris_areas,
+    tris_areas_from_verts,
+    distance_signed_point_to_planes,
+)
 from ..sollumz_properties import (
     SollumType,
     SOLLUMZ_UI_NAMES,
@@ -49,13 +55,29 @@ CLOTH_CHAR_VERTEX_GROUP_NAME = "CLOTH"
 
 
 def cloth_char_find_mesh_objects(drawable_obj: Object, silent: bool = False) -> list[Object]:
-    from .cloth_char import cloth_char_find_mesh_objects as impl
-    return impl(drawable_obj, silent)
+    """Returns a list of mesh objects that use a cloth material in the fragment. If not silent, warns the user if a mesh
+    has a cloth material but also other materials or multiple cloth materials.
+    """
+    mesh_objs = []
+    for obj in drawable_obj.children_recursive:
+        if obj.sollum_type != SollumType.CHARACTER_CLOTH_MESH or obj.type != "MESH":
+            continue
+
+        # Character cloth mesh are not supposed to have any materials, so don't need to check anything else
+        mesh_objs.append(obj)
+
+    return mesh_objs
 
 
 def cloth_char_find_bounds(char_cloth_obj: Object) -> list[Object]:
-    from .cloth_char import cloth_char_find_bounds as impl
-    return impl(char_cloth_obj)
+    composite_objs = []
+    for obj in char_cloth_obj.children:
+        if obj.sollum_type != SollumType.BOUND_COMPOSITE:
+            continue
+
+        composite_objs.append(obj)
+
+    return composite_objs
 
 
 def cloth_char_export(
@@ -345,8 +367,43 @@ def _cloth_char_get_cloth_to_bone_bindings(
     cloth_obj: Object,
     armature_obj: Object
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[int]]:
-    from .cloth_char import _cloth_char_get_cloth_to_bone_bindings as impl
-    return impl(cloth_mesh, cloth_obj, armature_obj)
+    from .vertex_buffer_builder import normalize_weights, get_sorted_vertex_group_elements, try_get_bone_by_vgroup
+
+    bone_by_vgroup = try_get_bone_by_vgroup(cloth_obj, armature_obj)
+    assert bone_by_vgroup is not None
+
+    num_verts = len(cloth_mesh.vertices)
+
+    ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
+    weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
+    bone_index_map = {}
+
+    ungrouped_verts = 0
+
+    for i, vert in enumerate(cloth_mesh.vertices):
+        groups = get_sorted_vertex_group_elements(vert, bone_by_vgroup)
+        if not groups:
+            ungrouped_verts += 1
+            continue
+
+        for j, grp in enumerate(groups):
+            if j > 3:
+                break
+
+            weights_arr[i][j] = grp.weight
+            bone_index = bone_by_vgroup[grp.group]
+            ind_arr[i][j] = bone_index_map.setdefault(bone_index, len(bone_index_map))
+
+    if ungrouped_verts != 0:
+        logger.warning(
+            f"Character cloth mesh '{cloth_mesh.name}' has {ungrouped_verts} vertices not weighted to any vertex group! "
+            "These vertices will be weighted to the root bone which may cause parts to float in-game. "
+            "In Edit Mode, you can use 'Select > Select All by Trait > Ungrouped vertices' to select "
+            "these vertices."
+        )
+
+    weights_arr = normalize_weights(weights_arr)
+    return weights_arr, ind_arr, list(bone_index_map.keys())
 
 
 def cloth_char_get_mesh_to_cloth_bindings(
@@ -354,13 +411,110 @@ def cloth_char_get_mesh_to_cloth_bindings(
     mesh_binded_verts: NDArray[np.float32],
     mesh_binded_verts_normals: NDArray[np.float32],
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
-    from .cloth_char import _cloth_char_get_mesh_to_cloth_bindings_impl as impl
-    return impl(
-        cloth.controller.vertices,
-        cloth.controller.indices,
-        mesh_binded_verts,
-        mesh_binded_verts_normals,
-    )
+    cloth_vertices = cloth.controller.vertices
+    cloth_indices = cloth.controller.indices
+
+    # Max distance from mesh vertex to cloth triangle to be considered
+    MAX_DISTANCE_THRESHOLD = 0.05
+
+    errors = []
+
+    num_binded_verts = len(mesh_binded_verts)
+
+    cloth_verts = np.array(cloth_vertices)
+    cloth_tris = np.array(cloth_indices).reshape((-1, 3))
+    cloth_tris_verts = cloth_verts[cloth_tris]
+    cloth_tris_normals = tris_normals(cloth_tris_verts)
+    cloth_tris_normals_neg = -cloth_tris_normals
+    cloth_tris_areas = tris_areas(cloth_tris_verts)
+    cloth_tris_v0, cloth_tris_v1, cloth_tris_v2 = cloth_tris_verts[:, 0], cloth_tris_verts[:, 1], cloth_tris_verts[:, 2]
+
+    # Compute the dot product to determine which verts are facing inside or outside by comparing the normals and the
+    # direction to the origin (0,0). Flattened to 2D on the XY plane (ignore Z) to reduce issues with the angled cloth
+    # or cloth far from the origin (i.e. face bandanas). Most cloths wrap the ped model around the Z axis (i.e. vertical
+    # tube), so when the verts are flattened it will be kind of a circle around the origin. This probably won't work
+    # well if the cloth is placed more like a horizontal tube (on an animal maybe?). Will need more complex logic or
+    # some user input to handle that, we ignore it for now.
+    mesh_binded_dot_product = np.sum(mesh_binded_verts_normals[:, :2] * -mesh_binded_verts[:, :2], axis=1)
+    mesh_binded_verts_facing_inside = mesh_binded_dot_product > 0.0
+
+    ind_arr = np.empty((num_binded_verts, 4), dtype=np.uint32)
+    weights_arr = np.empty((num_binded_verts, 4), dtype=np.float32)
+
+    # Bind each mesh vertex to a cloth triangle
+    for mesh_vert_idx in range(num_binded_verts):
+        mesh_vert = mesh_binded_verts[mesh_vert_idx]
+        mesh_vert_facing_inside = mesh_binded_verts_facing_inside[mesh_vert_idx]
+
+        if mesh_vert_facing_inside:
+            # Flip winding order
+            this_cloth_tris_normals = cloth_tris_normals_neg
+            this_cloth_tris_v0 = cloth_tris_v1
+            this_cloth_tris_v1 = cloth_tris_v0
+        else:
+            this_cloth_tris_normals = cloth_tris_normals
+            this_cloth_tris_v0 = cloth_tris_v0
+            this_cloth_tris_v1 = cloth_tris_v1
+
+        # Calculate the distance from the mesh vertex to every cloth triangle plane
+        distance_to_tris = distance_signed_point_to_planes(mesh_vert, this_cloth_tris_v0, this_cloth_tris_normals)
+
+        # Project the mesh vertex onto every cloth triangle plane
+        projected_to_tris = mesh_vert - this_cloth_tris_normals * distance_to_tris[:, np.newaxis]
+
+        # Calculate the barycentric coordinates of each projected vertex
+        tris_areas0 = tris_areas_from_verts(this_cloth_tris_v1, cloth_tris_v2, projected_to_tris)
+        tris_areas1 = tris_areas_from_verts(cloth_tris_v2, this_cloth_tris_v0, projected_to_tris)
+        tris_areas2 = tris_areas_from_verts(this_cloth_tris_v0, this_cloth_tris_v1, projected_to_tris)
+
+        tris_w0 = tris_areas0 / cloth_tris_areas
+        tris_w1 = tris_areas1 / cloth_tris_areas
+        tris_w2 = tris_areas2 / cloth_tris_areas
+
+        # Use the squared distance between mesh vertex and projected vertex as error measure
+        err_to_tris = np.sum((mesh_vert - projected_to_tris) ** 2, axis=1)
+
+        # Triangles are considered valid if:
+        #  1. Projected vertex falls within the triangle, i.e. the barycentric coordinates sum 1 (with some leeway)
+        #  2. They are not too far away from the mesh vertex
+        condition_projection = (tris_w0 + tris_w1 + tris_w2) < 1.05
+        condition_distance = np.abs(distance_to_tris) <= MAX_DISTANCE_THRESHOLD
+        valid_tris_mask = condition_projection & condition_distance
+        valid_tris_indices = np.where(valid_tris_mask)[0]
+        if not valid_tris_mask.any():
+            errors.append(ClothDiagMeshBindingError(
+                Vector(mesh_vert),
+                error_projection=not condition_projection.any(),
+                error_distance=not condition_distance.any(),
+                error_multiple_matches=False,
+            ))
+            continue
+
+        # Find the triangle to bind this vertex to, the valid triangle with the least error
+        bind_tri_index = valid_tris_indices[np.argmin(err_to_tris[valid_tris_mask])]
+
+        b0, b1, b2 = cloth_tris[bind_tri_index]
+        w0, w1, w2 = tris_w0[bind_tri_index], tris_w1[bind_tri_index], tris_w2[bind_tri_index]
+        d = distance_to_tris[bind_tri_index]
+
+        if mesh_vert_facing_inside:
+            # Flip winding order
+            b1, b0 = b0, b1
+
+        ind_arr[mesh_vert_idx, 0] = b1
+        ind_arr[mesh_vert_idx, 1] = b0
+        ind_arr[mesh_vert_idx, 2] = 255
+        ind_arr[mesh_vert_idx, 3] = b2
+
+        weights_arr[mesh_vert_idx, 0] = w0
+        weights_arr[mesh_vert_idx, 1] = w1
+        weights_arr[mesh_vert_idx, 2] = w2
+        weights_arr[mesh_vert_idx, 3] = d * 10.0 + 0.5
+
+    # Make sure weights stay in the [0, 1] range
+    weights_arr.clip(0.0, 1.0, out=weights_arr)
+
+    return weights_arr, ind_arr, errors
 
 
 def cloth_char_export_dictionary(dwd_obj: Object) -> AssetClothDictionary | None:

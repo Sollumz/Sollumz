@@ -727,7 +727,7 @@ def create_fragment_as_asset(
 ) -> Object:
     """Create fragment as an asset with all meshes joined together."""
 
-    from ..ydr.ydrimport import convert_object_to_asset
+    from ..ydr.ydrimport_io import convert_object_to_asset
     skel = frag.base_drawable.skeleton
     lights = frag.lights
     bounds = frag.physics and frag.physics.lod1 and frag.physics.lod1.archetype and frag.physics.lod1.archetype.bounds

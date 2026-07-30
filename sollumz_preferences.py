@@ -1101,17 +1101,6 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_on_custom_procids_path_update,
     )
 
-    legacy_import_export: BoolProperty(
-        name="Legacy Import/Export",
-        description=(
-            "Use the legacy import/export system, which only supports CodeWalker XML format. "
-            "Enable this option only if you experience issues or errors with the new import/export system "
-            "with binary resource formats support"
-        ),
-        default=False,
-        update=_save_preferences_on_update
-    )
-
     popup_shown_install_dependencies: BoolProperty(
         default=False,
         update=_save_preferences_on_update
@@ -1396,31 +1385,30 @@ class SollumzAddonPreferences(AddonPreferences):
         box.label(text="Export", icon="EXPORT")
         settings = self.export_settings
 
-        if not self.legacy_import_export:
-            from szio.gta5 import AssetFormat, is_provider_available
-            row = box.row(align=True)
-            row.use_property_split = False
-            row.use_property_decorate = False
-            split = row.split(factor=0.4, align=True)
-            subrow = split.row(align=False)
-            subrow.alignment = "RIGHT"
-            subrow.label(text="Formats")
-            subrow = split.row(align=True)
-            for f in ("NATIVE", "CWXML"):
-                subsubrow = subrow.row(align=True)
-                subsubrow.enabled = is_provider_available(AssetFormat[f])
-                subsubrow.prop_enum(settings, "target_formats", f)
+        from szio.gta5 import AssetFormat, is_provider_available
+        row = box.row(align=True)
+        row.use_property_split = False
+        row.use_property_decorate = False
+        split = row.split(factor=0.4, align=True)
+        subrow = split.row(align=False)
+        subrow.alignment = "RIGHT"
+        subrow.label(text="Formats")
+        subrow = split.row(align=True)
+        for f in ("NATIVE", "CWXML"):
+            subsubrow = subrow.row(align=True)
+            subsubrow.enabled = is_provider_available(AssetFormat[f])
+            subsubrow.prop_enum(settings, "target_formats", f)
 
-            row = box.row(align=True)
-            row.use_property_split = False
-            row.use_property_decorate = False
-            split = row.split(factor=0.4, align=True)
-            subrow = split.row(align=False)
-            subrow.alignment = "RIGHT"
-            subrow.label(text="Versions")
-            subrow = split.row(align=True)
-            for f in ("GEN8", "GEN9"):
-                subrow.prop_enum(settings, "target_versions", f)
+        row = box.row(align=True)
+        row.use_property_split = False
+        row.use_property_decorate = False
+        split = row.split(factor=0.4, align=True)
+        subrow = split.row(align=False)
+        subrow.alignment = "RIGHT"
+        subrow.label(text="Versions")
+        subrow = split.row(align=True)
+        for f in ("GEN8", "GEN9"):
+            subrow.prop_enum(settings, "target_versions", f)
 
         row = box.row(heading="Limit To")
         row.prop(settings, "limit_to_selected", text="Selected Objects")
@@ -1431,9 +1419,6 @@ class SollumzAddonPreferences(AddonPreferences):
 
         _section_header(box, "Drawable Dictionary")
         box.prop(settings, "exclude_skeleton")
-
-        _line_separator(layout, factor=3.0)
-        layout.prop(self, "legacy_import_export")
 
     def draw_keymap(self, context, layout: UILayout):
         wm = bpy.context.window_manager

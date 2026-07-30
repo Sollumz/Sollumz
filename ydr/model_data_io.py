@@ -336,8 +336,14 @@ def get_model_vert_buffer_dtype(geoms: list[Geometry]) -> np.dtype:
 
 
 def apply_bone_ids(vert_arr: NDArray, bone_ids: NDArray[np.uint32]):
-    from .model_data import apply_bone_ids as impl
-    return impl(vert_arr, bone_ids)
+    if "BlendIndices" not in vert_arr.dtype.names:
+        return vert_arr
+
+    # Give vertices binded to cloth a magic number so mesh_builder knows it is cloth
+    is_cloth = vert_arr['BlendIndices'][:, 2] == 255
+    vert_arr["BlendIndices"][is_cloth] = 99999, 99999, 99999, 99999
+
+    vert_arr["BlendIndices"][~is_cloth] = bone_ids[vert_arr["BlendIndices"][~is_cloth]]
 
 
 def get_model_poly_mat_inds(geoms: list[Geometry]):

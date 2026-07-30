@@ -9,7 +9,7 @@ from bpy.types import (
 from bpy_extras.mesh_utils import mesh_linked_triangles
 import numpy as np
 from sys import float_info
-from typing import Optional
+from typing import NamedTuple, Optional
 from collections import defaultdict
 from itertools import combinations, zip_longest
 from dataclasses import replace
@@ -44,8 +44,12 @@ from ..tools.meshhelper import flip_uvs
 from ..tools.utils import vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_sollumz_materials, GetSollumzMaterialsMode, get_parent_inverse
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
-from ..ybn.ybnexport_io import create_bound_composite_asset, has_collision_materials, has_bvh_collision_materials
-from ..ybn.ybnexport import get_scale_to_apply_to_bound
+from ..ybn.ybnexport_io import (
+    create_bound_composite_asset,
+    has_collision_materials,
+    has_bvh_collision_materials,
+    calc_scale_to_apply_to_bound,
+)
 from ..ydr.ydrexport_io import (
     create_drawable_asset,
     create_model,
@@ -64,7 +68,99 @@ from .properties import (
     GroupProperties,
     get_glass_type_index,
 )
-from .yftexport import locate_fragment_objects, FragmentObjects
+class FragmentObjects(NamedTuple):
+    """Contains the important Blender objects in a fragment hierarchy."""
+    fragment: Object
+    drawable: Object
+    composite: Optional[Object]
+    damaged_drawable: Optional[Object]
+    damaged_composite: Optional[Object]
+
+    @property
+    def has_collisions(self) -> bool:
+        return self.composite is not None
+
+
+def locate_fragment_objects(frag: Object) -> Optional[FragmentObjects]:
+    """Explore the fragment hierarchy looking for the important objects (drawables, bound composites). Returns ``None``
+    if there are missing objects such that the export process would not be able to continue.
+    """
+    assert frag.sollum_type == SollumType.FRAGMENT
+    if frag.type != "ARMATURE":
+        logger.warning(f"Fragment '{frag.name}' must have an armature!")
+        return None
+
+    drawables = []
+    damaged_drawables = []
+    composites = []
+    damaged_composites = []
+
+    for obj in frag.children:
+        match obj.sollum_type:
+            case SollumType.DRAWABLE:
+                if ".damaged" in obj.name:
+                    damaged_drawables.append(obj)
+                else:
+                    drawables.append(obj)
+            case SollumType.BOUND_COMPOSITE:
+                if ".damaged" in obj.name:
+                    damaged_composites.append(obj)
+                else:
+                    composites.append(obj)
+            case _:
+                continue
+
+    if not drawables:
+        logger.warning(f"Fragment '{frag.name}' must have a Drawable!")
+        return None
+
+    drawable, *bad_drawables = drawables
+    if bad_drawables:
+        bad_drawables_names = (f"'{d.name}'" for d in bad_drawables)
+        logger.warning(
+            f"Fragment '{frag.name}' has multiple Drawables! Fragments only support a single drawable. Only "
+            f"'{drawable.name}' will be exported, other drawables will be ignored ({', '.join(bad_drawables_names)}). "
+            f"Please, remove them or combine their meshes."
+        )
+
+    if damaged_drawables:
+        damaged_drawable, *bad_damaged_drawables = damaged_drawables
+        if bad_damaged_drawables:
+            bad_damaged_drawables_names = (f"'{d.name}'" for d in bad_damaged_drawables)
+            logger.warning(
+                f"Fragment '{frag.name}' has multiple damaged Drawables! Fragments only support a single damaged "
+                f"drawable. Only '{damaged_drawable.name}' will be exported, other damaged drawables will be ignored "
+                f"({', '.join(bad_damaged_drawables_names)}). Please, remove them or combine their meshes."
+            )
+    else:
+        damaged_drawable = None
+
+    if composites:
+        composite, *bad_composites = composites
+        if bad_composites:
+            bad_composites_names = (f"'{d.name}'" for d in bad_composites)
+            logger.warning(
+                f"Fragment '{frag.name}' has multiple Bound Composites! Fragments only support a single bound "
+                f"composite. Only '{composite.name}' will be exported, other bound composites will be ignored "
+                f"({', '.join(bad_composites_names)}). Please, remove them or combine their child bounds."
+            )
+    else:
+        composite = None
+
+    if damaged_composites:
+        damaged_composite, *bad_damaged_composites = damaged_composites
+        if bad_damaged_composites:
+            bad_damaged_composites_names = (f"'{d.name}'" for d in bad_damaged_composites)
+            logger.warning(
+                f"Fragment '{frag.name}' has multiple damaged Bound Composites! Fragments only support a single "
+                f"damaged bound composite. Only '{damaged_composite.name}' will be exported, other damaged bound "
+                f"composites will be ignored ({', '.join(bad_damaged_composites_names)}). Please, remove them or "
+                f"combine their child bounds."
+            )
+    else:
+        damaged_composite = None
+
+    return FragmentObjects(frag, drawable, composite, damaged_drawable, damaged_composite)
 
 
 def export_yft(obj: Object) -> ExportBundle:
@@ -1034,7 +1130,7 @@ def create_frag_phys_child_drawable(main_drawable: AssetFragDrawable | None, mat
 
     models: dict[IOLodLevel, list[Model]] = defaultdict(list)
     for model_obj in model_objs:
-        scale = get_scale_to_apply_to_bound(model_obj)
+        scale = calc_scale_to_apply_to_bound(model_obj)
         transforms_to_apply = Matrix.Diagonal(scale).to_4x4()
 
         lods = model_obj.sz_lods

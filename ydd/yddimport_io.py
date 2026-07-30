@@ -163,7 +163,7 @@ def create_drawable_dictionary(
         )
         drawable_obj.parent = dict_obj
         if import_as_asset:
-            from ..ydr.ydrimport import convert_object_to_asset
+            from ..ydr.ydrimport_io import convert_object_to_asset
             drawable_obj_asset = convert_object_to_asset(name, drawable_obj)
             dict_assets.append(drawable_obj_asset)
 

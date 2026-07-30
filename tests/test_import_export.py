@@ -7,14 +7,8 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 from ..sollumz_properties import SollumType
-from ..ybn.ybnexport import export_ybn
-from ..ybn.ybnimport import import_ybn
 from ..ycd.ycdexport import export_ycd
 from ..ycd.ycdimport import import_ycd
-from ..ydr.ydrexport import export_ydr
-from ..ydr.ydrimport import import_ydr
-from ..yft.yftexport import export_yft
-from ..yft.yftimport import import_yft
 from .shared import (
     assert_logs_no_errors,
     assert_logs_no_warnings_or_errors,
@@ -34,37 +28,39 @@ if is_tmp_dir_available():
     def tmp_path(file_name: str) -> Path:
         return tmp_path_with_subdir(file_name, "import_export")
 
-    @pytest.mark.parametrize("ydr_path, ydr_path_str", glob_assets("ydr"))
-    @pytest.mark.skip(reason="old import/export code, some new changes in szio are not handled correctly")
-    def test_import_export_ydr(ydr_path: Path, ydr_path_str: str):
-        obj = import_ydr(ydr_path_str)
-        assert obj is not None
-
-        out_path = tmp_path(ydr_path.name)
-        success = export_ydr(obj, str(out_path))
-        assert success
-        assert out_path.exists()
-
-    @pytest.mark.parametrize("yft_path, yft_path_str", glob_assets("yft"))
-    @pytest.mark.skip(reason="old import/export code, some new cloth assets are not handled correctly")
-    def test_import_export_yft(yft_path: Path, yft_path_str: str):
-        obj = import_yft(yft_path_str)
-        assert obj is not None
-
-        out_path = tmp_path(yft_path.name)
-        success = export_yft(obj, str(out_path))
-        assert success
-        assert out_path.exists()
-
     @pytest.mark.parametrize("ybn_path, ybn_path_str", glob_assets("ybn"))
     def test_import_export_ybn(ybn_path: Path, ybn_path_str: str):
-        obj = import_ybn(ybn_path_str)
-        assert obj is not None
+        bpy.ops.wm.read_homefile()
 
-        out_path = tmp_path(ybn_path.name)
-        success = export_ybn(obj, str(out_path))
-        assert success
-        assert out_path.exists()
+        res = bpy.ops.sollumz.import_assets(
+            directory=str(ybn_path.parent),
+            files=[{"name": ybn_path.name}],
+            use_custom_settings=True,
+            **DEFAULT_IMPORT_SETTINGS,
+        )
+        assert res == {"FINISHED"}
+
+        asset_name = ybn_path.name.split(".", 1)[0]
+        obj = bpy.data.objects.get(asset_name)
+        assert obj is not None
+        assert obj.sollum_type == SollumType.BOUND_COMPOSITE
+
+        obj.select_set(True)
+
+        out_dir = tmp_path(asset_name)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        res = bpy.ops.sollumz.export_assets(
+            directory=str(out_dir),
+            direct_export=True,
+            use_custom_settings=True,
+            **DEFAULT_EXPORT_SETTINGS | {
+                "target_formats": {"CWXML"},
+                "target_versions": {"GEN8"},
+            },
+        )
+        assert res == {"FINISHED"}
+        # With a single target version the bundle is saved directly in the directory, no gen8/gen9 subdirectories
+        assert (out_dir / f"{asset_name}.ybn.xml").is_file()
 
     @pytest.mark.parametrize("ycd_path, ycd_path_str", glob_assets("ycd"))
     def test_import_export_ycd(ycd_path: Path, ycd_path_str: str):
@@ -817,7 +813,7 @@ def test_export_fragment_cloth(frag_obj_name: str, tmp_path: Path):
 )
 @assert_logs_no_warnings_or_errors
 def test_import_fragment_cloth(version_dir: str, model: str, tmp_path: Path):
-    from ..ydr.cloth_env import cloth_env_find_mesh_objects
+    from ..ydr.cloth_env_io import cloth_env_find_mesh_objects
 
     bpy.ops.wm.read_homefile()
 

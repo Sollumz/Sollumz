@@ -116,7 +116,7 @@ class MeshBuilder:
     def create_vertex_groups(self, obj: bpy.types.Object, bones: list[bpy.types.Bone]):
         def _get_vertex_group_name(bone_index: int) -> str:
             if bone_index == 99999:
-                from .cloth_char import CLOTH_CHAR_VERTEX_GROUP_NAME
+                from .cloth_char_io import CLOTH_CHAR_VERTEX_GROUP_NAME
                 return CLOTH_CHAR_VERTEX_GROUP_NAME
             elif bones and bone_index < len(bones):
                 return bones[bone_index].name

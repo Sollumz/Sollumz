@@ -288,7 +288,7 @@ class SOLLUMZ_OT_light_effect_create_lights_from_entity(bpy.types.Operator):
         selected_entity = get_selected_entity(context)
         selected_extension = get_selected_entity_extension(context)
 
-        from ...ydr.lights import duplicate_lights_for_light_effect
+        from ...ydr.lights_io import duplicate_lights_for_light_effect
         obj = duplicate_lights_for_light_effect(selected_entity.linked_object)
         obj.name = f"{selected_entity.archetype_name}.light_effect"
         constraint = obj.constraints.new("COPY_TRANSFORMS")

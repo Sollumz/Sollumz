@@ -420,7 +420,7 @@ class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
 
     def calculate_mass(self, obj: bpy.types.Object, mat: bpy.types.Material) -> float:
         bbmin, bbmax = get_combined_bound_box(obj, use_world=True)
-        # TODO: here we could calculate the volume based on shape like we do on ybnexport for more accurate results
+        # TODO: here we could calculate the volume based on shape like we do on ybnexport_io for more accurate results
         volume = get_mass_properties_of_box(bbmin, bbmax).volume
         density = collisionmats[mat.collision_properties.collision_index].density
 

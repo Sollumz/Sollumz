@@ -580,8 +580,6 @@ def create_drawable_as_asset(
 ) -> Object:
     """Create drawable as an asset with all the high LODs joined together."""
 
-    from .ydrimport import convert_object_to_asset
-
     skel = drawable.skeleton
     lights = drawable.lights
     bounds = drawable.bounds
@@ -644,3 +642,47 @@ def create_drawable_as_asset(
 
 
     return asset_obj
+
+
+def convert_object_to_asset(name: str, obj: Object) -> Object:
+    root_transform = obj.matrix_world.copy()
+
+    model_objs = []
+    other_objs = []
+
+    for child in obj.children_recursive:
+        if child.sollum_type == SollumType.DRAWABLE_MODEL:
+            model_objs.append(child)
+        else:
+            other_objs.append(child)
+
+    joined_obj = join_objects(model_objs)
+    joined_transform = joined_obj.matrix_world.copy()
+    joined_obj.parent = None
+
+    # Fix origin of the drawable, the joined object ends up with the origin of the first model selected, which does not
+    # always have the same origin as the drawable itself
+    joined_obj.data.transform(root_transform.inverted_safe() @ joined_transform)
+
+    for modifier in joined_obj.modifiers:
+        if modifier.type == "ARMATURE":
+            joined_obj.modifiers.remove(modifier)
+
+    for constraint in joined_obj.constraints:
+        joined_obj.constraints.remove(constraint)
+
+    bpy.context.collection.objects.unlink(joined_obj)
+
+    armature = obj.data
+    bpy.data.objects.remove(obj)
+    if armature:
+        bpy.data.armatures.remove(armature)
+    for other_obj in other_objs:
+        bpy.data.objects.remove(other_obj)
+
+    joined_obj.name = name
+    joined_obj.data.name = f"{name}.mesh"
+    joined_obj.asset_mark()
+    joined_obj.asset_generate_preview()
+
+    return joined_obj

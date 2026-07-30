@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 from bpy.types import (
     Object,
     Material,
@@ -198,13 +199,30 @@ def create_models(
 
 
 def get_model_objs(drawable_obj: Object) -> list[Object]:
-    from .ydrexport import get_model_objs as impl
-    return impl(drawable_obj)
+    """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
+    from .cloth import is_cloth_mesh_object
+    return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh and not is_cloth_mesh_object(obj)]
 
 
 def sort_skinned_models_by_bone(model_objs: list[Object], bones: list[Bone]) -> list[Object]:
-    from .ydrexport import sort_skinned_models_by_bone as impl
-    return impl(model_objs, bones)
+    """Sort all models with vertex groups by bone index. If a model has multiple vertex group uses the vertex group
+    with the lowest bone index."""
+    # This is necessary to ensure proper render order of each vertex group. With many vertex groups on a single object
+    # you can just change the order, but if the object is split by group there is no way of manually sorting the vertex groups.
+    def get_model_bone_ind(obj: Object):
+        bone_ind_by_name: dict[str, int] = {
+            b.name: i for i, b in enumerate(bones)}
+        bone_inds = [bone_ind_by_name[group.name]
+                     for group in obj.vertex_groups if group.name in bone_ind_by_name]
+
+        if not bone_inds:
+            return 0
+
+        lowest_bone_ind = min(bone_inds)
+
+        return lowest_bone_ind
+
+    return sorted(model_objs, key=get_model_bone_ind)
 
 
 @operates_on_lod_level
@@ -260,13 +278,27 @@ def create_model(
 
 
 def triangulate_mesh(mesh: Mesh):
-    from .ydrexport import triangulate_mesh as impl
-    impl(mesh)
+    temp_mesh = bmesh.new()
+    temp_mesh.from_mesh(mesh)
+
+    bmesh.ops.triangulate(temp_mesh, faces=temp_mesh.faces)
+
+    temp_mesh.to_mesh(mesh)
+    temp_mesh.free()
+
+    return mesh
 
 
 def get_model_bone_index(model_obj: Object) -> int:
-    from .ydrexport import get_model_bone_index as impl
-    return impl(model_obj)
+    constraint = get_child_of_constraint(model_obj)
+
+    if constraint is None:
+        return 0
+
+    armature: Armature = constraint.target.data
+    bone_index = armature.bones.find(constraint.subtarget)
+
+    return bone_index if bone_index != -1 else 0
 
 
 def create_geometries(
@@ -407,13 +439,49 @@ def sort_geoms_by_shader(geometries: list[Geometry]) -> list[Geometry]:
 
 
 def get_loop_inds_by_material(mesh: Mesh, drawable_mats: list[Material]) -> dict[int, NDArray[np.uint32]]:
-    from .ydrexport import get_loop_inds_by_material as impl
-    return impl(mesh, drawable_mats)
+    loop_inds_by_mat: dict[int, NDArray[np.uint32]] = {}
+
+    if not mesh.loop_triangles:
+        mesh.calc_loop_triangles()
+
+    # Material indices for each triangle
+    tri_mat_indices = np.empty(len(mesh.loop_triangles), dtype=np.uint32)
+    mesh.loop_triangles.foreach_get("material_index", tri_mat_indices)
+
+    # Material indices for each loop triangle
+    loop_mat_inds = np.repeat(tri_mat_indices, 3)
+
+    all_loop_inds = np.empty(len(mesh.loop_triangles) * 3, dtype=np.uint32)
+    mesh.loop_triangles.foreach_get("loops", all_loop_inds)
+
+    mat_inds: dict[str, int] = {mat: i for i, mat in enumerate(drawable_mats)}
+
+    for i, mat in enumerate(mesh.materials):
+        original_mat = mat.original
+
+        if original_mat not in mat_inds:
+            continue
+
+        # Get index of material on drawable (different from mesh material index)
+        shader_index = mat_inds[original_mat]
+        tri_loop_inds = np.where(loop_mat_inds == i)[0]
+
+        if tri_loop_inds.size == 0:
+            continue
+
+        loop_indices = all_loop_inds[tri_loop_inds]
+
+        if shader_index in loop_inds_by_mat:
+            # Merge arrays when multiple material slots use the same material
+            loop_inds_by_mat[shader_index] = np.concatenate((loop_inds_by_mat[shader_index], loop_indices))
+        else:
+            loop_inds_by_mat[shader_index] = loop_indices
+
+    return loop_inds_by_mat
 
 
 def get_bone_ids(bones: list[Bone]) -> list[int]:
-    from .ydrexport import get_bone_ids as impl
-    return impl(bones)
+    return [i for i in range(len(bones))]
 
 
 def fix_vehglass_geometry_for_shattermap_generation(

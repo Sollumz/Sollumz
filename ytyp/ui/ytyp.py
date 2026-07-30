@@ -1,7 +1,6 @@
 import bpy
 from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
 from ...sollumz_properties import ArchetypeType
-from ...sollumz_preferences import get_addon_preferences
 from ..utils import get_selected_ytyp
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
@@ -48,15 +47,9 @@ class SOLLUMZ_PT_YTYP_LIST_PANEL(YtypToolChildPanel, bpy.types.Panel):
         list_col, _ = draw_list_with_add_remove(self.layout, "sollumz.createytyp", "sollumz.deleteytyp",
                                                 SOLLUMZ_UL_YTYP_LIST.bl_idname, "", context.scene, "ytyps", context.scene, "ytyp_index", rows=3)
 
-        import_op, export_op = (
-            (ytyp_ops.SOLLUMZ_OT_import_ytyp, ytyp_ops.SOLLUMZ_OT_export_ytyp)
-            if get_addon_preferences(context).legacy_import_export
-            else (ytyp_ops.SOLLUMZ_OT_import_ytyp_io, ytyp_ops.SOLLUMZ_OT_export_ytyp_io)
-        )
-
         row = list_col.row()
-        row.operator(import_op.bl_idname, icon="IMPORT")
-        row.operator(export_op.bl_idname, icon="EXPORT")
+        row.operator(ytyp_ops.SOLLUMZ_OT_import_ytyp_io.bl_idname, icon="IMPORT")
+        row.operator(ytyp_ops.SOLLUMZ_OT_export_ytyp_io.bl_idname, icon="EXPORT")
 
 
 class SOLLUMZ_UL_ARCHETYPE_LIST(MultiSelectUIListMixin, bpy.types.UIList):

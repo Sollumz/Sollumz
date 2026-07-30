@@ -20,7 +20,7 @@ from ..cloth import (
     mesh_has_cloth_attribute,
     mesh_get_cloth_attribute_values,
 )
-from ..cloth_env import (
+from ..cloth_env_io import (
     cloth_env_find_mesh_objects,
 )
 from ..cloth_diagnostics import (
@@ -272,18 +272,30 @@ class SOLLUMZ_OT_cloth_refresh_diagnostics(Operator):
 
             cloth_last_export_contexts().clear()
 
+            from szio.gta5 import AssetTarget, AssetFormat, AssetVersion
+            from ...iecontext import export_context_scope, ExportContext
+            from ...sollumz_preferences import get_export_settings
+            from ...tools.blenderhelper import remove_number_suffix
+
+            settings = get_export_settings().to_export_context_settings()
+            if not settings.targets:
+                settings.targets = (AssetTarget(AssetFormat.CWXML, AssetVersion.GEN8),)
+
+            # Dry runs: the returned bundles are discarded, nothing is written to disk
             if cloth_objs:
-                from ...ydd.yddexport import export_ydd
+                from ...ydd.yddexport_io import export_ydd
                 for cloth_obj in cloth_objs:
                     if not (dwd_obj := find_sollumz_parent(cloth_obj, SollumType.DRAWABLE_DICTIONARY)):
                         continue
                     logger.info(f"Checking '{dwd_obj.name}'...")
-                    export_ydd(dwd_obj, None)
+                    with export_context_scope(ExportContext(remove_number_suffix(dwd_obj.name.lower()), settings)):
+                        export_ydd(dwd_obj)
 
             if frag_cloth_objs:
-                from ...yft.yftexport import export_yft
+                from ...yft.yftexport_io import export_yft
                 for frag_obj in frag_cloth_objs:
                     logger.info(f"Checking '{frag_obj.name}'...")
-                    export_yft(frag_obj, None)
+                    with export_context_scope(ExportContext(remove_number_suffix(frag_obj.name.lower()), settings)):
+                        export_yft(frag_obj)
 
         return {"FINISHED"}

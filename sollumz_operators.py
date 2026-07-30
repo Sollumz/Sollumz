@@ -1,5 +1,4 @@
 import traceback
-import os
 import bpy
 from bpy.types import (
     Context,
@@ -20,31 +19,15 @@ from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, TimeFlagsMixin
 from .sollumz_preferences import get_addon_preferences, get_import_settings, get_export_settings, ImportSettingsBase, ExportSettingsBase
 from szio.gta5.cwxml import (
-    YDR,
-    YDD,
-    YFT,
-    YBN,
     YNV,
     YCD,
-    YTYP,
     YMAP,
 )
-from .ydr.ydrimport import import_ydr
-from .ydr.ydrexport import export_ydr
-from .ydd.yddimport import import_ydd
-from .ydd.yddexport import export_ydd
-from .yft.yftimport import import_yft
-from .yft.yftexport import export_yft
-from .ybn.ybnimport import import_ybn
-from .ybn.ybnexport import export_ybn
 from .ynv.ynvimport import import_ynv
 from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
-from .ymap.ymapimport import import_ymap as deprecated_import_ymap
 from .ymap.ymapexport import export_ymap as deprecated_export_ymap
-from .ytyp.ytypimport import import_ytyp
 from .tools.blenderhelper import remove_number_suffix
-from .meta import DEV_MODE
 from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
 from .iecontext import (
     export_context_scope,
@@ -73,106 +56,6 @@ class TimedOperator:
 
     def execute_timed(self, context: Context):
         ...
-
-
-class SOLLUMZ_OT_import_assets_legacy(TimedOperator, Operator):
-    """Import XML files exported by CodeWalker"""
-    bl_idname = "sollumz.import_assets_legacy"
-    bl_label = "Import CodeWalker XML"
-    bl_options = {"UNDO"}
-
-    directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
-    files: bpy.props.CollectionProperty(
-        name="File Path",
-        type=bpy.types.OperatorFileListElement,
-        options={"HIDDEN", "SKIP_SAVE"}
-    )
-
-    filter_glob: bpy.props.StringProperty(
-        default="".join(f"*{filetype.file_extension};" for filetype in (YDR, YDD, YFT, YBN, YNV, YCD, YMAP, YTYP)),
-        options={"HIDDEN", "SKIP_SAVE"},
-        maxlen=255,
-    )
-
-    def draw(self, context):
-        pass
-
-    def execute_timed(self, context):
-        with logger.use_operator_logger(self):
-            if not self.directory or len(self.files) == 0 or self.files[0].name == "":
-                logger.info("No file selected for import!")
-                return {"CANCELLED"}
-
-            self.directory = bpy.path.abspath(self.directory)
-
-            filenames = [f.name for f in self.files]
-            filenames, ytyp_filenames = self._separate_ytyp_filenames(filenames)
-            filenames = self._dedupe_hi_yft_filenames(filenames)
-
-            for filename in filenames:
-                filepath = os.path.join(self.directory, filename)
-
-                try:
-
-                    if YDR.file_extension in filepath:
-                        import_ydr(filepath)
-                    elif YDD.file_extension in filepath:
-                        import_ydd(filepath)
-                    elif YFT.file_extension in filepath:
-                        import_yft(filepath)
-                    elif YBN.file_extension in filepath:
-                        import_ybn(filepath)
-                    elif YNV.file_extension in filepath:
-                        import_ynv(filepath)
-                    elif YCD.file_extension in filepath:
-                        import_ycd(filepath)
-                    elif YMAP.file_extension in filepath:
-                        deprecated_import_ymap(filepath)
-                    else:
-                        continue
-
-                    logger.info(f"Successfully imported '{filepath}'")
-                except:
-                    logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
-                    return {"CANCELLED"}
-
-            # Import the .ytyps after all the assets to ensure that the archetypes get linked to their object in case
-            # they are imported together
-            for filename in ytyp_filenames:
-                filepath = os.path.join(self.directory, filename)
-                try:
-                    import_ytyp(filepath)
-                    logger.info(f"Successfully imported '{filepath}'")
-                except:
-                    logger.error(f"Error importing: {filepath} \n {traceback.format_exc()}")
-                    return {"CANCELLED"}
-
-            logger.info(f"Imported in {self.time_elapsed} seconds")
-            return {"FINISHED"}
-
-    def invoke(self, context, event):
-        if self.directory and len(self.files) > 0 and self.files[0].name != "":
-            # Already have a list of files, don't open the import window and do the import directly.
-            # Invoked by the FileHandler below (or a manual operator call, but we don't currently do that).
-            return self.execute(context)
-
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
-
-    def _dedupe_hi_yft_filenames(self, filenames: list[str]) -> list[str]:
-        """If the user selected both a non-hi .yft.xml and its _hi.yft.xml, remove the _hi.yft.xml one to prevent
-        importing the same model twice.
-        """
-        return [f for f in filenames if not f.endswith("_hi.yft.xml") or f"{f[:-11]}.yft.xml" not in filenames]
-
-    def _separate_ytyp_filenames(self, filenames: list[str]) -> tuple[list[str], list[str]]:
-        """Separate the filenames list into two lists, one with all the assets and another one only with .ytyps."""
-        asset_filenames, ytyp_filenames = [], []
-        for f in filenames:
-            dest = ytyp_filenames if f.endswith(YTYP.file_extension) else asset_filenames
-            dest.append(f)
-        return asset_filenames, ytyp_filenames
-
 
 
 class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
@@ -449,18 +332,7 @@ if bpy.app.version >= (4, 1, 0):
         @classmethod
         def poll_drop(cls, context):
             a = context.area
-            return a is not None and not get_addon_preferences(context).legacy_import_export and (a.type == "VIEW_3D" or a.type == "OUTLINER")
-
-    class SOLLUMZ_FH_import_legacy(bpy.types.FileHandler):
-        bl_idname = "SOLLUMZ_FH_import_legacy"
-        bl_label = "File handler for CodeWalker XML import"
-        bl_import_operator = SOLLUMZ_OT_import_assets_legacy.bl_idname
-        bl_file_extensions = ".xml"
-
-        @classmethod
-        def poll_drop(cls, context):
-            a = context.area
-            return a is not None and get_addon_preferences(context).legacy_import_export and (a.type == "VIEW_3D" or a.type == "OUTLINER")
+            return a is not None and (a.type == "VIEW_3D" or a.type == "OUTLINER")
 
 
 def _collect_objects_for_export(context, limit_to_selected: bool) -> list[Object]:
@@ -486,110 +358,6 @@ def _get_only_parent_objs(objs: list[Object]) -> list[Object]:
         parent_objs.add(parent_obj)
 
     return list(parent_objs)
-
-
-class SOLLUMZ_OT_export_assets_legacy(TimedOperator, Operator):
-    """Export CodeWalker XML files"""
-    bl_idname = "sollumz.export_assets_legacy"
-    bl_label = "Export CodeWalker XML"
-
-    filter_glob: bpy.props.StringProperty(
-        default=f"*{YDR.file_extension};*{YDD.file_extension};*{YFT.file_extension};*{YBN.file_extension};*{YCD.file_extension};*{YMAP.file_extension};",
-        options={"HIDDEN", "SKIP_SAVE"},
-        maxlen=255,
-    )
-
-    directory: bpy.props.StringProperty(
-        name="Output directory",
-        description="Select export output directory",
-        subtype="DIR_PATH",
-        options={"HIDDEN"}
-    )
-
-    direct_export: bpy.props.BoolProperty(
-        name="Direct Export",
-        description="Export directly to the output directory without opening the directory selection dialog",
-        options={"HIDDEN", "SKIP_SAVE"}
-    )
-
-    def draw(self, context):
-        pass
-
-    def invoke(self, context, event):
-        if self.direct_export:
-            return self.execute(context)
-        else:
-            context.window_manager.fileselect_add(self)
-            return {"RUNNING_MODAL"}
-
-    def execute_timed(self, context: Context):
-        with logger.use_operator_logger(self) as op_log:
-            logger.info("Starting export...")
-            export_settings = get_export_settings()
-            objs = _collect_objects_for_export(context, export_settings.limit_to_selected)
-
-            self.directory = bpy.path.abspath(self.directory)
-
-            if not objs:
-                if export_settings.limit_to_selected:
-                    logger.info("No Sollumz objects selected for export!")
-                else:
-                    logger.info("No Sollumz objects in the scene to export!")
-                return {"CANCELLED"}
-
-            any_warnings_or_errors = False
-            for obj in objs:
-                op_log.clear_log_counts()
-                filepath = None
-                try:
-                    success = False
-                    if obj.sollum_type == SollumType.DRAWABLE:
-                        filepath = self.get_filepath(obj, YDR.file_extension)
-                        success = export_ydr(obj, filepath)
-                    elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
-                        filepath = self.get_filepath(obj, YDD.file_extension)
-                        success = export_ydd(obj, filepath)
-                    elif obj.sollum_type == SollumType.FRAGMENT:
-                        filepath = self.get_filepath(obj, YFT.file_extension)
-                        success = export_yft(obj, filepath)
-                    elif obj.sollum_type == SollumType.CLIP_DICTIONARY:
-                        filepath = self.get_filepath(obj, YCD.file_extension)
-                        success = export_ycd(obj, filepath)
-                    elif obj.sollum_type == SollumType.BOUND_COMPOSITE:
-                        filepath = self.get_filepath(obj, YBN.file_extension)
-                        success = export_ybn(obj, filepath)
-                    elif obj.sollum_type == SollumType.DEPRECATED__YMAP:
-                        filepath = self.get_filepath(obj, YMAP.file_extension)
-                        success = deprecated_export_ymap(obj, filepath)
-                    else:
-                        continue
-
-                    if success:
-                        if op_log.has_warnings_or_errors:
-                            logger.info(
-                                f"Exported '{filepath}' with WARNINGS or ERRORS! Please check the Info Log for details.")
-                            any_warnings_or_errors = True
-                        else:
-                            logger.info(f"Successfully exported '{filepath}'")
-                    else:
-                        if op_log.has_warnings_or_errors:
-                            logger.info(
-                                f"Failed to export '{obj.name}', ERRORS found! Please check the Info Log for details.")
-                            any_warnings_or_errors = True
-                except:
-                    logger.error(f"Error exporting: {filepath or obj.name} \n {traceback.format_exc()}")
-                    any_warnings_or_errors = True
-                    return {"CANCELLED"}
-
-            logger.info(f"Exported in {self.time_elapsed} seconds")
-            if any_warnings_or_errors and bpy.ops.screen.info_log_show.poll():
-                bpy.ops.screen.info_log_show()
-            return {"FINISHED"}
-
-    def get_filepath(self, obj: Object, extension: str):
-        name = remove_number_suffix(obj.name.lower())
-
-        return os.path.join(self.directory, name + extension)
 
 
 class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
@@ -621,9 +389,6 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
 
     def draw(self, context):
         prefs = get_addon_preferences(context)
-        if prefs.legacy_import_export:
-            return
-
         export_prefs = prefs.export_settings
         from szio.gta5 import AssetFormat, is_provider_available
         row = self.layout.row(align=False)
@@ -747,13 +512,11 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
                         case SollumType.FRAGMENT:
                             export_bundle = export_yft_asset(obj)
 
-                        # These assets still need legacy export
+                        # These assets are still exported by writing directly to a file instead of through ExportBundle
                         case SollumType.CLIP_DICTIONARY:
-                            filepath = SOLLUMZ_OT_export_assets_legacy.get_filepath(self, obj, YCD.file_extension)
-                            legacy_success = export_ycd(obj, filepath)
+                            legacy_success = export_ycd(obj, str(directory / (asset_name + YCD.file_extension)))
                         case SollumType.DEPRECATED__YMAP:
-                            filepath = SOLLUMZ_OT_export_assets_legacy.get_filepath(self, obj, YMAP.file_extension)
-                            legacy_success = deprecated_export_ymap(obj, filepath)
+                            legacy_success = deprecated_export_ymap(obj, str(directory / (asset_name + YMAP.file_extension)))
 
                         case _:
                             assert False, f"Unsupported asset type '{obj.sollum_type}'"
@@ -881,55 +644,6 @@ class SOLLUMZ_OT_export_assets(ExportAssetsOperatorImpl, Operator):
     """Export RAGE asset files"""
     bl_idname = "sollumz.export_assets"
     bl_label = "Export RAGE Assets"
-
-
-if DEV_MODE:
-    class SOLLUMZ_OT_dev_test_export_assets(Operator):
-        bl_idname = "sollumz.dev_test_export_assets"
-        bl_label = "[DEV] Test Export"
-
-        directory: bpy.props.StringProperty(
-            name="Output directory",
-            description="Select export output directory",
-            subtype="DIR_PATH",
-            options={"HIDDEN"}
-        )
-
-        def draw(self, context):
-            export_prefs = get_addon_preferences(context).export_settings
-            self.layout.prop(export_prefs, "formats")
-
-        def invoke(self, context, event):
-            context.window_manager.fileselect_add(self)
-            return {"RUNNING_MODAL"}
-
-        def execute(self, context: Context):
-            from pathlib import Path
-            d = Path(self.directory)
-            io_dir = d / "io"
-            io_dir.mkdir(exist_ok=True)
-            legacy_dir = d / "legacy"
-            legacy_dir.mkdir(exist_ok=True)
-            bpy.ops.sollumz.export_assets(directory=str(io_dir), direct_export=True)
-            bpy.ops.sollumz.export_assets_legacy(directory=str(legacy_dir), direct_export=True)
-
-            io_files = list(io_dir.iterdir())
-            legacy_files = list(legacy_dir.iterdir())
-            self.report({"INFO"}, f"{io_files=}")
-            self.report({"INFO"}, f"{legacy_files=}")
-
-            for legacy_file in legacy_dir.iterdir():
-                if not legacy_file.is_file():
-                    continue
-
-                io_file = io_dir / legacy_file.name
-                legacy_size = legacy_file.stat().st_size
-                io_size = io_file.stat().st_size
-                self.report({"INFO"}, f"=============== {legacy_file.name} ===============")
-                self.report({"INFO"}, f"  legacy {legacy_size}  bytes")
-                self.report({"INFO"}, f"      io {io_size}  bytes   ({io_size - legacy_size} bytes)")
-
-            return {"FINISHED"}
 
 
 class SOLLUMZ_OT_paint_vertices(SOLLUMZ_OT_base, Operator):
@@ -1061,29 +775,14 @@ class ClearTimeFlagsMultiSelect(SOLLUMZ_OT_base):
 
 
 _MENU_LABEL = "RAGE Asset (.ydr, .ydd, .yft, .ybn, .ytyp, .ymap, .ycd, .y*.xml)"
-_MENU_LABEL_LEGACY = f"CodeWalker XML ({YDR.file_extension}, {YDD.file_extension}, {YFT.file_extension}, {YBN.file_extension}, {YCD.file_extension})"
 
 
 def sollumz_menu_func_import(self, context):
-    if get_addon_preferences(context).legacy_import_export:
-        op = SOLLUMZ_OT_import_assets_legacy
-        label = _MENU_LABEL_LEGACY
-    else:
-        op = SOLLUMZ_OT_import_assets
-        label = _MENU_LABEL
-
-    self.layout.operator(op.bl_idname, text=label)
+    self.layout.operator(SOLLUMZ_OT_import_assets.bl_idname, text=_MENU_LABEL)
 
 
 def sollumz_menu_func_export(self, context):
-    if get_addon_preferences(context).legacy_import_export:
-        op = SOLLUMZ_OT_export_assets_legacy
-        label = _MENU_LABEL_LEGACY
-    else:
-        op = SOLLUMZ_OT_export_assets
-        label = _MENU_LABEL
-
-    self.layout.operator(op.bl_idname, text=label)
+    self.layout.operator(SOLLUMZ_OT_export_assets.bl_idname, text=_MENU_LABEL)
 
 
 class SOLLUMZ_OT_copy_location(Operator):

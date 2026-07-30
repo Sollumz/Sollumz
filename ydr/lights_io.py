@@ -251,3 +251,16 @@ def serialize_lights_to_asset(asset_obj: Object, lights: list[Light]):
             data[LIGHTS_KEY] = lights_serialized_str
     if asset_data := asset_obj.asset_data:
             asset_data[LIGHTS_KEY] = lights_serialized_str
+
+
+def duplicate_lights_for_light_effect(parent_obj: Object) -> Object:
+    lights_parent = create_empty_object(SollumType.NONE, "Lights")
+
+    for child in parent_obj.children_recursive:
+        if child.type == "LIGHT" and child.data.sollum_type != LightType.NONE:
+            light_copy = child.copy()
+            light_copy.data = light_copy.data.copy()
+            light_copy.parent = lights_parent
+            bpy.context.collection.objects.link(light_copy)
+
+    return lights_parent

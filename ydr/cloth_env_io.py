@@ -18,6 +18,7 @@ from szio.gta5 import (
     LodLevel as IOLodLevel,
     Model,
     VertexDataType,
+    ShaderManager,
 )
 from ..tools.blenderhelper import (
     get_evaluated_obj,
@@ -30,16 +31,12 @@ from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     LODLevel,
 )
-from ..ybn.ybnexport import get_scale_to_apply_to_bound
-from ..ybn.ybnexport_io import create_bound_composite_asset
+from ..ybn.ybnexport_io import create_bound_composite_asset, calc_scale_to_apply_to_bound
 from .vertex_buffer_builder_domain import VBBuilderDomain
 from .ydrexport_io import (
     get_bone_index,
     create_model,
     create_shader_group,
-)
-from .cloth_env import (
-    cloth_env_find_mesh_objects,
 )
 from .cloth_diagnostics import (
     ClothDiagMeshBindingError,
@@ -50,6 +47,51 @@ from ..iecontext import export_context
 from .. import logger
 
 CLOTH_ENV_MAX_VERTICES = 1000
+
+
+def cloth_env_find_mesh_objects(frag_obj: Object, silent: bool = False) -> list[Object]:
+    """Returns a list of mesh objects that use a cloth material in the fragment. If not silent, warns the user if a mesh
+    has a cloth material but also other materials or multiple cloth materials.
+    """
+    mesh_objs = []
+    for obj in frag_obj.children_recursive:
+        if obj.sollum_type != SollumType.DRAWABLE_MODEL or obj.type != "MESH":
+            continue
+
+        mesh = obj.data
+        num_cloth_materials = 0
+        num_other_materials = 0
+        for material in mesh.materials:
+            shader_def = ShaderManager.find_shader(material.shader_properties.filename)
+            is_cloth_material = shader_def is not None and shader_def.is_cloth
+            if is_cloth_material:
+                num_cloth_materials += 1
+            else:
+                num_other_materials += 1
+
+        match (num_cloth_materials, num_other_materials):
+            case (1, 0):
+                # Only cloth
+                mesh_objs.append(obj)
+            case (0, _):
+                # Not cloth, ignore
+                pass
+            case (_, 0):
+                # More than one cloth material, warning
+                if not silent:
+                    logger.warning(
+                        f"Drawable model '{obj.name}' has multiple cloth materials! "
+                        f"This is not supported, only a single cloth material per mesh is supported."
+                    )
+            case (_, _):
+                # Multiple materials including cloth, warning
+                if not silent:
+                    logger.warning(
+                        f"Drawable model '{obj.name}' has a cloth material along with other materials! "
+                        f"This is not supported, only a single cloth material per mesh is supported."
+                    )
+
+    return mesh_objs
 
 
 def _cloth_sort_verlet_edges(edges: list[VerletClothEdge]) -> list[VerletClothEdge]:
@@ -305,7 +347,7 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable: AssetFragDr
     cloth_drawable.skeleton = drawable.skeleton
     cloth_drawable.lod_thresholds = drawable.lod_thresholds
 
-    scale = get_scale_to_apply_to_bound(cloth_obj)
+    scale = calc_scale_to_apply_to_bound(cloth_obj)
     transforms_to_apply = Matrix.Diagonal(scale).to_4x4()
 
     # TODO(cloth): lods
