@@ -86,14 +86,7 @@ def get_min_vector_list(vecs: list[Vector]):
     if not vecs:
         return Vector()
 
-    x = []
-    y = []
-    z = []
-    for v in vecs:
-        x.append(v[0])
-        y.append(v[1])
-        z.append(v[2])
-    return Vector((min(x), min(y), min(z)))
+    return Vector(map(min, zip(*vecs)))
 
 
 def get_max_vector_list(vecs: list[Vector]):
@@ -101,14 +94,7 @@ def get_max_vector_list(vecs: list[Vector]):
     if not vecs:
         return Vector()
 
-    x = []
-    y = []
-    z = []
-    for v in vecs:
-        x.append(v[0])
-        y.append(v[1])
-        z.append(v[2])
-    return Vector((max(x), max(y), max(z)))
+    return Vector(map(max, zip(*vecs)))
 
 
 def get_distance_of_vectors(a, b):
