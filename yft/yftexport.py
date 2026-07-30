@@ -44,19 +44,19 @@ from ..tools.meshhelper import flip_uvs
 from ..tools.utils import vector_inv, reshape_mat_3x4
 from ..sollumz_helper import get_sollumz_materials, GetSollumzMaterialsMode, get_parent_inverse
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
-from ..ybn.ybnexport_io import (
+from ..ybn.ybnexport import (
     create_bound_composite_asset,
     has_collision_materials,
     has_bvh_collision_materials,
     calc_scale_to_apply_to_bound,
 )
-from ..ydr.ydrexport_io import (
+from ..ydr.ydrexport import (
     create_drawable_asset,
     create_model,
     get_bone_index,
 )
-from ..ydr.lights_io import export_lights
-from ..ydr.cloth_env_io import cloth_env_export, cloth_env_find_mesh_objects
+from ..ydr.lights import export_lights
+from ..ydr.cloth_env import cloth_env_export, cloth_env_find_mesh_objects
 
 from ..iecontext import export_context, ExportBundle
 from .. import logger

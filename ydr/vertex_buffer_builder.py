@@ -18,7 +18,7 @@ from szio.gta5 import (
     STANDARD_VERTEX_ATTR_DTYPES,
     CharacterCloth as IOCharacterCloth,
 )
-from .cloth_char_io import (
+from .cloth_char import (
     CLOTH_CHAR_VERTEX_GROUP_NAME,
     cloth_char_get_mesh_to_cloth_bindings,
 )

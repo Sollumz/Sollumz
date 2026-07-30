@@ -26,9 +26,9 @@ from szio.gta5 import (
     LodLevel,
     AssetTextureDictionary,
 )
-from ..ydr.ydrimport_io import create_drawable, create_drawable_models, shader_group_to_materials_with_hi, create_armature_obj_from_skel, extract_embedded_textures_from_hd_txd
-from ..ybn.ybnimport_io import create_bound_object, create_bound_composite
-from ..ydr.lights_io import create_light_objs, serialize_lights_to_asset
+from ..ydr.ydrimport import create_drawable, create_drawable_models, shader_group_to_materials_with_hi, create_armature_obj_from_skel, extract_embedded_textures_from_hd_txd
+from ..ybn.ybnimport import create_bound_object, create_bound_composite
+from ..ydr.lights import create_light_objs, serialize_lights_to_asset
 from .properties import LODProperties, GroupFlagBit, GlassTypes
 from ..tools.blenderhelper import get_child_of_bone
 from ..ytd.ytdimport import try_load_hd_txd
@@ -727,7 +727,7 @@ def create_fragment_as_asset(
 ) -> Object:
     """Create fragment as an asset with all meshes joined together."""
 
-    from ..ydr.ydrimport_io import convert_object_to_asset
+    from ..ydr.ydrimport import convert_object_to_asset
     skel = frag.base_drawable.skeleton
     lights = frag.lights
     bounds = frag.physics and frag.physics.lod1 and frag.physics.lod1.archetype and frag.physics.lod1.archetype.bounds

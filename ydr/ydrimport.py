@@ -20,7 +20,7 @@ from .shader_materials import (
     create_tinted_shader_graph,
     update_vehicle_material_paint_name,
 )
-from ..ybn.ybnimport_io import create_bound_composite, create_bound_object
+from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_addon_preferences
 from szio.gta5 import (
@@ -43,12 +43,12 @@ from szio.gta5 import (
 )
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
 from ..shared.shader_nodes import SzShaderNodeParameter
-from .model_data_io import ModelData, get_model_data, get_model_data_split_by_group
+from .model_data import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
 from .cable_mesh_builder import CableMeshBuilder
 from .cable import CABLE_SHADER_NAME
 from ..lods import LODLevels, LODLevel
-from .lights_io import create_light_objs, serialize_lights_to_asset
+from .lights import create_light_objs, serialize_lights_to_asset
 from .properties import DrawableModelProperties
 from ..iecontext import import_context, ImportTexturesMode
 from .. import logger

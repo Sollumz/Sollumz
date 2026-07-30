@@ -8,7 +8,7 @@ from bpy.props import (
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
 from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect, ImportAssetsOperatorImpl, ExportAssetsOperatorImpl
-from ...ydr.cloth_env_io import cloth_env_find_mesh_objects
+from ...ydr.cloth_env import cloth_env_find_mesh_objects
 from ..utils import get_selected_ytyp, get_selected_archetype
 from ...shared.multiselection import (
     MultiSelectOneOperator,

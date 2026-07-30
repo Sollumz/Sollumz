@@ -813,7 +813,7 @@ def test_export_fragment_cloth(frag_obj_name: str, tmp_path: Path):
 )
 @assert_logs_no_warnings_or_errors
 def test_import_fragment_cloth(version_dir: str, model: str, tmp_path: Path):
-    from ..ydr.cloth_env_io import cloth_env_find_mesh_objects
+    from ..ydr.cloth_env import cloth_env_find_mesh_objects
 
     bpy.ops.wm.read_homefile()
 

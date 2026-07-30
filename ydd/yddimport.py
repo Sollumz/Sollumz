@@ -15,8 +15,8 @@ from szio.gta5 import (
     jenkhash,
     AssetTextureDictionary,
 )
-from ..ydr.ydrimport_io import create_drawable, create_drawable_skel, extract_embedded_textures_from_hd_txd
-from ..ydr.cloth_char_io import (
+from ..ydr.ydrimport import create_drawable, create_drawable_skel, extract_embedded_textures_from_hd_txd
+from ..ydr.cloth_char import (
     cloth_char_import_mesh,
     cloth_char_import_bounds,
 )
@@ -163,7 +163,7 @@ def create_drawable_dictionary(
         )
         drawable_obj.parent = dict_obj
         if import_as_asset:
-            from ..ydr.ydrimport_io import convert_object_to_asset
+            from ..ydr.ydrimport import convert_object_to_asset
             drawable_obj_asset = convert_object_to_asset(name, drawable_obj)
             dict_assets.append(drawable_obj_asset)
 

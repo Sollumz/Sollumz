@@ -334,7 +334,7 @@ def create_extension(extension: Extension, extensions_container: ExtensionsConta
         obj = extensions_container.linked_object
         armature_obj = obj if obj is not None and obj.type == "ARMATURE" else None
 
-        from ..ydr.lights_io import create_light_objs
+        from ..ydr.lights import create_light_objs
         lights_parent_obj = create_light_objs(extension.instances, armature_obj)
         lights_parent_obj.name = f"{extensions_container.archetype_name}.light_effect"
         if obj is not None:

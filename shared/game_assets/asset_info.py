@@ -192,7 +192,7 @@ def _resolve_lights(obj: Object, cache: AssetInfoCache | None) -> list | None:
         return None
 
     # Local import to avoid pulling format-specific code into shared/ at module load time.
-    from ...ydr.lights_io import export_lights, serialize_lights
+    from ...ydr.lights import export_lights, serialize_lights
 
     lights = export_lights(canonical)
     if not lights:
@@ -232,7 +232,7 @@ def _resolve_skeleton(obj: Object, cache: AssetInfoCache | None) -> dict | None:
     if canonical is None or canonical.type != "ARMATURE" or not canonical.pose or not canonical.pose.bones:
         return None
 
-    from ...ydr.ydrexport_io import create_skeleton
+    from ...ydr.ydrexport import create_skeleton
 
     skel = create_skeleton(canonical)
     skel_dict = asdict(skel)

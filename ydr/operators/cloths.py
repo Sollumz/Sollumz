@@ -20,7 +20,7 @@ from ..cloth import (
     mesh_has_cloth_attribute,
     mesh_get_cloth_attribute_values,
 )
-from ..cloth_env_io import (
+from ..cloth_env import (
     cloth_env_find_mesh_objects,
 )
 from ..cloth_diagnostics import (
@@ -283,7 +283,7 @@ class SOLLUMZ_OT_cloth_refresh_diagnostics(Operator):
 
             # Dry runs: the returned bundles are discarded, nothing is written to disk
             if cloth_objs:
-                from ...ydd.yddexport_io import export_ydd
+                from ...ydd.yddexport import export_ydd
                 for cloth_obj in cloth_objs:
                     if not (dwd_obj := find_sollumz_parent(cloth_obj, SollumType.DRAWABLE_DICTIONARY)):
                         continue
@@ -292,7 +292,7 @@ class SOLLUMZ_OT_cloth_refresh_diagnostics(Operator):
                         export_ydd(dwd_obj)
 
             if frag_cloth_objs:
-                from ...yft.yftexport_io import export_yft
+                from ...yft.yftexport import export_yft
                 for frag_obj in frag_cloth_objs:
                     logger.info(f"Checking '{frag_obj.name}'...")
                     with export_context_scope(ExportContext(remove_number_suffix(frag_obj.name.lower()), settings)):

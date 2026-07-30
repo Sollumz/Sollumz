@@ -17,7 +17,7 @@ from .gta5.presets.light import SOLLUMZ_PT_light_presets
 from .shader_materials import shadermats
 from .cable import CableAttr, is_cable_mesh
 from .cloth import ClothAttr
-from .cloth_char_io import cloth_char_find_mesh_objects
+from .cloth_char import cloth_char_find_mesh_objects
 from .cloth_diagnostics import cloth_last_export_contexts
 from szio.gta5 import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL

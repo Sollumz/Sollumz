@@ -242,7 +242,7 @@ class ClothPanel:
 
     @property
     def has_cloth(self) -> bool:
-        from ..ydr.cloth_env_io import cloth_env_find_mesh_objects
+        from ..ydr.cloth_env import cloth_env_find_mesh_objects
         obj = bpy.context.view_layer.objects.active
         cloth_objs = cloth_env_find_mesh_objects(obj, silent=True)
         return bool(cloth_objs)

@@ -281,7 +281,7 @@ def get_extension_props(extension: ExtensionProperties, extension_def_cls: type)
             # Get the light objects and add them to the extension
             lights_obj = extension.get_properties().linked_lights_object
 
-            from ..ydr.lights_io import export_lights
+            from ..ydr.lights import export_lights
             props["instances"] = export_lights(lights_obj)
     else:
         # Assumes extension definition and extension Blender properties classes have the same attribute names

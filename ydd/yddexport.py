@@ -8,8 +8,8 @@ from szio.gta5 import (
     AssetClothDictionary,
     AssetTextureDictionary,
 )
-from ..ydr.ydrexport_io import create_drawable_asset
-from ..ydr.cloth_char_io import cloth_char_export_dictionary
+from ..ydr.ydrexport import create_drawable_asset
+from ..ydr.cloth_char import cloth_char_export_dictionary
 from ..ydr.cloth_diagnostics import (
     cloth_export_context,
     cloth_enter_export_context,

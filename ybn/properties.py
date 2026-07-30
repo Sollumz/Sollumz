@@ -282,7 +282,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
     """
 
     def box_extents_getter(self) -> Vector:
-        from .ybnexport_io import calc_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
         bbmin, bbmax = calc_bound_extents(obj)
@@ -304,7 +304,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
     )
 
     def sphere_radius_getter(self) -> float:
-        from .ybnexport_io import calc_bound_extents
+        from .ybnexport import calc_bound_extents
         from ..tools.meshhelper import get_inner_sphere_radius
 
         obj = self.id_data
@@ -335,7 +335,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
                 return "Y"
 
     def capsule_radius_getter(self) -> float:
-        from .ybnexport_io import calc_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
         bbmin, bbmax = calc_bound_extents(obj)
@@ -344,7 +344,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         return radius
 
     def capsule_length_getter(self) -> float:
-        from .ybnexport_io import calc_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
         bbmin, bbmax = calc_bound_extents(obj)
@@ -393,7 +393,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
                 return "Y"
 
     def cylinder_radius_getter(self) -> float:
-        from .ybnexport_io import calc_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
         bbmin, bbmax = calc_bound_extents(obj)
@@ -403,7 +403,7 @@ class BoundShapeProps(bpy.types.PropertyGroup):
         return radius
 
     def cylinder_length_getter(self) -> float:
-        from .ybnexport_io import calc_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
         bbmin, bbmax = calc_bound_extents(obj)

@@ -31,9 +31,9 @@ from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     LODLevel,
 )
-from ..ybn.ybnexport_io import create_bound_composite_asset, calc_scale_to_apply_to_bound
+from ..ybn.ybnexport import create_bound_composite_asset, calc_scale_to_apply_to_bound
 from .vertex_buffer_builder_domain import VBBuilderDomain
-from .ydrexport_io import (
+from .ydrexport import (
     get_bone_index,
     create_model,
     create_shader_group,

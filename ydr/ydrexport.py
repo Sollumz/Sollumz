@@ -66,7 +66,7 @@ from ..sollumz_properties import (
     LODLevel,
     SollumType
 )
-from ..ybn.ybnexport_io import (
+from ..ybn.ybnexport import (
     create_bound_composite_asset,
     create_bound_asset,
 )
@@ -76,7 +76,7 @@ from .vertex_buffer_builder import VertexBufferBuilder, VBBuilderDomain, dedupe_
 from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
 from .cloth_diagnostics import cloth_export_context
-from .lights_io import export_lights
+from .lights import export_lights
 
 from ..iecontext import export_context, ExportBundle
 from .. import logger

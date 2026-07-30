@@ -35,8 +35,8 @@ from ..sollumz_properties import (
     SollumType,
     SOLLUMZ_UI_NAMES,
 )
-from ..ybn.ybnimport_io import create_bound_composite
-from ..ybn.ybnexport_io import create_bound_composite_asset
+from ..ybn.ybnimport import create_bound_composite
+from ..ybn.ybnexport import create_bound_composite_asset
 from ..iecontext import export_context
 from .cloth import (
     mesh_get_cloth_attribute_values,
@@ -129,7 +129,7 @@ def cloth_char_export(
         )
 
     # Need the bone transforms to calculate the bound transforms
-    from .ydrexport_io import create_skeleton
+    from .ydrexport import create_skeleton
     armature_obj = drawable_obj if drawable_obj.type == "ARMATURE" else dwd_obj
     assert armature_obj.type == "ARMATURE", "Drawable with cloth or its parent drawable dictionary must have an armature"
     skeleton = create_skeleton(armature_obj)
@@ -294,7 +294,7 @@ def cloth_char_export(
 
     del edges_added
 
-    from .cloth_env_io import _cloth_sort_verlet_edges
+    from .cloth_env import _cloth_sort_verlet_edges
     edges = _cloth_sort_verlet_edges(edges)
     custom_edges = _cloth_sort_verlet_edges(custom_edges)
 

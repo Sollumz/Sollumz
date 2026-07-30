@@ -579,7 +579,7 @@ def _create_map_entity(map_group: MapGroup, map_data: MapData, entity: Entity, i
         e.mlo_cap_entities_alpha = EntityMloInstanceFlags.CAP_ENTITIES_ALPHA in entity.mlo_inst_flags
         e.mlo_short_fade_distance = EntityMloInstanceFlags.SHORT_FADE_DISTANCE in entity.mlo_inst_flags
 
-    from ..ytyp.ytypimport_io import create_extension
+    from ..ytyp.ytypimport import create_extension
 
     for extension in entity.extensions:
         create_extension(extension, e)

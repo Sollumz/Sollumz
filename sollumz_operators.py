@@ -120,11 +120,11 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             from pathlib import Path
             from szio import VPath
             from szio.gta5 import try_load_asset, AssetType, AssetWithDependencies
-            from .ybn.ybnimport_io import import_ybn as import_ybn_asset
-            from .ydr.ydrimport_io import import_ydr as import_ydr_asset, find_ydr_external_dependencies
-            from .ydd.yddimport_io import import_ydd as import_ydd_asset, find_ydd_external_dependencies
-            from .yft.yftimport_io import import_yft as import_yft_asset, find_yft_external_dependencies
-            from .ytyp.ytypimport_io import import_ytyp as import_ytyp_asset
+            from .ybn.ybnimport import import_ybn as import_ybn_asset
+            from .ydr.ydrimport import import_ydr as import_ydr_asset, find_ydr_external_dependencies
+            from .ydd.yddimport import import_ydd as import_ydd_asset, find_ydd_external_dependencies
+            from .yft.yftimport import import_yft as import_yft_asset, find_yft_external_dependencies
+            from .ytyp.ytypimport import import_ytyp as import_ytyp_asset
             from .ytd.ytdimport import import_ytd as import_ytd_asset, find_ytd_external_dependencies
             from .ymap_next.ymapimport import import_ymap as import_ymap_asset, begin_import_ymap_group, end_import_ymap_group
 
@@ -488,10 +488,10 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
             return {"FINISHED"}
 
     def _export_objects(self, objs: list[Object], directory: Path, export_settings, op_log) -> bool:
-        from .ybn.ybnexport_io import export_ybn as export_ybn_asset
-        from .ydr.ydrexport_io import export_ydr as export_ydr_asset
-        from .ydd.yddexport_io import export_ydd as export_ydd_asset
-        from .yft.yftexport_io import export_yft as export_yft_asset
+        from .ybn.ybnexport import export_ybn as export_ybn_asset
+        from .ydr.ydrexport import export_ydr as export_ydr_asset
+        from .ydd.yddexport import export_ydd as export_ydd_asset
+        from .yft.yftexport import export_yft as export_yft_asset
 
         any_warnings_or_errors = False
 
@@ -539,7 +539,7 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
             return list(range(n))
 
     def _export_ytyps(self, context, ytyp_indices: list[int], directory: Path, export_settings, op_log) -> bool:
-        from .ytyp.ytypexport_io import export_ytyp as export_ytyp_asset
+        from .ytyp.ytypexport import export_ytyp as export_ytyp_asset
 
         any_warnings_or_errors = False
 
