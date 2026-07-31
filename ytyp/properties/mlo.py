@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 import bpy
 from mathutils import Vector
-from ...sollumz_properties import EntityPriorityLevel, items_from_enums
+from ...sollumz_properties import SOLLUMZ_UI_NAMES, EntityPriorityLevel, SollumType, items_from_enums
 from ...tools.utils import get_list_item
 from ..utils import get_selected_ytyp, get_selected_archetype
 from .flags import EntityFlags, RoomFlags, PortalFlags
@@ -14,6 +14,12 @@ from .extensions import ExtensionsContainer, ExtensionType
 _DEFAULT_EMPTY_ENUM_ITEMS = [("-1", "None", "", -1)]
 
 MAX_LIMBO_ROOM_ENTITIES = 12
+
+ENTITY_LINKABLE_SOLLUM_TYPES = (SollumType.DRAWABLE, SollumType.FRAGMENT)
+
+
+def is_entity_linkable_object(obj: bpy.types.Object) -> bool:
+    return obj.sollum_type in ENTITY_LINKABLE_SOLLUM_TYPES
 
 
 def get_portal_items_for_archetype(archetype: Optional["ArchetypeProperties"]):
@@ -489,7 +495,12 @@ class MloEntityProperties(bpy.types.PropertyGroup, MloArchetypeChild, Extensions
     tint_value: bpy.props.IntProperty(name="Tint Value", default=0, min=0, max=255)
 
     linked_object: bpy.props.PointerProperty(
-        type=bpy.types.Object, name="Linked Object")
+        type=bpy.types.Object, name="Linked Object",
+        description=(
+            "Object this entity is linked to. Only "
+            f"{', '.join(SOLLUMZ_UI_NAMES[t] for t in ENTITY_LINKABLE_SOLLUM_TYPES)} objects can be linked"
+        ),
+        poll=lambda self, obj: is_entity_linkable_object(obj))
 
     # Blender usage only
     id: bpy.props.IntProperty(name="Id")

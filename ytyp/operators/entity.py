@@ -5,8 +5,10 @@ from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
 from ...shared.multiselection import SelectMode
 from ..utils import get_selected_archetype, get_selected_entity
+from ...sollumz_properties import SOLLUMZ_UI_NAMES
 from ..properties.mlo import (
-    MloEntityProperties, get_portal_items_for_selected_archetype, get_room_items_for_selected_archetype
+    ENTITY_LINKABLE_SOLLUM_TYPES, MloEntityProperties, get_portal_items_for_selected_archetype,
+    get_room_items_for_selected_archetype, is_entity_linkable_object
 )
 from ..properties.ytyp import ArchetypeProperties
 
@@ -57,6 +59,11 @@ class SOLLUMZ_OT_add_obj_as_entity(bpy.types.Operator):
         first_new_entity_index = len(selected_archetype.entities)
 
         for obj in context.selected_objects:
+            if not is_entity_linkable_object(obj):
+                allowed = ", ".join(SOLLUMZ_UI_NAMES[t] for t in ENTITY_LINKABLE_SOLLUM_TYPES)
+                self.report({"WARNING"}, f"Object '{obj.name}' is not a {allowed}! Skipping...")
+                continue
+
             existing_entity = self.get_entity_using_obj(obj, selected_archetype)
 
             if existing_entity is not None:
