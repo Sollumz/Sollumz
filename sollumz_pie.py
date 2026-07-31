@@ -26,7 +26,7 @@ class SOLLUMZ_MT_pie_menu(Menu):
         pie.separator()
         # Top
         col = pie.column()
-        col.emboss = "PIE_MENU"
+        col.emboss = "PIE_MENU" if bpy.app.version >= (5, 0, 0) else "RADIAL_MENU"
         col.scale_x = 1.1
         col.scale_y = 1.4
         col.operator("file.find_missing_files", text="Find Missing Textures", icon='VIEWZOOM')
