@@ -83,12 +83,14 @@ class GameFiles:
 
             def _sort_by_dlc(path):
                 path = str(path)
-                if dlc_match := DLC_PACK_REGEX.search(path):
-                    dlc = dlc_match.group(1).lower()
-                    order = dlclist[dlc] * 2
-                elif dlc_match := DLC_PATCH_REGEX.search(path):
-                    dlc = dlc_match.group(1).lower()
-                    order = dlclist[dlc] * 2 + 1
+                if (dlc_match := DLC_PACK_REGEX.search(path)) and (
+                    idx := dlclist.get(dlc_match.group(1).lower())
+                ) is not None:
+                    order = idx * 2
+                elif (dlc_match := DLC_PATCH_REGEX.search(path)) and (
+                    idx := dlclist.get(dlc_match.group(1).lower())
+                ) is not None:
+                    order = idx * 2 + 1
                 else:
                     order = -1
                 return order

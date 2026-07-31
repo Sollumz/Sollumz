@@ -212,9 +212,10 @@ def build_library(
 
     typ_pattern = re.compile(typ_pattern) if typ_pattern else None
 
-    with tempfile.NamedTemporaryFile(delete=False) as file_index_by_hash_cache_file:
-        pickle.dump(file_index_by_hash, file_index_by_hash_cache_file, protocol=pickle.HIGHEST_PROTOCOL)
-        file_index_by_hash_cache_file.close()
+    with tempfile.TemporaryDirectory() as file_index_by_hash_cache_dir:
+        file_index_by_hash_cache_path = str(Path(file_index_by_hash_cache_dir) / "file_index_by_hash.pickle")
+        with open(file_index_by_hash_cache_path, "wb") as fp:
+            pickle.dump(file_index_by_hash, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
         if gf.is_game_installation():
             # game directory
@@ -310,7 +311,7 @@ def build_library(
                         "-c",
                         str(cat.uuid),
                         "-f",
-                        file_index_by_hash_cache_file.name,
+                        file_index_by_hash_cache_path,
                     ]
                 )
 
@@ -331,7 +332,7 @@ def build_library(
                             "-c",
                             str(cat.uuid),
                             "-f",
-                            file_index_by_hash_cache_file.name,
+                            file_index_by_hash_cache_path,
                             "--interiors",
                         ]
                     )
@@ -371,7 +372,7 @@ def build_library(
                         "-c",
                         str(cat.uuid),
                         "-f",
-                        file_index_by_hash_cache_file.name,
+                        file_index_by_hash_cache_path,
                     ]
                 )
 
@@ -392,7 +393,7 @@ def build_library(
                             "-c",
                             str(cat.uuid),
                             "-f",
-                            file_index_by_hash_cache_file.name,
+                            file_index_by_hash_cache_path,
                             "--interiors",
                         ]
                     )
