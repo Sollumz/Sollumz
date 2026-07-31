@@ -90,8 +90,6 @@ def split_model_by_group(model_data: ModelData, bones: list[SkelBone]) -> list[M
 def get_group_face_inds(mesh_data: MeshData, bones: list[SkelBone]):
     """Get face indices split by vertex group. Overlapping vertex groups are merged
     based on bone parenting."""
-    group_inds: dict[int, set] = defaultdict(list)
-
     blend_inds = mesh_data.vert_arr["BlendIndices"]
     weights = mesh_data.vert_arr["BlendWeights"]
 
@@ -110,18 +108,29 @@ def get_group_face_inds(mesh_data: MeshData, bones: list[SkelBone]):
     # Maps group indices to the group index of the object they should be parented to
     parent_map = get_group_parent_map(face_blend_inds, bones)
 
-    for i, all_blend_inds in enumerate(face_blend_inds):
-        # Valid BlendIndices are those where either the index or weight is not 0
-        valid_blend_inds = all_blend_inds[blend_inds_mask[i]]
+    if num_tris == 0:
+        return {}
 
-        if valid_blend_inds.size == 0:
-            group_ind = 0
-        else:
-            group_ind = parent_map[valid_blend_inds[0]]
+    # Each face takes the group of its first valid BlendIndex (index or weight non-zero), else group 0.
+    # argmax gives the first True per row; has_valid gates rows where the mask is all False.
+    has_valid = blend_inds_mask.any(axis=1)
+    first_slot = blend_inds_mask.argmax(axis=1)
+    first_blend_inds = face_blend_inds[np.arange(num_tris), first_slot]
 
-        group_inds[group_ind].append(i)
+    # parent_map is keyed by blend index, so a flat array turns the per-face lookup into one gather.
+    lut = np.zeros(int(face_blend_inds.max()) + 1, dtype=np.int64)
+    for blend_ind, parent_ind in parent_map.items():
+        lut[blend_ind] = parent_ind
+    face_groups = np.where(has_valid, lut[first_blend_inds], 0)
 
-    return {i: np.array(face_inds, dtype=np.uint32) for i, face_inds in group_inds.items()}
+    # Bucket faces by group. A stable sort keeps faces in ascending order within each group.
+    order = np.argsort(face_groups, kind="stable")
+    sorted_groups = face_groups[order]
+    bounds = np.flatnonzero(np.diff(sorted_groups)) + 1
+    starts = np.concatenate(([0], bounds))
+    ends = np.concatenate((bounds, [len(order)]))
+
+    return {int(sorted_groups[s]): order[s:e].astype(np.uint32) for s, e in zip(starts, ends)}
 
 
 def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[SkelBone]) -> dict[int, set]:
@@ -188,23 +197,14 @@ def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: 
 
     subset_inds = faces[face_inds].flatten()
 
-    # Map old vert inds to new vert inds
-    # TODO: Remap inds using numpy?
-    vert_inds_map: dict[int, int] = {}
-    vert_inds = []
-    new_inds = []
+    unique_verts, first_pos, inverse = np.unique(subset_inds, return_index=True, return_inverse=True)
+    inverse = inverse.reshape(-1)
+    order = np.argsort(first_pos)
+    rank = np.empty(len(order), dtype=np.uint32)
+    rank[order] = np.arange(len(order), dtype=np.uint32)
 
-    for vert_ind in subset_inds:
-        if vert_ind in vert_inds_map:
-            new_inds.append(vert_inds_map[vert_ind])
-        else:
-            new_vert_ind = len(vert_inds_map)
-            new_inds.append(new_vert_ind)
-            vert_inds_map[vert_ind] = new_vert_ind
-            vert_inds.append(vert_ind)
-
-    new_vert_arr = vert_arr[vert_inds]
-    new_ind_arr = np.array(new_inds, dtype=np.uint32)
+    new_vert_arr = vert_arr[unique_verts[order]]
+    new_ind_arr = rank[inverse]
 
     return new_vert_arr, new_ind_arr
 
@@ -281,8 +281,8 @@ def get_model_joined_ind_arr(geoms: list[Geometry]) -> NDArray[np.uint32]:
 
     for geom in geoms:
         # Make sure indices are at least uint32 (in native format they are stored as uint16, while in CWXML they are
-        # already parsed as uint32) to avoid integer overflows when adding num_verts below
-        ind_arr = geom.index_buffer.astype(np.uint32, copy=False)
+        # already parsed as uint32) to avoid integer overflows when adding num_verts below.
+        ind_arr = geom.index_buffer.astype(np.uint32)
 
         if num_verts > 0:
             ind_arr += num_verts
