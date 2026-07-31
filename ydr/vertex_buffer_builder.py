@@ -272,8 +272,7 @@ class VertexBufferBuilder:
             # Count loops per vertex for averaging
             loop_counts = np.bincount(self._loop_to_vert_inds, minlength=num_verts)
 
-            # Average and normalize
-            vertex_normals /= loop_counts[:, np.newaxis]
+            vertex_normals /= np.maximum(loop_counts, 1)[:, np.newaxis]
             norms = np.linalg.norm(vertex_normals, axis=1, keepdims=True)
             vertex_normals = np.divide(
                 vertex_normals, norms,
@@ -382,15 +381,23 @@ class VertexBufferBuilder:
             self.mesh.loop_triangles.foreach_get("vertices", tri_verts)
             tri_verts = tri_verts.reshape((-1, 3))
 
-            mat_is_ped_cloth_mask = np.array([
-                ShaderManager.find_shader(m.shader_properties.filename).is_ped_cloth
-                for m in self.materials
-            ])
+            # `find_shader` returns None for unknown/custom shaders, which are never ped cloth.
+            mat_is_ped_cloth_mask = np.array(
+                [
+                    (shader := ShaderManager.find_shader(m.shader_properties.filename)) is not None
+                    and shader.is_ped_cloth
+                    for m in self.materials
+                ],
+                dtype=bool,
+            )
+
+            if len(mat_is_ped_cloth_mask) == 0:
+                mat_is_ped_cloth_mask = np.zeros(1, dtype=bool)
+            tri_mat_indices %= len(mat_is_ped_cloth_mask)
 
             # Check all triangles with any vertex weighted to CLOTH
             cloth_bind_tris_mask = cloth_bind_verts_mask[tri_verts].any(axis=1)
             cloth_bind_tris_mat_indices = tri_mat_indices[cloth_bind_tris_mask]
-            cloth_bind_tris_mat_indices %= len(mat_is_ped_cloth_mask)
             cloth_bind_tris_mat_not_ped_cloth_mask = ~mat_is_ped_cloth_mask[cloth_bind_tris_mat_indices]
             if cloth_bind_tris_mat_not_ped_cloth_mask.any():
                 n = cloth_bind_tris_mat_not_ped_cloth_mask.sum()
