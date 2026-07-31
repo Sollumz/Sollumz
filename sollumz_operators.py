@@ -59,7 +59,8 @@ class TimedOperator:
 
 
 class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
-    """Import RAGE asset files"""
+    bl_description = "Import RAGE asset files"
+
     directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
     files: bpy.props.CollectionProperty(
         name="File Path",
