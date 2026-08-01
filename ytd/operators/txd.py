@@ -195,9 +195,7 @@ class SOLLUMZ_OT_txd_refresh_sources(Operator):
 
     def execute(self, context):
         txd = get_selected_txd(context)
-        for src in txd.sources:
-            src.refresh(context)
-        txd.refresh_from_sources()
+        txd.refresh_from_sources(context)
         return {"FINISHED"}
 
 

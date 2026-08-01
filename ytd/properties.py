@@ -173,8 +173,10 @@ class TextureDictionary(PropertyGroup):
         self.sources.select(len(self.sources) - 1)
         return src
 
-    def refresh_from_sources(self):
-        # TODO(txd): not clear all textures
+    def refresh_from_sources(self, context: Context):
+        for src in self.sources:
+            src.refresh(context)
+
         self._remove_textures_from_sources()
 
         images = set(s.image for src in self.sources for s in src.images if s.use)

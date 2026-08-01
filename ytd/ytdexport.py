@@ -32,6 +32,8 @@ def create_txd_asset(
     textures: dict[str, EmbeddedTexture] = {}
     hi_textures: dict[str, EmbeddedTexture] = {}
 
+    txd.refresh_from_sources(bpy.context)
+
     for slot in txd.textures:
         img = slot.image
         if img is None:
