@@ -834,8 +834,9 @@ def test_ymap_export_incomplete_missing_parent(tmp_path: Path):
     with log_capture() as logs:
         _import_ymaps("test_partition_strm.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     assert group.maps[0].incomplete_lod_hierarchy_lock, "Container with a missing parent map should be locked"
@@ -856,8 +857,9 @@ def test_ymap_export_incomplete_missing_children(tmp_path: Path):
     with log_capture() as logs:
         _import_ymaps("test_partition_lod.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     assert group.maps[0].incomplete_lod_hierarchy_lock, "Container with missing children should be locked"
@@ -877,8 +879,9 @@ def test_ymap_export_incomplete_bad_parent_index(tmp_path: Path):
     with log_capture() as logs:
         _import_ymaps("test_partial_bad_parent_index.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     assert group.maps[0].incomplete_lod_hierarchy_lock, (
@@ -919,8 +922,9 @@ def _import_partial_subtree():
     with log_capture() as logs:
         _import_ymaps("test_partition_lod.ymap.xml", "test_partition_strm.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     lod_map = _find_group_map(group, "test_partition_lod")

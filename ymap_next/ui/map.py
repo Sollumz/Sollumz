@@ -98,15 +98,6 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
             return
 
         if groups and (active_group := groups.active_item):
-            if active_group.has_incomplete_lod_hierarchy:
-                box = layout.box()
-                box.alert = True
-                col = box.column(align=True)
-                col.label(text="Incomplete LOD hierarchy", icon="ERROR")
-                col.label(text="Some containers were imported without related YMAP")
-                col.label(text="files. Their hierarchy values are kept as-is on export")
-                col.label(text="and editing them is limited.")
-
             layout.prop(active_group, "scripted")
 
             if bpy.app.version >= (4, 1, 0):

@@ -159,6 +159,10 @@ class TestLogger(LoggerBase):
         self._logs.clear()
 
     @property
+    def infos(self) -> list[str]:
+        return self._logs["INFO"]
+
+    @property
     def warnings(self) -> list[str]:
         return self._logs["WARNING"]
 

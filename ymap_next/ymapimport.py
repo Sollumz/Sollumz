@@ -207,11 +207,6 @@ class LodHierarchy:
                     self.root_maps.append(map_key)
                     continue
 
-                map_name = self.get_map_name(map_key)
-                logger.warning(
-                    f"Map '{map_name}' is missing its parent map '{parent_map_name}' in LOD "
-                    f"hierarchy. Have you imported all related .ymap files?"
-                )
                 # Keep the map: promote it to a root so it is still imported (instead of being
                 # silently dropped), and mark it incomplete so its LOD hierarchy values are
                 # preserved as-is on export.
@@ -236,11 +231,6 @@ class LodHierarchy:
             if EntityFlags.LOD_IN_PARENT_MAP in entity.flags:
                 parent_map_key = self.parent_map_by_map[entity_key.map_key.map_index]
                 if parent_map_key is None:
-                    map_name = self.get_map_name(entity_key.map_key)
-                    logger.warning(
-                        f"Map '{map_name}', entity #{entity_key.entity_index} ({entity.archetype_name}) is missing its parent in LOD "
-                        f"hierarchy. Have you imported all related .ymap files?"
-                    )
                     self.incomplete_maps.add(entity_key.map_key)
                     success = False
                     continue
@@ -254,11 +244,6 @@ class LodHierarchy:
                 self.children_entities_by_entity[parent_entity_key].append(entity_key)
                 self.parent_entity_by_entity[entity_key] = parent_entity_key
             else:
-                map_name = self.get_map_name(entity_key.map_key)
-                logger.warning(
-                    f"Map '{map_name}', entity #{entity_key.entity_index} ({entity.archetype_name}) is missing its parent in LOD "
-                    f"hierarchy. Have you imported all related .ymap files?"
-                )
                 self.incomplete_maps.add(entity_key.map_key)
                 success = False
                 continue
@@ -276,13 +261,6 @@ class LodHierarchy:
                 expected_num_children = entity.num_children
                 found_num_children = len(self.children_entities_by_entity[entity_key])
                 if expected_num_children != found_num_children:
-                    map_name = self.get_map_name(map_key)
-                    # TODO: if there are more than 5 or so entities missing children, show a different error log, this can be too spammy
-                    logger.warning(
-                        f"Map '{map_name}', entity #{entity_idx} ({entity.archetype_name}) is missing children in LOD "
-                        f"hierarchy (found {found_num_children}, expected {expected_num_children}). Have you imported "
-                        f"all related .ymap files?"
-                    )
                     self.incomplete_maps.add(map_key)
                     success = False
 
@@ -537,11 +515,10 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
         map_group.refresh_ui()
 
     if lod_hierarchy.incomplete_maps:
-        logger.warning(
-            "Imported an incomplete LOD hierarchy: some related YMAP files (parent or child maps) "
-            "were not imported. The affected map container(s) have been locked: their LOD hierarchy "
-            "values (parent index, number of children, parent map) are preserved as-is on export "
-            "and editing them is limited. Other containers in the group remain editable."
+        names = ", ".join(sorted(lod_hierarchy.get_map_name(k) for k in lod_hierarchy.incomplete_maps))
+        logger.info(
+            f"LOD hierarchy of {names} is preserved and will export unchanged. Full hierarchy editing "
+            "becomes available when all related YMAP files are imported together."
         )
 
     from .map_index import MAP_INDEX
