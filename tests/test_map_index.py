@@ -130,7 +130,7 @@ def test_build_progress_none_when_idle():
 
 
 @assert_logs_no_errors
-def test_start_build_sets_progress_total():
+def test_start_build_defers_total_to_first_tick():
     group = _new_group()
     group.new_map()
     group.new_entity()
@@ -148,11 +148,40 @@ def test_start_build_sets_progress_total():
     assert progress is not None
     processed, total = progress
     assert processed == 0
-    # 1 map + 2 entities + 1 grass_batch + 1 cargen + 1 occluder + 1 lod_lights
-    assert total == 7
+    # The count runs inside _iter_build on the first tick, so start_build itself stays cheap.
+    assert total == 0
 
     MAP_INDEX.ensure_ready()
     assert MAP_INDEX.build_progress is None
+    assert MAP_INDEX.is_ready is True
+    # 1 map + 2 entities + 1 grass_batch + 1 cargen + 1 occluder + 1 lod_lights
+    assert MAP_INDEX._build_total == 7
+
+
+@assert_logs_no_errors
+def test_repeated_invalidate_and_rebuild_keeps_single_timer():
+    group = _new_group()
+    entity = group.new_entity()
+    MAP_INDEX.invalidate()
+
+    # A burst of rebuild requests (e.g. linked_object update callbacks during
+    # instancing) must coalesce into a single registered build timer.
+    MAP_INDEX.invalidate_and_rebuild()
+    MAP_INDEX.invalidate_and_rebuild()
+    MAP_INDEX.invalidate_and_rebuild()
+    assert MAP_INDEX._tick_registered is True
+
+    # Simulate the timer firing: this small build completes in one tick,
+    # which returns None (unregister) and clears the flag.
+    assert MAP_INDEX._build_tick() is None
+    assert MAP_INDEX._tick_registered is False
+    assert MAP_INDEX.is_ready is True
+    assert MAP_INDEX.try_get_entity(entity.uuid) is not None
+
+    # A fired-and-finished timer must not block a later rebuild's tick.
+    MAP_INDEX.invalidate_and_rebuild()
+    assert MAP_INDEX._tick_registered is True
+    assert MAP_INDEX._build_tick() is None
     assert MAP_INDEX.is_ready is True
 
 
@@ -478,10 +507,14 @@ def test_find_entity_by_object_returns_none_when_linked_object_swapped():
     MAP_INDEX.invalidate()
     MAP_INDEX.ensure_ready()
 
-    # Reassign linked_object without rebuilding the cache. The reverse
-    # lookup must reject the stale hit (linked_object != obj guard in
-    # find_entity_by_object).
+    # Reassigning linked_object invalidates the cache via its update callback; drain
+    # the rebuild so the index is ready again.
     entity.linked_object = replacement
+    MAP_INDEX.ensure_ready()
+
+    # Inject a stale reverse entry for the old object. The reverse lookup must
+    # reject the stale hit (linked_object != obj guard in find_entity_by_object).
+    MAP_INDEX.store_id(original, CacheObjectData(group.uuid, CacheObjectData.ENTITY, entity.uuid))
 
     assert find_entity_by_object(original) is None
 

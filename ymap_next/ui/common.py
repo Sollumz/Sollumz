@@ -13,7 +13,8 @@ def draw_cache_result(layout: UILayout, cache_result: object | None, missing_msg
             layout.progress(text="Building cache...", factor=0.0, type="BAR")
         else:
             current, total = progress
-            layout.progress(text=f"Building cache ({current}/{total})...", factor=current / total, type="BAR")
+            factor = current / total if total else 0.0
+            layout.progress(text=f"Building cache ({current}/{total})...", factor=factor, type="BAR")
         return False
 
     if cache_result is None:

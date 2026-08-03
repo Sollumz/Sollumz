@@ -997,7 +997,12 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
     mlo_cap_entities_alpha: BoolProperty(name="Cap Entities Alpha", default=False)
     mlo_short_fade_distance: BoolProperty(name="Short Fade Distance", default=False)
 
-    linked_object: PointerProperty(type=Object, name="Linked Object")
+    def _on_linked_object_update(self, _context):
+        from ..map_index import MAP_INDEX
+
+        MAP_INDEX.invalidate_and_rebuild()
+
+    linked_object: PointerProperty(type=Object, name="Linked Object", update=_on_linked_object_update)
 
     @property
     def is_orphan_hd(self) -> bool:
