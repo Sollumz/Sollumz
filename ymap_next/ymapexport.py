@@ -121,11 +121,10 @@ def _ensure_auto_partitions_generated(map_group: MapGroup):
 
 
 def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
+    # Map data UUID -> parent map data UUID
+    map_parent_uuids = {m.uuid: m.parent_uuid for m in map_group.maps}
     # Pre-compute which maps are parents (have children pointing to them)
-    parent_map_uuids = set()
-    for map_data in map_group.maps:
-        if map_data.parent_uuid:
-            parent_map_uuids.add(map_data.parent_uuid)
+    parent_map_uuids = {parent_uuid for parent_uuid in map_parent_uuids.values() if parent_uuid}
 
     # Maps with an incomplete LOD hierarchy: their entities' unresolved parent_index values are
     # exported verbatim instead of recomputed (see _export_entity)
@@ -182,13 +181,38 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
     # for stable round-trips) and which map data it belongs to.
     entity_index_in_map: dict[bytes, int] = {}
     entity_map_data_uuid: dict[bytes, bytes] = {}
-    entity_num_children = Counter()
     for map_uuid, entities in entities_by_map.items():
         for i, entity in enumerate(entities):
             entity_index_in_map[entity.uuid] = i
             entity_map_data_uuid[entity.uuid] = map_uuid
-            if parent_uuid := entity.parent_uuid:
+
+    # Validate parent links. A entity parent_index can only reference another entity in the same map or in
+    # the map's direct parent map (via LOD_IN_PARENT_MAP). Any other link is invalid, so it is exported
+    # unlinked (parent_index = -1) and excluded from num_children.
+    entity_num_children = Counter()
+    invalid_parent_links: set[bytes] = set()
+    invalid_names_by_map: dict[bytes, list[str]] = defaultdict(list)
+    for map_uuid, entities in entities_by_map.items():
+        if map_uuid not in map_parent_uuids:
+            continue  # entities without a valid container are not exported
+        for entity in entities:
+            if not (parent_uuid := entity.parent_uuid):
+                continue
+            parent_map_uuid = entity_map_data_uuid.get(parent_uuid, b"")
+            if parent_map_uuid in map_parent_uuids and parent_map_uuid in (map_uuid, map_parent_uuids[map_uuid]):
                 entity_num_children[parent_uuid] += 1
+            else:
+                invalid_parent_links.add(entity.uuid)
+                pos = obj.matrix_world.translation if (obj := entity.linked_object) else entity.position
+                invalid_names_by_map[map_uuid].append(
+                    f"{entity.archetype_name} at ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})"
+                )
+
+    for map_data in map_group.maps:
+        if names := invalid_names_by_map.get(map_data.uuid):
+            subject = "1 entity has a LOD parent" if len(names) == 1 else f"{len(names)} entities have LOD parents"
+            shown = ", ".join(names[:6]) + (", ..." if len(names) > 6 else "")
+            logger.warning(f"{map_data.name}: {subject} in unreachable containers, exported unlinked: {shown}")
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     asset_info_cache = AssetInfoCache()
@@ -264,7 +288,14 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
         # Entities
         if map_entities := entities_by_map[map_uuid]:
             map_data_asset.entities = [
-                _export_entity(e, entity_index_in_map, entity_map_data_uuid, entity_num_children, locked_map_uuids)
+                _export_entity(
+                    e,
+                    entity_index_in_map,
+                    entity_map_data_uuid,
+                    entity_num_children,
+                    invalid_parent_links,
+                    locked_map_uuids,
+                )
                 for e in map_entities
             ]
 
@@ -349,6 +380,7 @@ def _export_entity(
     entity_index_in_map: dict[bytes, int],
     entity_map_data_uuid: dict[bytes, bytes],
     entity_num_children: dict[bytes, int],
+    invalid_parent_links: set[bytes],
     locked_map_uuids: set[bytes],
 ) -> Entity | EntityMloInstance:
     entity_flags = EntityFlags(int(e.flags.total))
@@ -359,7 +391,7 @@ def _export_entity(
         # ...plus children known to be in non-imported .ymap files.
         num_children += e.num_children_missing
 
-    if e.parent_uuid:
+    if e.parent_uuid and e.uuid not in invalid_parent_links:
         # Resolved parent: always recompute, even in locked containers. The parent may live in an
         # unlocked, editable container; when nothing was edited this equals the imported values
         # because a locked container's own entity list is frozen.
@@ -373,13 +405,15 @@ def _export_entity(
             # Parent is in the same map data, ensure flag is not set
             entity_flags &= ~EntityFlags.LOD_IN_PARENT_MAP
         lod_level = EntityLodLevel[e.lod_level]
-    elif e.map_data_uuid in locked_map_uuids and e.parent_index != -1:
+    elif not e.parent_uuid and e.map_data_uuid in locked_map_uuids and e.parent_index != -1:
         # Unresolvable parent in a non-imported .ymap: preserve parent_index verbatim, flags
         # untouched so LOD_IN_PARENT_MAP round-trips.
         parent_index = e.parent_index
         lod_level = EntityLodLevel[e.lod_level]
     else:
-        # No parent. An HD entity without a parent is ORPHANHD.
+        # No parent, or an invalid parent link being exported unlinked. An HD entity without a parent
+        # is ORPHANHD.
+        entity_flags &= ~EntityFlags.LOD_IN_PARENT_MAP
         parent_index = -1
         lod_level = EntityLodLevel.ORPHANHD if e.lod_level == "HD" else EntityLodLevel[e.lod_level]
 
