@@ -120,3 +120,41 @@ def test_hide_entities_scope():
     assert result == {"FINISHED"}
     assert obj_a.hide_get()
     assert obj_b.hide_get()
+
+
+def test_delete_map_data_unassigns_all_item_types():
+    """Deleting a container clears map_data_uuid on every item type that referenced it."""
+    bpy.ops.wm.read_homefile()
+
+    group = _new_group()
+    md_keep = group.new_map()
+    md_keep.name = "keep"
+    keep_uuid = md_keep.uuid
+    md_del = group.new_map()
+    md_del.name = "delete"
+    del_uuid = md_del.uuid
+
+    for new_item in (
+        group.new_entity,
+        group.new_cargen,
+        group.new_tcm,
+        group.new_grass_batch,
+        group.new_occluder,
+        group.new_lod_lights,
+    ):
+        new_item().map_data_uuid = del_uuid
+
+    group.maps.select(1)  # the "delete" container
+    result = bpy.ops.sollumz.map_group_delete_map_data()
+
+    assert result == {"FINISHED"}
+    assert [m.uuid for m in group.maps] == [keep_uuid]
+    for items in (
+        group.entities,
+        group.cargens,
+        group.timecycle_modifiers,
+        group.grass_batches,
+        group.occluders,
+        group.lod_lights,
+    ):
+        assert [item.map_data_uuid for item in items] == [b""]

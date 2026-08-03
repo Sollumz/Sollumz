@@ -120,6 +120,12 @@ def _ensure_auto_partitions_generated(map_group: MapGroup):
             generate_partitions(map_group, map_data, settings)
 
 
+def _entity_log_display_name(entity: MapEntity) -> str:
+    """String used to identify an entity in log messages."""
+    pos = obj.matrix_world.translation if (obj := entity.linked_object) else entity.position
+    return f"{entity.archetype_name} at ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})"
+
+
 def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
     # Map data UUID -> parent map data UUID
     map_parent_uuids = {m.uuid: m.parent_uuid for m in map_group.maps}
@@ -132,31 +138,58 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
 
     # Group entities, cargens, tcms, and grass batches by map_data_uuid
     entities_by_map: dict[bytes, list[MapEntity]] = defaultdict(list)
+    unassigned_entities: list[str] = []
     for entity in map_group.entities:
-        entities_by_map[entity.map_data_uuid].append(entity)
+        entity_map_uuid = entity.map_data_uuid
+        if entity_map_uuid not in map_parent_uuids:
+            unassigned_entities.append(_entity_log_display_name(entity))
+        else:
+            entities_by_map[entity_map_uuid].append(entity)
 
     cargens_by_map: dict[bytes, list[MapCarGenerator]] = defaultdict(list)
     cargen_objs_by_map: dict[bytes, list[Object]] = defaultdict(list)
+    unassigned_cargens: list[str] = []
     for cargen in map_group.cargens:
         for map_uuid, exported in _export_cargens(map_group, cargen).items():
             cargens_by_map[map_uuid].extend(exported)
+        num_unassigned_objs = 0
         for map_uuid, objs in cargen.objects_by_map_data(map_group).items():
             cargen_objs_by_map[map_uuid].extend(objs)
+            if map_uuid not in map_parent_uuids:
+                num_unassigned_objs += len(objs)
+        if num_unassigned_objs:
+            objs_str = "1 object" if num_unassigned_objs == 1 else f"{num_unassigned_objs} objects"
+            unassigned_cargens.append(f"{cargen.name} ({objs_str})")
 
     tcms_by_map: dict[bytes, list[MapTimecycleModifier]] = defaultdict(list)
+    unassigned_tcms: list[str] = []
     for tcm in map_group.timecycle_modifiers:
-        tcms_by_map[tcm.map_data_uuid].append(tcm)
+        tcm_map_uuid = tcm.map_data_uuid
+        if tcm_map_uuid not in map_parent_uuids:
+            unassigned_tcms.append(tcm.name)
+        else:
+            tcms_by_map[tcm_map_uuid].append(tcm)
 
     grass_by_map: dict[bytes, list[MapGrassBatch]] = defaultdict(list)
+    unassigned_grass: list[str] = []
     for grass_batch in map_group.grass_batches:
-        grass_by_map[grass_batch.map_data_uuid].append(grass_batch)
+        grass_map_uuid = grass_batch.map_data_uuid
+        if grass_map_uuid not in map_parent_uuids:
+            unassigned_grass.append(grass_batch.name)
+        else:
+            grass_by_map[grass_map_uuid].append(grass_batch)
 
-        if obj := grass_batch.linked_object:
-            disable_grass_batch_modifier_preview(obj, grass_batch)
+            if obj := grass_batch.linked_object:
+                disable_grass_batch_modifier_preview(obj, grass_batch)
 
     occl_by_map: dict[bytes, list[MapOccluder]] = defaultdict(list)
+    unassigned_occl: list[str] = []
     for occl in map_group.occluders:
-        occl_by_map[occl.map_data_uuid].append(occl)
+        occl_map_uuid = occl.map_data_uuid
+        if occl_map_uuid not in map_parent_uuids:
+            unassigned_occl.append(occl.name)
+        else:
+            occl_by_map[occl_map_uuid].append(occl)
 
     # Pre-compute lod_lights export data. Each item produces both an IOMapLodLights (for the child map)
     # and an IOMapDistantLodLights (for the parent map). The property items are also bucketed for the
@@ -165,16 +198,35 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
     distant_lod_lights_by_parent: dict[bytes, IOMapDistantLodLights] = {}
     lls_by_map: dict[bytes, list[MapLodLights]] = defaultdict(list)
     distant_lls_by_parent: dict[bytes, list[MapLodLights]] = defaultdict(list)
+    unassigned_ll: list[str] = []
     for ll in map_group.lod_lights:
-        if not ll.map_data_uuid:
-            continue
-        lls_by_map[ll.map_data_uuid].append(ll)
-        lod_lights, distant_lod_lights = _export_lod_lights(ll)
-        lod_lights_by_child[ll.map_data_uuid] = lod_lights
-        child_map = map_group.find_map(ll.map_data_uuid)
-        if child_map is not None and child_map.parent_uuid:
-            distant_lls_by_parent[child_map.parent_uuid].append(ll)
-            distant_lod_lights_by_parent[child_map.parent_uuid] = distant_lod_lights
+        ll_map_uuid = ll.map_data_uuid
+        if ll_map_uuid not in map_parent_uuids:
+            unassigned_ll.append(ll.name)
+        else:
+            lls_by_map[ll_map_uuid].append(ll)
+            lod_lights, distant_lod_lights = _export_lod_lights(ll)
+            lod_lights_by_child[ll_map_uuid] = lod_lights
+            child_map = map_group.find_map(ll_map_uuid)
+            if child_map is not None and child_map.parent_uuid:
+                distant_lls_by_parent[child_map.parent_uuid].append(ll)
+                distant_lod_lights_by_parent[child_map.parent_uuid] = distant_lod_lights
+
+    # Warn about items whose container reference is empty or does not resolve to an existing container: they are not
+    # included in any exported .ymap
+    def _warn_unassigned(subject_one: str, subject_many: str, names: list[str]):
+        if not names:
+            return
+        subject = subject_one if len(names) == 1 else subject_many.format(n=len(names))
+        shown = ", ".join(names[:6]) + (", ..." if len(names) > 6 else "")
+        logger.warning(f"{subject} not assigned to any container, not exported: {shown}")
+
+    _warn_unassigned("1 entity is", "{n} entities are", unassigned_entities)
+    _warn_unassigned("1 car generator has objects", "{n} car generators have objects", unassigned_cargens)
+    _warn_unassigned("1 timecycle modifier is", "{n} timecycle modifiers are", unassigned_tcms)
+    _warn_unassigned("1 grass batch is", "{n} grass batches are", unassigned_grass)
+    _warn_unassigned("1 occluder is", "{n} occluders are", unassigned_occl)
+    _warn_unassigned("1 LOD lights item is", "{n} LOD lights items are", unassigned_ll)
 
     # Pre-compute entity indices for parent_index recomputation.
     # For each entity, compute its index within its map data's entity list (preserving insertion order
@@ -193,8 +245,6 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
     invalid_parent_links: set[bytes] = set()
     invalid_names_by_map: dict[bytes, list[str]] = defaultdict(list)
     for map_uuid, entities in entities_by_map.items():
-        if map_uuid not in map_parent_uuids:
-            continue  # entities without a valid container are not exported
         for entity in entities:
             if not (parent_uuid := entity.parent_uuid):
                 continue
@@ -203,10 +253,7 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
                 entity_num_children[parent_uuid] += 1
             else:
                 invalid_parent_links.add(entity.uuid)
-                pos = obj.matrix_world.translation if (obj := entity.linked_object) else entity.position
-                invalid_names_by_map[map_uuid].append(
-                    f"{entity.archetype_name} at ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})"
-                )
+                invalid_names_by_map[map_uuid].append(_entity_log_display_name(entity))
 
     for map_data in map_group.maps:
         if names := invalid_names_by_map.get(map_data.uuid):

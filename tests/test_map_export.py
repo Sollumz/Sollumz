@@ -1051,3 +1051,73 @@ def test_ymap_incomplete_unlock_recomputes_but_keeps_missing_children(tmp_path: 
     lod_b = _find_group_entity(group, "test_sector_lod_b")
     group.set_entity_parent(lod_a, lod_b.uuid)
     assert lod_a.parent_uuid == lod_b.uuid
+
+
+def test_ymap_export_warns_unassigned_items(tmp_path: Path):
+    """Items whose container reference is empty or dangling warn at export instead of silently disappearing."""
+    from uuid import uuid4
+
+    from ..ymap_next.properties.map import MapCarGen
+
+    maps = get_maps(bpy.context, create_if_missing=True)
+    group = maps.new_group()
+    group.name = "test_unassigned_warn"
+
+    md = group.new_map()
+    md.name = "test_unassigned_warn"
+    md_uuid = md.uuid
+
+    e_ok = group.new_entity()
+    e_ok.archetype_name = "test_assigned"
+    e_ok.lod_level = "HD"
+    e_ok.position = (1.0, 2.0, 3.0)
+    e_ok.map_data_uuid = md_uuid
+
+    e_lost = group.new_entity()
+    e_lost.archetype_name = "test_unassigned"
+    e_lost.lod_level = "HD"
+    e_lost.position = (4.0, 5.0, 6.0)
+    # map_data_uuid left empty
+
+    cargen = group.new_cargen()
+    cargen.name = "test_unassigned_cargen"
+    cargen.model = "adder"
+    # primary map_data_uuid left empty; its objects resolve to the empty primary
+    coll = bpy.data.collections.new("test_unassigned_warn.cargen")
+    bpy.context.scene.collection.children.link(coll)
+    cargen.linked_collection = coll
+    cargen_obj = bpy.data.objects.new("test_unassigned_warn.cargen.0", MapCarGen.get_cargen_mesh())
+    coll.objects.link(cargen_obj)
+
+    tcm = group.new_tcm()
+    tcm.name = "test_unassigned_tcm"
+
+    batch = group.new_grass_batch()
+    batch.name = "test_unassigned_grass"
+
+    occl = group.new_occluder()
+    occl.name = "test_unassigned_occl"
+    occl.map_data_uuid = uuid4().bytes  # dangling: this container does not exist
+
+    ll = group.new_lod_lights()
+    ll.name = "test_unassigned_ll"
+
+    with log_capture() as logs:
+        _export_last_map_group(tmp_path)
+    logs.assert_no_errors()
+
+    # One warning per item type
+    for pattern in (
+        r"1 entity.*not exported: test_unassigned at \(4\.00, 5\.00, 6\.00\)",
+        r"1 car generator.*not exported: test_unassigned_cargen \(1 object\)",
+        r"1 timecycle modifier.*not exported: test_unassigned_tcm",
+        r"1 grass batch.*not exported: test_unassigned_grass",
+        r"1 occluder.*not exported: test_unassigned_occl",
+        r"1 LOD lights.*not exported: test_unassigned_ll",
+    ):
+        logs.assert_warning(match=pattern, num=6)
+
+    # The assigned entity still exports; the unassigned one is dropped
+    root = _parse_xml(tmp_path / "test_unassigned_warn.ymap.xml")
+    names = [_get_text(e, "archetypeName") for e in root.findall("./entities/Item")]
+    assert names == ["test_assigned"]

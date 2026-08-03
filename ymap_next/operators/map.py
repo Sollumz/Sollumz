@@ -186,6 +186,12 @@ class SOLLUMZ_OT_map_group_delete_map_data(Operator):
         for batch in group.grass_batches:
             if batch.map_data_uuid in md_uuids:
                 batch.map_data_uuid = b""
+        for occl in group.occluders:
+            if occl.map_data_uuid in md_uuids:
+                occl.map_data_uuid = b""
+        for ll in group.lod_lights:
+            if ll.map_data_uuid in md_uuids:
+                ll.map_data_uuid = b""
 
         # Clear parent_uuid on children
         for m in group.maps:
