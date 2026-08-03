@@ -37,7 +37,7 @@ from ..properties.filters import (
 from ..properties.map import (
     get_maps,
 )
-from .common import draw_cache_result
+from .common import draw_cache_result, is_valid_cache_result
 from .map import MapChildTabPanel
 
 
@@ -378,8 +378,8 @@ class SOLLUMZ_PT_map_object_entity_properties(Panel):
 
     @classmethod
     def poll(cls, context):
-        aobj = context.active_object
-        return aobj is not None
+        aentity = active_entity_from_active_object(context)
+        return is_valid_cache_result(aentity)
 
     def draw(self, context):
         layout = self.layout

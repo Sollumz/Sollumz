@@ -28,7 +28,7 @@ from ..properties.map import (
     MAP_CARGEN_FLAG_PROPS,
     get_maps,
 )
-from .common import draw_cache_result
+from .common import draw_cache_result, is_valid_cache_result
 from .map import MapChildTabPanel
 
 
@@ -176,8 +176,8 @@ class SOLLUMZ_PT_map_object_cargen_properties(Panel):
 
     @classmethod
     def poll(cls, context):
-        aobj = context.active_object
-        return aobj is not None
+        acargen = active_cargen_from_active_object(context)
+        return is_valid_cache_result(acargen)
 
     def draw(self, context):
         layout = self.layout

@@ -6,6 +6,10 @@ from ..map_index import (
 )
 
 
+def is_valid_cache_result(cache_result: object | None) -> bool:
+    return cache_result is not None and cache_result is not CACHE_NOT_READY
+
+
 def draw_cache_result(layout: UILayout, cache_result: object | None, missing_msg: str) -> bool:
     if cache_result is CACHE_NOT_READY:
         progress = MAP_INDEX.build_progress

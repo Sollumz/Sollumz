@@ -56,7 +56,7 @@ def active_entity_from_active_object(context) -> tuple[MapGroup, MapEntity] | ob
     from .map_index import find_entity_by_object
 
     aobj = context.active_object
-    return find_entity_by_object(aobj)
+    return find_entity_by_object(aobj) if aobj else None
 
 
 def active_cargens_collection(context) -> MultiSelectCollection[MapCarGen, MapCarGenSelectionAccess] | None:
@@ -77,6 +77,8 @@ def active_cargen_from_active_object(context) -> tuple[MapGroup, MapCarGen] | ob
     from .map_index import find_cargen_by_collection
 
     aobj = context.active_object
+    if not aobj:
+        return None
 
     result = None
     for coll in aobj.users_collection:
