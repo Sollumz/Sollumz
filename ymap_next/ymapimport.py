@@ -984,12 +984,12 @@ def _organize_map_in_collections(map_group: MapGroup):
 
     if map_group.cargens:
         # Link cargen collections to the base collection, inside their own collection
-        vehgens_collection_name = f"{map_group.name}.vehicle_gens"
-        vehgens_collection = bpy.data.collections.new(vehgens_collection_name)
-        base_collection.children.link(vehgens_collection)
+        cargens_collection_name = f"{map_group.name}.cargens"
+        cargens_collection = bpy.data.collections.new(cargens_collection_name)
+        base_collection.children.link(cargens_collection)
         for cargen in map_group.cargens:
             if coll := cargen.linked_collection:
-                vehgens_collection.children.link(coll)
+                cargens_collection.children.link(coll)
 
     if map_group.grass_batches:
         # Link grass instances objects inside their own collection
