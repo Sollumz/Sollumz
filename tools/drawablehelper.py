@@ -16,7 +16,7 @@ class BonePropertiesManager:
     @staticmethod
     def load_bones():
         from xml.etree import ElementTree as ET
-        from .cwxml import Bone
+        from szio.gta5.cwxml import Bone
 
         tree = ET.parse(BonePropertiesManager.dictionary_xml)
         for node in tree.getroot():
