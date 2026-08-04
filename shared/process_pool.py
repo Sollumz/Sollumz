@@ -1,7 +1,19 @@
+import atexit
 import subprocess
 from collections.abc import Sequence
 
 from .. import logger
+
+# Pools with live subprocesses. Blender doesn't wait for them on quit, so without this the workers
+# outlive the Blender window as orphaned headless processes.
+_live_pools = []
+
+
+@atexit.register
+def _kill_live_processes():
+    for pool in _live_pools:
+        for proc in pool._processes:
+            proc.kill()
 
 
 class ProcessPool:
@@ -11,6 +23,7 @@ class ProcessPool:
         self.return_codes = []
         self._remaining_commands = list(commands)
         self._processes = []
+        _live_pools.append(self)
 
     @property
     def num_completed(self) -> int:
@@ -37,4 +50,7 @@ class ProcessPool:
             self._processes.append(p)
 
         # Still busy while anything is running or queued
-        return bool(self._processes or self._remaining_commands)
+        busy = bool(self._processes or self._remaining_commands)
+        if not busy and self in _live_pools:
+            _live_pools.remove(self)
+        return busy
