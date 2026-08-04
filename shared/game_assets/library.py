@@ -312,6 +312,7 @@ def build_library(
                         str(cat.uuid),
                         "-f",
                         file_index_by_hash_cache_path,
+                        "--exit-with-parent",
                     ]
                 )
 
@@ -334,6 +335,7 @@ def build_library(
                             "-f",
                             file_index_by_hash_cache_path,
                             "--interiors",
+                            "--exit-with-parent",
                         ]
                     )
         else:
@@ -373,6 +375,7 @@ def build_library(
                         str(cat.uuid),
                         "-f",
                         file_index_by_hash_cache_path,
+                        "--exit-with-parent",
                     ]
                 )
 
@@ -395,6 +398,7 @@ def build_library(
                             "-f",
                             file_index_by_hash_cache_path,
                             "--interiors",
+                            "--exit-with-parent",
                         ]
                     )
 

@@ -197,6 +197,34 @@ def create_library_from_ytyp(
     bpy.ops.wm.save_mainfile(filepath=str(out_library_file.absolute()), compress=True)
 
 
+def _start_exit_with_parent_watcher():
+    """Terminate this process once the parent process dies."""
+    import os
+    import sys
+    import threading
+
+    stdin = sys.stdin
+    if stdin is None or stdin.closed:
+        print(f"{CMD_ID}: --exit-with-parent requires an open stdin pipe, cannot watch parent process", file=sys.stderr)
+        return
+
+    # Read the raw fd, not sys.stdin.buffer: a thread blocked on the BufferedReader holds its
+    # internal lock, and interpreter shutdown then aborts with "Fatal Python error:
+    # _enter_buffered_busy" when it tries to flush std streams while we still own that lock.
+    fd = stdin.fileno()
+
+    def _watch():
+        try:
+            while os.read(fd, 4096):  # blocks; the parent never writes, so this only returns at EOF
+                pass
+            print("Parent process exited, terminating", file=sys.stderr)
+        except Exception:
+            pass
+        os._exit(1)
+
+    threading.Thread(target=_watch, daemon=True, name="exit-with-parent").start()
+
+
 def main(argv: list[str]) -> int:
     import sys
     import os
@@ -244,7 +272,16 @@ def main(argv: list[str]) -> int:
         "--file-index",
         type=Path,
     )
+    parser.add_argument(
+        "--exit-with-parent",
+        action="store_true",
+        help="Terminate this process when the parent process that launched it exits. "
+        "The parent must keep this process' stdin pipe open, without writing to it.",
+    )
     args = parser.parse_args(argv)
+
+    if args.exit_with_parent:
+        _start_exit_with_parent_watcher()
 
     create_library_from_ytyp(args.directory, args.input, args.output, args.catalog, args.interiors, args.file_index)
 
