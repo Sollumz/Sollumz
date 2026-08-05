@@ -520,17 +520,13 @@ def create_image_node(node_tree, param) -> bpy.types.ShaderNodeTexImage:
     return imgnode
 
 
-def create_parameter_node(
-    node_tree: bpy.types.NodeTree,
+def get_shader_parameter_layout(
     param: (
         ShaderParameterFloatDef | ShaderParameterFloat2Def | ShaderParameterFloat3Def | ShaderParameterFloat4Def |
         ShaderParameterFloat4x4Def
     )
-) -> SzShaderNodeParameter:
-    node: SzShaderNodeParameter = node_tree.nodes.new(SzShaderNodeParameter.bl_idname)
-    node.name = param.name
-    node.label = node.name
-
+) -> tuple[int, int, SzShaderNodeParameterDisplayType]:
+    """Derive (num_cols, num_rows, display_type) for a shader parameter node from its definition."""
     display_type = SzShaderNodeParameterDisplayType.DEFAULT
     match param.type:
         case ShaderParameterType.FLOAT:
@@ -552,6 +548,22 @@ def create_parameter_node(
 
     if param.hidden:
         display_type = SzShaderNodeParameterDisplayType.HIDDEN_IN_UI
+
+    return cols, rows, display_type
+
+
+def create_parameter_node(
+    node_tree: bpy.types.NodeTree,
+    param: (
+        ShaderParameterFloatDef | ShaderParameterFloat2Def | ShaderParameterFloat3Def | ShaderParameterFloat4Def |
+        ShaderParameterFloat4x4Def
+    )
+) -> SzShaderNodeParameter:
+    node: SzShaderNodeParameter = node_tree.nodes.new(SzShaderNodeParameter.bl_idname)
+    node.name = param.name
+    node.label = node.name
+
+    cols, rows, display_type = get_shader_parameter_layout(param)
 
     node.set_size(cols, rows)
     node.set_display_type(display_type)
