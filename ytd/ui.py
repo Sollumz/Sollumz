@@ -10,8 +10,12 @@ from .operators import (
     selection as txd_select_ops,
 )
 from .operators import (
+    gtxd as gtxd_ops,
+)
+from .operators import (
     txd as txd_ops,
 )
+from .properties import get_selected_gtxd
 from .utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -387,6 +391,90 @@ class SOLLUMZ_PT_txd_textures_panel(TxdToolChildPanel, Panel):
         row = col.row(align=True)
         row.alignment = "RIGHT"
         row.label(text=f"{w} × {h}")
+
+
+class SOLLUMZ_UL_gtxds_list(UIList):
+    bl_idname = "SOLLUMZ_UL_gtxds_list"
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        layout.prop(item, "name", text="", emboss=False, icon="FILE_FOLDER")
+
+class SOLLUMZ_UL_gtxd_list(UIList):
+    bl_idname = "SOLLUMZ_UL_gtxd_list"
+
+    duplicate_indices: set[int] = set()
+    incomplete_indices: set[int] = set()
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        is_duplicate = index in self.duplicate_indices
+        is_orphan = item.ui_is_orphan and bool(item.parent.strip())
+        row = layout.row(align=True)
+        if item.ui_tree_depth:
+            row.separator(factor=item.ui_tree_depth)
+        row.prop(item, "ui_label", text="", emboss=False, icon="TEXTURE")
+        if is_duplicate:
+            warning = "Duplicate name"
+        elif is_orphan:
+            warning = "Invalid parent"
+        elif index in self.incomplete_indices:
+            warning = "No relationship"
+        else:
+            warning = ""
+
+        row.alert = bool(warning)
+        if warning:
+            sub = row.row(align=True)
+            sub.alignment = "RIGHT"
+            sub.label(text=warning, icon="ERROR")
+
+    def filter_items(self, context, data, propname):
+        return [], [node.ui_tree_sort_id for node in getattr(data, propname)]
+
+
+class SOLLUMZ_PT_gtxd_panel(TxdToolChildPanel, Panel):
+    bl_label = "GTXD"
+    bl_idname = "SOLLUMZ_PT_gtxd_panel"
+    bl_options = {"DEFAULT_CLOSED"}
+    bl_order = 3
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        gtxd = get_selected_gtxd(context)
+
+        if gtxd is None:
+            SOLLUMZ_UL_gtxd_list.duplicate_indices = set()
+            SOLLUMZ_UL_gtxd_list.incomplete_indices = set()
+        else:
+            SOLLUMZ_UL_gtxd_list.duplicate_indices = gtxd_ops.find_duplicate_nodes(gtxd.nodes)
+            SOLLUMZ_UL_gtxd_list.incomplete_indices = gtxd_ops.find_incomplete_nodes(gtxd.nodes)
+
+        row = layout.row()
+        row.template_list(SOLLUMZ_UL_gtxds_list.bl_idname, "", scene, "sz_gtxds",
+                          scene, "sz_gtxd_index", rows=3)
+        col = row.column(align=True)
+        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_create.bl_idname, text="", icon="ADD")
+        col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_delete.bl_idname, text="", icon="REMOVE")
+
+        if gtxd is not None:
+            row = layout.row()
+            row.template_list(SOLLUMZ_UL_gtxd_list.bl_idname, "", gtxd, "nodes",
+                              gtxd, "node_index", rows=6)
+            col = row.column(align=True)
+            col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_node_create.bl_idname, text="", icon="ADD")
+            col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_node_delete.bl_idname, text="", icon="REMOVE")
+
+        if gtxd is not None and 0 <= gtxd.node_index < len(gtxd.nodes):
+            node = gtxd.nodes[gtxd.node_index]
+            col = layout.column()
+            col.use_property_split = True
+            col.use_property_decorate = False
+            col.prop(node, "name", text="Name", icon="TEXTURE")
+            col.prop(node, "parent", text="Parent", icon="CON_CHILDOF")
+
+        row = layout.row(align=True)
+        row.operator(gtxd_ops.SOLLUMZ_OT_gtxd_import.bl_idname, text="Import", icon="IMPORT")
+        row.operator(gtxd_ops.SOLLUMZ_OT_gtxd_export.bl_idname, text="Export Meta").file_extension = ".meta"
+        row.operator(gtxd_ops.SOLLUMZ_OT_gtxd_export.bl_idname, text="Export XML").file_extension = ".ymt.rbf.xml"
 
 
 class SOLLUMZ_PT_txd_sources_panel(TxdToolChildPanel, Panel):
