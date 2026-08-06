@@ -10,7 +10,7 @@ from bpy.types import (
 import numpy as np
 from mathutils import Matrix, Vector, Quaternion
 from typing import Optional
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, get_bone_name_by_tag, material_from_image, create_blender_object
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType
@@ -243,8 +243,7 @@ def create_frag_collisions(frag: AssetFragment, frag_obj: Object, damaged: bool 
         # NOTE: we currently lose damaged mass or pristine mass if the phys child only has a pristine bound or damaged
         # bound, but archetype still use this mass. Is this important?
 
-        bone_name = get_bone_name_by_tag(frag_obj.data, bone.tag) or bone.name
-        add_child_of_bone_constraint(bound_obj, frag_obj, bone_name)
+        add_child_of_bone_constraint(bound_obj, frag_obj, bone.name)
         drawable = phys_child.damaged_drawable if damaged else phys_child.drawable
         bound_obj.matrix_local = drawable.frag_bound_matrix.transposed()
 
@@ -295,14 +294,8 @@ def apply_phys_groups_to_bones(frag: AssetFragment, frag_obj: Object):
     """Set the physics group properties for all bones in the armature."""
     armature = frag_obj.data
     groups = frag.physics.lod1.groups
-    bone_tag_by_name = {bone.name: bone.tag for bone in frag.base_drawable.skeleton.bones}
 
     for group in groups:
-        bone_tag = bone_tag_by_name.get(group.name)
-        bone_name = get_bone_name_by_tag(armature, bone_tag)
-        if bone_name is not None:
-            group.name = bone_name
-
         bone = armature.bones.get(group.name, None)
         if bone is None:
             # Bone not found, try a case-insensitive search
@@ -381,8 +374,9 @@ def create_phys_child_meshes(
     lod = frag.physics.lod1
     children = lod.children
     hi_children = hi_frag.physics.lod1.children if hi_frag else []
-    bone_name_by_tag = {
-        bone.bone_properties.tag: bone.name for bone in frag_obj.data.bones}
+    bones = frag.base_drawable.skeleton.bones
+
+    bone_name_by_tag: dict[str, SkelBone] = {bone.tag: bone.name for bone in bones}
 
     for i, child in enumerate(children):
         if not child.drawable.models:
@@ -447,8 +441,7 @@ def create_frag_env_cloth(frag: AssetFragment, frag_obj: Object, drawable_obj: O
 
     bones = cloth.drawable.skeleton.bones
     bone_index = cloth.drawable.models[LodLevel.HIGH][0].bone_index
-    bone = bones[bone_index]
-    bone_name = get_bone_name_by_tag(frag_obj.data, bone.tag) or bone.name
+    bone_name = bones[bone_index].name
     add_child_of_bone_constraint(model_obj, frag_obj, bone_name)
 
     mesh = model_obj.data

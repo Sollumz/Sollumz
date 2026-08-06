@@ -380,14 +380,13 @@ def create_drawable_skel(skeleton_xml: Skeleton, armature_obj: bpy.types.Object)
     # Need to go into edit mode to modify edit bones
     bpy.ops.object.mode_set(mode="EDIT")
 
-    bone_names = []
     for bone_xml in bones:
-        bone_names.append(create_bpy_bone(bone_xml, armature_obj.data))
+        create_bpy_bone(bone_xml, armature_obj.data)
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    for bone_xml, bone_name in zip(bones, bone_names):
-        set_bone_properties(bone_xml, armature_obj.data, bone_name)
+    for bone_xml in bones:
+        set_bone_properties(bone_xml, armature_obj.data)
 
     return armature_obj
 
@@ -410,11 +409,11 @@ def create_bpy_bone(bone_xml: Bone, armature: bpy.types.Armature):
     if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
-    return edit_bone.name
+    return bone_xml.name
 
 
-def set_bone_properties(bone_xml: Bone, armature: bpy.types.Armature, bone_name: str):
-    bl_bone = armature.bones[bone_name]
+def set_bone_properties(bone_xml: Bone, armature: bpy.types.Armature):
+    bl_bone = armature.bones[bone_xml.name]
     bl_bone.bone_properties.tag = bone_xml.tag
 
     # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
