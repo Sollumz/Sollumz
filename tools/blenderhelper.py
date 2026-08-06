@@ -185,6 +185,17 @@ def build_tag_bone_map(armature):
     return tag_bone_map
 
 
+def get_bone_name_by_tag(armature, tag):
+    if armature is None or tag is None:
+        return None
+
+    for bone in armature.bones:
+        if bone.bone_properties.tag == tag:
+            return bone.name
+
+    return None
+
+
 def build_name_bone_map(armature):
     if armature is None:
         return None

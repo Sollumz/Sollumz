@@ -5,7 +5,7 @@ from traceback import format_exc
 from mathutils import Matrix, Vector, Quaternion
 from typing import Optional
 from .fragment_merger import FragmentMerger
-from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
+from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, get_bone_name_by_tag, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType
@@ -203,8 +203,14 @@ def create_phys_lod(frag_xml: Fragment, frag_obj: bpy.types.Object):
 def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Fragment):
     """Set the physics group properties for all bones in the armature."""
     groups_xml: list[PhysicsGroup] = frag_xml.physics.lod1.groups
+    bone_tag_by_name = {bone.name: bone.tag for bone in frag_xml.drawable.skeleton.bones}
 
     for group_xml in groups_xml:
+        bone_tag = bone_tag_by_name.get(group_xml.name)
+        bone_name = get_bone_name_by_tag(armature, bone_tag)
+        if bone_name is not None:
+            group_xml.name = bone_name
+
         if group_xml.name not in armature.bones:
             # Bone not found, try a case-insensitive search
             group_name_lower = group_xml.name.lower()
@@ -257,7 +263,8 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object, damag
         # NOTE: we currently lose damaged mass or pristine mass if the phys child only has a pristine bound or damaged
         # bound, but archetype still use this mass. Is this important?
 
-        add_child_of_bone_constraint(bound_obj, frag_obj, bone.name)
+        bone_name = get_bone_name_by_tag(frag_obj.data, bone.tag) or bone.name
+        add_child_of_bone_constraint(bound_obj, frag_obj, bone_name)
         drawable = phys_child.damaged_drawable if damaged else phys_child.drawable
         bound_obj.matrix_local = drawable.frag_bound_matrix.transposed()
 
@@ -281,10 +288,8 @@ def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, dra
     """Create all Fragment.Physics.LOD1.Children meshes. (Only LOD1 currently supported)"""
     lod_xml = frag_xml.physics.lod1
     children_xml: list[PhysicsChild] = lod_xml.children
-    bones = frag_xml.drawable.skeleton.bones
-
-    bone_name_by_tag: dict[str, Bone] = {
-        bone.tag: bone.name for bone in bones}
+    bone_name_by_tag = {
+        bone.bone_properties.tag: bone.name for bone in frag_obj.data.bones}
 
     for child_xml in children_xml:
         if child_xml.drawable.is_empty:
@@ -335,7 +340,8 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
 
     bones = cloth.drawable.skeleton.bones
     bone_index = cloth.drawable.drawable_models_high[0].bone_index
-    bone_name = bones[bone_index].name
+    bone = bones[bone_index]
+    bone_name = get_bone_name_by_tag(frag_obj.data, bone.tag) or bone.name
     add_child_of_bone_constraint(model_obj, frag_obj, bone_name)
 
     mesh = model_obj.data

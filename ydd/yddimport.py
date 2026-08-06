@@ -100,10 +100,16 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str, yld_xml: Optional
         if yld_xml is not None:
             cloth = next((c for c in yld_xml if c.name == drawable_xml.name), None)
             if cloth is not None:
+                cloth_armature = external_armature or drawable_obj
+                cloth_bones = (
+                    cloth_armature.data.bones
+                    if cloth_armature.type == "ARMATURE"
+                    else drawable_xml.skeleton.bones or external_bones
+                )
                 cloth_obj = create_character_cloth_mesh(
-                    cloth, drawable_obj, drawable_xml.skeleton.bones or external_bones)
+                    cloth, drawable_obj, cloth_bones)
                 bounds_obj = create_character_cloth_bounds(
-                    cloth, external_armature or drawable_obj, drawable_xml.skeleton.bones or external_bones)
+                    cloth, cloth_armature, cloth_bones)
                 bounds_obj.parent = cloth_obj
                 cloth_obj.parent = drawable_obj
 
