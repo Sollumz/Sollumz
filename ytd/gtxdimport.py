@@ -1,13 +1,10 @@
 import bpy
 from szio.gta5 import AssetMapParentTxds
-
 from .properties import refresh_gtxd_ui
 
-
-def unique_gtxd_name(nodes, name: str) -> str:
-    """Make ``name`` unique among the texture dictionary names, so nothing collides in the tree."""
-    name = name.strip() or "txd"
-    taken = {n.name.strip().lower() for n in nodes}
+def unique_name(items, name: str, fallback: str) -> str:
+    name = name.strip() or fallback
+    taken = {item.name.strip().lower() for item in items}
     if name.lower() not in taken:
         return name
 
@@ -18,13 +15,14 @@ def unique_gtxd_name(nodes, name: str) -> str:
 
 
 def import_gtxd(asset: AssetMapParentTxds, name: str = "") -> int:
-    """Add the relationships of a gtxd asset to the GTXD tree. Returns the number of relationships."""
     scene = bpy.context.scene
-    nodes = scene.sz_gtxds
-    first_index = len(nodes)
+    name = unique_name(scene.sz_gtxds, name, "gtxd")
+    gtxd = scene.sz_gtxds.add()
+    gtxd.name = name
+    nodes = gtxd.nodes
 
-    # Each texture dictionary becomes a single node pointing at its parent, so hierarchies of any depth are kept
-    existing = {n.name.strip().lower() for n in nodes}
+    existing = set()
+    imported = 0
     for child, parent in asset.parents.items():
         parent, child = parent.strip(), child.strip()
         if not parent or not child or child.lower() in existing:
@@ -34,14 +32,15 @@ def import_gtxd(asset: AssetMapParentTxds, name: str = "") -> int:
         node["name_"] = child
         node["parent_"] = parent
         existing.add(child.lower())
+        imported += 1
 
-    # Parents that are not a child of anything else are the roots of the tree
     for parent in {p.strip() for p in asset.parents.values() if p.strip()}:
         if parent.lower() not in existing:
             node = nodes.add()
             node["name_"] = parent
             existing.add(parent.lower())
 
-    scene.sz_gtxd_index = first_index
-    refresh_gtxd_ui(scene)
-    return len(asset.parents)
+    scene.sz_gtxd_index = len(scene.sz_gtxds) - 1
+    gtxd.node_index = 0
+    refresh_gtxd_ui(gtxd)
+    return imported

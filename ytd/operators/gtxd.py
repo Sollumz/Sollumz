@@ -1,30 +1,31 @@
 import os
 
-from bpy.props import CollectionProperty, StringProperty
-from bpy.types import Operator, OperatorFileListElement
-from bpy_extras.io_utils import ExportHelper, ImportHelper
+from bpy.props import StringProperty
+from bpy.types import Operator
+from bpy_extras.io_utils import ExportHelper
 from szio.gta5 import AssetMapParentTxds
-from szio.gta5.assets import try_load_asset
 from szio.gta5.cwxml.adapters import save_map_parent_txds_to_cw
-from szio.vfs import VPath
 
-from ..gtxdimport import import_gtxd, unique_gtxd_name
-from ..properties import refresh_gtxd_ui
+from ...sollumz_operators import ImportAssetsOperatorImpl
+from ..gtxdimport import unique_name
+from ..properties import get_gtxd_ui_order, get_selected_gtxd, refresh_gtxd_ui
 
 
 def _selected_node(context):
-    nodes = context.scene.sz_gtxds
-    index = context.scene.sz_gtxd_index
+    gtxd = get_selected_gtxd(context)
+    if gtxd is None:
+        return None
+    nodes = gtxd.nodes
+    index = gtxd.node_index
     return nodes[index] if 0 <= index < len(nodes) else None
 
 
 def _tree_order(context):
-    """The nodes in the order shown in the UI list."""
-    return sorted(context.scene.sz_gtxds, key=lambda n: n.ui_tree_sort_id)
+    gtxd = get_selected_gtxd(context)
+    return get_gtxd_ui_order(gtxd) if gtxd else []
 
 
 def _block(context, node):
-    """``node`` and everything under it, using the depths computed for the UI list."""
     ordered = _tree_order(context)
     index = next((i for i, n in enumerate(ordered) if n.as_pointer() == node.as_pointer()), None)
     if index is None:
@@ -39,8 +40,6 @@ def _block(context, node):
 
 
 def find_duplicate_nodes(nodes) -> set[int]:
-    """Indices of nodes sharing a name. A texture dictionary can only inherit from a single parent, so each one
-    must appear only once in the tree."""
     duplicates = set()
     first_index = {}
     for index, node in enumerate(nodes):
@@ -58,8 +57,6 @@ def find_duplicate_nodes(nodes) -> set[int]:
 
 
 def find_incomplete_nodes(nodes) -> set[int]:
-    """Indices of nodes that cannot be exported: without a name, or named but not linked to anything, so they
-    would not produce any relationship."""
     used_as_parent = {n.parent.strip().lower() for n in nodes if n.parent.strip()}
     return {
         index
@@ -69,23 +66,22 @@ def find_incomplete_nodes(nodes) -> set[int]:
 
 
 class SOLLUMZ_OT_gtxd_create(Operator):
-    """Add a texture dictionary at the root of the tree"""
+    """Add a GTXD to the project"""
 
     bl_idname = "sollumz.gtxd_create"
-    bl_label = "Add Texture Dictionary"
+    bl_label = "Add GTXD"
     bl_options = {"UNDO"}
 
     def execute(self, context):
-        nodes = context.scene.sz_gtxds
-        node = nodes.add()
-        node["name_"] = unique_gtxd_name(nodes, "txd")
-        context.scene.sz_gtxd_index = len(nodes) - 1
-        refresh_gtxd_ui(context.scene)
+        gtxds = context.scene.sz_gtxds
+        name = unique_name(gtxds, "gtxd", "gtxd")
+        gtxd = gtxds.add()
+        gtxd.name = name
+        context.scene.sz_gtxd_index = len(gtxds) - 1
         return {"FINISHED"}
 
 
 class SOLLUMZ_OT_gtxd_delete(Operator):
-    """Delete the selected texture dictionary and everything that inherits from it"""
 
     bl_idname = "sollumz.gtxd_delete"
     bl_label = "Delete"
@@ -93,22 +89,57 @@ class SOLLUMZ_OT_gtxd_delete(Operator):
 
     @classmethod
     def poll(cls, context):
+        return get_selected_gtxd(context) is not None
+
+    def execute(self, context):
+        gtxds = context.scene.sz_gtxds
+        gtxds.remove(context.scene.sz_gtxd_index)
+        context.scene.sz_gtxd_index = min(context.scene.sz_gtxd_index, len(gtxds) - 1)
+        return {"FINISHED"}
+
+class SOLLUMZ_OT_gtxd_node_create(Operator):
+
+    bl_idname = "sollumz.gtxd_node_create"
+    bl_label = "Add Texture Dictionary"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_gtxd(context) is not None
+
+    def execute(self, context):
+        gtxd = get_selected_gtxd(context)
+        nodes = gtxd.nodes
+        node = nodes.add()
+        node["name_"] = unique_name(nodes, "txd", "txd")
+        gtxd.node_index = len(nodes) - 1
+        refresh_gtxd_ui(gtxd)
+        return {"FINISHED"}
+
+class SOLLUMZ_OT_gtxd_node_delete(Operator):
+    bl_idname = "sollumz.gtxd_node_delete"
+    bl_label = "Delete Texture Dictionary"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
         return _selected_node(context) is not None
 
     def execute(self, context):
-        nodes = context.scene.sz_gtxds
+        gtxd = get_selected_gtxd(context)
+        nodes = gtxd.nodes
         to_remove = {n.as_pointer() for n in _block(context, _selected_node(context))}
         for i in reversed(range(len(nodes))):
             if nodes[i].as_pointer() in to_remove:
                 nodes.remove(i)
 
-        context.scene.sz_gtxd_index = min(context.scene.sz_gtxd_index, len(nodes) - 1)
-        refresh_gtxd_ui(context.scene)
+        gtxd.node_index = min(gtxd.node_index, len(nodes) - 1)
+        refresh_gtxd_ui(gtxd)
         return {"FINISHED"}
 
 
 def _relationships_of(nodes) -> list[tuple[str, str]]:
-    """The ``(parent, child)`` pairs of a gtxd file, in tree order."""
+    """Return the parent-child relationships."""
     return [
         (node.parent.strip(), node.name.strip())
         for node in nodes
@@ -116,63 +147,20 @@ def _relationships_of(nodes) -> list[tuple[str, str]]:
     ]
 
 
-class SOLLUMZ_OT_gtxd_import(Operator, ImportHelper):
-    """Import a gtxd .meta or .xml file into the tree"""
-
+class SOLLUMZ_OT_gtxd_import(ImportAssetsOperatorImpl, Operator):
     bl_idname = "sollumz.gtxd_import"
     bl_label = "Import GTXD"
     bl_options = {"UNDO"}
 
-    filter_glob: StringProperty(default="*.meta;*.xml", options={"HIDDEN"}, maxlen=255)
-    files: CollectionProperty(type=OperatorFileListElement, options={"HIDDEN", "SKIP_SAVE"})
-    directory: StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
-
-    def invoke(self, context, event):
-        if self.directory and len(self.files) > 0 and self.files[0].name != "":
-            # Already have a list of files, don't open the import window and do the import directly.
-            # Invoked by the file handler when dropping files into Blender.
-            return self.execute(context)
-
-        return super().invoke(context, event)
-
-    def execute(self, context):
-        if self.directory and len(self.files) > 0 and self.files[0].name != "":
-            filepaths = [os.path.join(self.directory, f.name) for f in self.files if f.name]
-        else:
-            filepaths = [self.filepath]
-
-        imported = 0
-        for filepath in filepaths:
-            if self._import_file(context, filepath):
-                imported += 1
-
-        return {"FINISHED"} if imported else {"CANCELLED"}
-
-    def _import_file(self, context, filepath: str) -> bool:
-        name = os.path.basename(filepath)
-        try:
-            asset = try_load_asset(VPath(filepath))
-        except OSError as e:
-            self.report({"ERROR"}, f"Could not read '{filepath}': {e.strerror or e}")
-            return False
-
-        if not isinstance(asset, AssetMapParentTxds):
-            self.report({"ERROR"}, f"'{name}' is not a gtxd file.")
-            return False
-
-        # Strip the extensions, so `gtxd.ymt.rbf.xml` becomes `gtxd`
-        for suffix in (".rbf.xml", ".xml", ".meta", ".ymt"):
-            if name.lower().endswith(suffix) and len(name) > len(suffix):
-                name = name[: -len(suffix)]
-
-        imported = import_gtxd(asset, name)
-        self.report({"INFO"}, f"Imported {imported} relationship(s).")
-        return True
+    filter_glob: StringProperty(
+        default="*.meta;*.ymt.rbf.xml",
+        options={"HIDDEN", "SKIP_SAVE"},
+        maxlen=255,
+    )
 
 
 class SOLLUMZ_OT_gtxd_export(Operator, ExportHelper):
-    """Export the texture dictionary relationships.
-    Name it 'gtxd.ymt.rbf.xml' to import it in CodeWalker and save it as a .ymt"""
+    """Export the selected GTXD"""
 
     bl_idname = "sollumz.gtxd_export"
     bl_label = "Export GTXD"
@@ -183,34 +171,32 @@ class SOLLUMZ_OT_gtxd_export(Operator, ExportHelper):
 
     @classmethod
     def poll(cls, context):
-        return len(context.scene.sz_gtxds) > 0
+        gtxd = get_selected_gtxd(context)
+        return gtxd is not None and len(gtxd.nodes) > 0
 
     def invoke(self, context, event):
-        # `ExportHelper` only understands a single extension, so give it the last one. Otherwise it would turn
-        # `gtxd.ymt.rbf.xml` into `gtxd.ymt.rbf.ymt.rbf.xml`.
         self.filename_ext = os.path.splitext(self.file_extension)[1] or self.file_extension
-        self.filepath = "gtxd" + self.file_extension
+        self.filepath = get_selected_gtxd(context).name + self.file_extension
         return super().invoke(context, event)
 
     def execute(self, context):
-        nodes = context.scene.sz_gtxds
+        gtxd = get_selected_gtxd(context)
+        if gtxd is None:
+            return {"CANCELLED"}
+        nodes = gtxd.nodes
         if duplicates := find_duplicate_nodes(nodes):
-            self.report({"ERROR"}, f"Duplicate name: '{nodes[min(duplicates)].name}'.")
+            self.report({"ERROR"}, f"Duplicate texture dictionary name: '{nodes[min(duplicates)].name}'.")
             return {"CANCELLED"}
 
         if incomplete := find_incomplete_nodes(nodes):
             node = nodes[min(incomplete)]
             if not node.name.strip():
-                self.report({"ERROR"}, "A texture dictionary has no name.")
+                self.report({"ERROR"}, "Texture dictionary name cannot be empty.")
             else:
-                self.report({"ERROR"}, f"'{node.name}' has no parent and no children, set a parent for it.")
+                self.report({"ERROR"}, f"Texture dictionary '{node.name}' is not part of any relationship.")
             return {"CANCELLED"}
 
         relationships = _relationships_of(_tree_order(context))
-        if not relationships:
-            self.report({"WARNING"}, "Nothing to export. Add a texture dictionary with a parent first.")
-            return {"CANCELLED"}
-
         asset = AssetMapParentTxds(parents={child: parent for parent, child in relationships})
         try:
             save_map_parent_txds_to_cw(asset).write_xml(self.filepath)

@@ -210,8 +210,6 @@ class TextureDictionarySelectionAccess(MultiSelectAccess):
 
 
 class GtxdNode(PropertyGroup):
-    """A texture dictionary in the GTXD tree. A node without a parent is at the root of the tree, any other node
-    inherits the textures of its parent. Parents can be nested to any depth."""
 
     def get_name(self) -> str:
         return self.get("name_", "")
@@ -221,13 +219,14 @@ class GtxdNode(PropertyGroup):
         new_name = new_name.strip()
         self["name_"] = new_name
 
-        # Parents are referenced by name, keep the children linked when renaming
-        if old_name and new_name and old_name.lower() != new_name.lower():
-            for node in self.id_data.sz_gtxds:
+        gtxd = get_gtxd_for_node(self.id_data, self)
+        if gtxd is not None and old_name and new_name and old_name.lower() != new_name.lower():
+            for node in gtxd.nodes:
                 if node.parent.strip().lower() == old_name.lower():
                     node["parent_"] = new_name
 
-        refresh_gtxd_ui(self.id_data)
+        if gtxd is not None:
+            refresh_gtxd_ui(gtxd)
 
     def search_names(self, context: Context, edit_text: str) -> Iterator[str]:
         for txd in context.scene.sz_txds.texture_dictionaries:
@@ -241,15 +240,17 @@ class GtxdNode(PropertyGroup):
 
     def set_parent(self, new_parent: str):
         self["parent_"] = new_parent.strip()
-        refresh_gtxd_ui(self.id_data)
+        if gtxd := get_gtxd_for_node(self.id_data, self):
+            refresh_gtxd_ui(gtxd)
 
     def search_parents(self, context: Context, edit_text: str) -> Iterator[str]:
+        gtxd = get_gtxd_for_node(context.scene, self)
+        if gtxd is None:
+            return
         pointer = self.as_pointer()
-        for node in sorted(context.scene.sz_gtxds, key=lambda n: n.ui_tree_sort_id):
+        for node in get_gtxd_ui_order(gtxd):
             if node.as_pointer() != pointer:
                 yield node.ui_label
-            else:
-                yield node.ui_label + "*"
 
     parent: StringProperty(
         name="Parent",
@@ -261,11 +262,10 @@ class GtxdNode(PropertyGroup):
 
     ui_tree_depth: IntProperty(min=0)
     ui_tree_sort_id: IntProperty()
-    #: Set when the parent does not exist or the node is part of a parent cycle
     ui_is_orphan: BoolProperty(default=False)
 
     def get_ui_label(self) -> str:
-        return " " * (4 * self.ui_tree_depth) + (self.name or "Set name...")
+        return self.name or "Set name..."
 
     def set_ui_label(self, s: str):
         s = s.strip()
@@ -274,9 +274,27 @@ class GtxdNode(PropertyGroup):
     ui_label: StringProperty(get=get_ui_label, set=set_ui_label)
 
 
-def refresh_gtxd_ui(scene):
-    """Sort the GTXD nodes so that each texture dictionary is listed under its parent, at any depth."""
-    nodes = scene.sz_gtxds
+class Gtxd(PropertyGroup):
+    name: StringProperty(name="Name", default="gtxd")
+    nodes: CollectionProperty(type=GtxdNode, name="Texture Dictionaries")
+    node_index: IntProperty(name="Texture Dictionary")
+def get_selected_gtxd(context: Context) -> Gtxd | None:
+    gtxds = context.scene.sz_gtxds
+    index = context.scene.sz_gtxd_index
+    return gtxds[index] if 0 <= index < len(gtxds) else None
+def get_gtxd_for_node(scene: Scene, target: GtxdNode) -> Gtxd | None:
+    pointer = target.as_pointer()
+    for gtxd in scene.sz_gtxds:
+        if any(node.as_pointer() == pointer for node in gtxd.nodes):
+            return gtxd
+    return None
+def get_gtxd_ui_order(gtxd: Gtxd) -> list[GtxdNode]:
+    ordered = list(gtxd.nodes)
+    for node in gtxd.nodes:
+        ordered[node.ui_tree_sort_id] = node
+    return ordered
+def refresh_gtxd_ui(gtxd: Gtxd):
+    nodes = gtxd.nodes
 
     children = {}
     roots = []
@@ -289,7 +307,6 @@ def refresh_gtxd_ui(scene):
         elif parent in names:
             children.setdefault(parent, []).append(node)
         else:
-            # Parent does not exist, show it at the root so it is not lost
             node.ui_is_orphan = True
             roots.append(node)
 
@@ -310,7 +327,6 @@ def refresh_gtxd_ui(scene):
     for root in roots:
         _add_to_ui(root, 0)
 
-    # Nodes left over are part of a parent cycle, keep them visible at the root
     for node in nodes:
         if node.as_pointer() not in visited:
             sort_id += 1
@@ -339,7 +355,7 @@ def register():
         type=TextureDictionaries,
         name="Texture Dictionaries",
     )
-    Scene.sz_gtxds = CollectionProperty(type=GtxdNode, name="GTXDs")
+    Scene.sz_gtxds = CollectionProperty(type=Gtxd, name="GTXDs")
     Scene.sz_gtxd_index = IntProperty(name="GTXD")
 
     Image.sz_is_hd = BoolProperty(

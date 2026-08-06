@@ -1,5 +1,3 @@
-import traceback
-
 from bpy.types import (
     Menu,
     Panel,
@@ -7,7 +5,6 @@ from bpy.types import (
     UIList,
 )
 
-from .. import logger
 from ..shared.multiselection import MultiSelectUIListMixin, multiselect_ui_draw_list
 from .operators import (
     selection as txd_select_ops,
@@ -18,6 +15,7 @@ from .operators import (
 from .operators import (
     txd as txd_ops,
 )
+from .properties import get_selected_gtxd
 from .utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -395,25 +393,30 @@ class SOLLUMZ_PT_txd_textures_panel(TxdToolChildPanel, Panel):
         row.label(text=f"{w} × {h}")
 
 
+class SOLLUMZ_UL_gtxds_list(UIList):
+    bl_idname = "SOLLUMZ_UL_gtxds_list"
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        layout.prop(item, "name", text="", emboss=False, icon="FILE_FOLDER")
+
 class SOLLUMZ_UL_gtxd_list(UIList):
     bl_idname = "SOLLUMZ_UL_gtxd_list"
 
-    # Computed once per redraw by the panel, to avoid checking the whole tree on every row
     duplicate_indices: set[int] = set()
     incomplete_indices: set[int] = set()
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         is_duplicate = index in self.duplicate_indices
-        # A node without a parent is a root of the tree, it is never missing anything
         is_orphan = item.ui_is_orphan and bool(item.parent.strip())
         row = layout.row(align=True)
+        if item.ui_tree_depth:
+            row.separator(factor=item.ui_tree_depth)
         row.prop(item, "ui_label", text="", emboss=False, icon="TEXTURE")
         if is_duplicate:
-            warning = "Duplicate"
+            warning = "Duplicate name"
         elif is_orphan:
-            warning = "Missing parent"
+            warning = "Invalid parent"
         elif index in self.incomplete_indices:
-            warning = "Not linked"
+            warning = "No relationship"
         else:
             warning = ""
 
@@ -424,7 +427,6 @@ class SOLLUMZ_UL_gtxd_list(UIList):
             sub.label(text=warning, icon="ERROR")
 
     def filter_items(self, context, data, propname):
-        # Display the nodes in tree order, as computed by `refresh_gtxd_ui`
         return [], [node.ui_tree_sort_id for node in getattr(data, propname)]
 
 
@@ -437,33 +439,32 @@ class SOLLUMZ_PT_gtxd_panel(TxdToolChildPanel, Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        gtxd = get_selected_gtxd(context)
 
-        try:
-            SOLLUMZ_UL_gtxd_list.duplicate_indices = gtxd_ops.find_duplicate_nodes(scene.sz_gtxds)
-            SOLLUMZ_UL_gtxd_list.incomplete_indices = gtxd_ops.find_incomplete_nodes(scene.sz_gtxds)
-        except Exception:
-            # Never let the duplicate check break the panel, but don't hide the error either
+        if gtxd is None:
             SOLLUMZ_UL_gtxd_list.duplicate_indices = set()
             SOLLUMZ_UL_gtxd_list.incomplete_indices = set()
-            logger.error(f"GTXD duplicate check failed: {traceback.format_exc()}")
+        else:
+            SOLLUMZ_UL_gtxd_list.duplicate_indices = gtxd_ops.find_duplicate_nodes(gtxd.nodes)
+            SOLLUMZ_UL_gtxd_list.incomplete_indices = gtxd_ops.find_incomplete_nodes(gtxd.nodes)
 
         row = layout.row()
-        row.template_list(SOLLUMZ_UL_gtxd_list.bl_idname, "", scene, "sz_gtxds",
-                          scene, "sz_gtxd_index", rows=6)
+        row.template_list(SOLLUMZ_UL_gtxds_list.bl_idname, "", scene, "sz_gtxds",
+                          scene, "sz_gtxd_index", rows=3)
         col = row.column(align=True)
         col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_create.bl_idname, text="", icon="ADD")
-        col.separator()
         col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_delete.bl_idname, text="", icon="REMOVE")
 
-        issues = SOLLUMZ_UL_gtxd_list.duplicate_indices | SOLLUMZ_UL_gtxd_list.incomplete_indices
-        if issues:
-            box = layout.box()
-            box.alert = True
-            box.label(text=f"{len(issues)} texture dictionary(s) need attention before exporting", icon="ERROR")
+        if gtxd is not None:
+            row = layout.row()
+            row.template_list(SOLLUMZ_UL_gtxd_list.bl_idname, "", gtxd, "nodes",
+                              gtxd, "node_index", rows=6)
+            col = row.column(align=True)
+            col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_node_create.bl_idname, text="", icon="ADD")
+            col.operator(gtxd_ops.SOLLUMZ_OT_gtxd_node_delete.bl_idname, text="", icon="REMOVE")
 
-        index = scene.sz_gtxd_index
-        if 0 <= index < len(scene.sz_gtxds):
-            node = scene.sz_gtxds[index]
+        if gtxd is not None and 0 <= gtxd.node_index < len(gtxd.nodes):
+            node = gtxd.nodes[gtxd.node_index]
             col = layout.column()
             col.use_property_split = True
             col.use_property_decorate = False
