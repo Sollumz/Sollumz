@@ -1,115 +1,165 @@
 import bpy
+from bpy.types import (
+    Object,
+    Material,
+    Mesh,
+)
 from mathutils import Vector, Matrix
-from typing import Optional, TypeVar, Callable, Type
+from typing import Optional, Callable, Sequence
+from dataclasses import replace
 import numpy as np
 
 from ..sollumz_helper import get_parent_inverse
 from ..tools.blenderhelper import get_pose_inverse, get_evaluated_obj
-from szio.gta5.cwxml import (
-    BoundFile,
-    Bound,
-    BoundComposite,
-    BoundGeometry,
-    BoundGeometryBVH,
-    BoundChild,
-    BoundBox,
-    BoundSphere,
-    BoundCapsule,
-    BoundCylinder,
-    BoundDisc,
-    BoundPlane,
-    PolyTriangle,
-    PolyBox,
-    PolySphere,
-    PolyCapsule,
-    PolyCylinder,
-    ColMaterial,
+from szio.gta5 import (
+    AssetBound,
+    AssetBoundComposite,
+    BoundType,
+    BoundPrimitive,
+    BoundPrimitiveType,
+    BoundVertex,
+    CollisionMaterial,
+    CollisionFlags,
+    CollisionMaterialFlags,
 )
 from ..tools.utils import get_max_vector_list, get_min_vector_list, get_matrix_without_scale
 from ..tools.meshhelper import (
-    get_bound_center_from_bounds,
     get_corners_from_extents,
     get_inner_sphere_radius,
     get_combined_bound_box_tight,
     get_color_attr_name,
 )
 from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOUND_POLYGON_TYPES
+from ..iecontext import export_context, ExportBundle
 from .. import logger
 from .properties import CollisionMatFlags, get_collision_mat_raw_flags, BoundFlags
-
-T_Bound = TypeVar("T_Bound", bound=Bound)
-T_BoundChild = TypeVar("T_BoundChild", bound=BoundChild)
-T_PolyCylCap = TypeVar("T_PolyCylCap", bound=PolyCylinder | PolyCapsule)
 
 MAX_VERTICES = 32767
 
 
-def export_ybn(obj: bpy.types.Object, filepath: str) -> bool:
-    bounds = BoundFile()
-    bounds.composite = create_composite_xml(obj)
-    bounds.write_xml(filepath)
-    return True
+def export_ybn(obj: Object) -> ExportBundle:
+    return export_context().make_bundle(create_bound_composite_asset(obj))
 
 
-def create_composite_xml(
-    obj: bpy.types.Object,
-    out_child_obj_to_index: dict[bpy.types.Object, int] = None,
+def create_bound_composite_asset(
+    obj: Object,
+    out_child_obj_to_index: dict[Object, int] = None,
     allow_planes: bool = False,
-) -> BoundComposite:
+) -> AssetBoundComposite:
     assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
 
-    composite_xml = BoundComposite()
+    if not obj.children:
+        # We only do a simple check for children here, if there are any other issues with them it will checked and
+        # reported by `create_bound_xml`
+        logger.warning(f"Bound composite '{obj.name}' has no children.")
+
+    children = []
     centroid = Vector()
     cg = Vector()
     volume = 0.0
-    for child in obj.children:
-        child_xml = create_bound_xml(child, allow_planes=allow_planes)
-        if child_xml is None:
+    extents_corners: list[Vector] = []
+    for child_obj in obj.children:
+        child_bound = create_bound_asset(child_obj, allow_planes=allow_planes)
+        if child_bound is None:
             continue
 
         if out_child_obj_to_index is not None:
-            out_child_obj_to_index[child] = len(composite_xml.children)
-        composite_xml.children.append(child_xml)
+            out_child_obj_to_index[child_obj] = len(children)
+        children.append(child_bound)
 
-        child_transform = child_xml.composite_transform.transposed()
-        child_cg = child_transform @ child_xml.sphere_center
-        child_centroid = child_transform @ child_xml.box_center
-        child_volume = child_xml.volume
+        child_transform = child_bound.composite_transform.transposed()
+        child_cg = child_transform @ child_bound.cg
+        child_centroid = child_transform @ child_bound.centroid
+        child_volume = child_bound.volume
+
+        child_min, child_max = child_bound.extent
+        child_corners = get_corners_from_extents(child_min, child_max)
 
         volume += child_volume
         cg += child_cg * child_volume  # uniform density so volume == mass
         centroid += child_centroid
+        extents_corners.extend(child_transform @ c for c in child_corners)
 
-    num_children = len(composite_xml.children)
+    num_children = len(children)
     cg /= volume if volume > 0 else 1.0
     centroid /= num_children if num_children > 0 else 1
+    bbmin, bbmax = get_min_vector_list(extents_corners), get_max_vector_list(extents_corners)
 
     # Calculate combined moment of inertia
     if volume > 0.0 and num_children > 0:
         from ..shared.geometry import calculate_composite_inertia
-        child_masses = [child_xml.volume for child_xml in composite_xml.children]
-        child_inertias = [child_xml.inertia * child_xml.volume for child_xml in composite_xml.children]
-        child_cgs = [child_xml.composite_transform.transposed() @ child_xml.sphere_center for child_xml in composite_xml.children]
+        child_masses = [child.volume for child in children]
+        child_inertias = [child.inertia * child.volume for child in children]
+        child_cgs = [child.composite_transform.transposed() @ child.cg for child in children]
         inertia = calculate_composite_inertia(cg, child_cgs, child_masses, child_inertias)
         inertia /= volume
     else:
         inertia = Vector((1.0, 1.0, 1.0))
 
-    # Calculate extents after children have been created
-    bbmin, bbmax = get_composite_extents(composite_xml)
-    set_bound_extents(composite_xml, bbmin, bbmax)
+    composite = AssetBoundComposite()
+    composite.children = children
+    composite.extent = bbmin, bbmax
+    composite.centroid = centroid
+    composite.radius_around_centroid = (bbmax - centroid).length
+    composite.volume = volume
+    composite.cg = cg
+    composite.inertia = inertia
+    composite.margin = 0.0  # composite margin always 0
 
-    radius_around_centroid = (bbmax - centroid).length
-
-    set_bound_centroid(composite_xml, centroid, radius_around_centroid)
-    set_bound_mass_properties(composite_xml, volume, cg, inertia)
-
-    composite_xml.margin = 0.0  # composite margin always 0
-
-    return composite_xml
+    return composite
 
 
-def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes: bool = False) -> Optional[BoundChild]:
+def init_bound_asset(bound_type: BoundType, obj: Object) -> AssetBound:
+    """Create an ``AssetBound`` instance and set base properties from the Blender object properties."""
+    bound = AssetBound.create(bound_type)
+    bound.composite_transform = calc_composite_transforms(obj).transposed()
+
+    if obj.type == "MESH":
+        bbmin, bbmax = calc_bound_extents(obj)
+    elif obj.type == "EMPTY":
+        bbmin, bbmax = calc_bound_bvh_extents(obj, bound.composite_transform)
+    else:
+        return bound
+
+    bound.extent = bbmin, bbmax
+
+    def _convert_flags(flags_props: BoundFlags) -> CollisionFlags:
+        # properties still use the CW names for backwards compatibility
+        from szio.gta5.cwxml.adapters.bound import CW_COLLISION_FLAGS_MAP
+
+        flags = CollisionFlags(0)
+        for flag_name in BoundFlags.__annotations__:
+            if flag_name not in flags_props or not flags_props[flag_name]:
+                continue
+
+            flags |= CW_COLLISION_FLAGS_MAP[flag_name.upper()]
+
+        return flags
+
+    bound.composite_collision_type_flags = _convert_flags(obj.composite_flags1)
+    bound.composite_collision_include_flags = _convert_flags(obj.composite_flags2)
+
+    if obj.active_material is not None:
+        bound.material = create_collision_material_data(obj.active_material)
+
+    return bound
+
+
+def init_bound_geometry_asset(obj: Object) -> tuple[AssetBound, list[BoundVertex], list[BoundPrimitive]]:
+    geom = init_bound_asset(BoundType.GEOMETRY, obj)
+    geom.material = None
+    vertices, primitives = init_bound_geometry_primitives(geom, obj)
+    return geom, vertices, primitives
+
+
+def init_bound_bvh_asset(obj: Object) -> tuple[AssetBound, list[BoundVertex], list[BoundPrimitive]]:
+    bvh = init_bound_asset(BoundType.BVH, obj)
+    bvh.material = None
+    vertices, primitives = init_bound_geometry_primitives(bvh, obj)
+    return bvh, vertices, primitives
+
+
+def create_bound_asset(obj: Object, is_root: bool = False, allow_planes: bool = False) -> Optional[AssetBound]:
     """Create a ``Bound`` instance based on `obj.sollum_type``."""
     if obj.sollum_type not in {
         SollumType.BOUND_BOX,
@@ -157,10 +207,9 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
 
     match obj.sollum_type:
         case SollumType.BOUND_BOX:
-            bound_xml = init_bound_child_xml(BoundBox(), obj)
+            bound = init_bound_asset(BoundType.BOX, obj)
 
-            box_min = bound_xml.box_min
-            box_max = bound_xml.box_max
+            box_min, box_max = bound.extent
             extents = box_max - box_min
 
             centroid, radius_around_centroid = get_centroid_of_box(box_min, box_max)
@@ -168,10 +217,10 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
             margin = min(0.04, min(extents) / 8)  # in boxes the margin equals the smallest side divided by 8
 
         case SollumType.BOUND_DISC:
-            bound_xml = init_bound_child_xml(BoundDisc(), obj)
+            bound = init_bound_asset(BoundType.DISC, obj)
 
             # Same as a cylinder but along X-axis instead of Y-axis
-            bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
+            bbmin, bbmax = bound.extent
             extents = bbmax - bbmin
             radius = extents.y * 0.5
             length = extents.x
@@ -181,22 +230,16 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
             margin = length * 0.5  # in discs the margin equals half the length
 
         case SollumType.BOUND_SPHERE:
-            bound_xml = init_bound_child_xml(BoundSphere(), obj)
-
-            bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-            radius = get_inner_sphere_radius(bbmin, bbmax)
+            bound = init_bound_asset(BoundType.SPHERE, obj)
+            radius = bound.sphere_radius
 
             centroid, radius_around_centroid = get_centroid_of_sphere(radius)
             volume, cg, inertia = get_mass_properties_of_sphere(radius)
             margin = radius  # in spheres the margin equals the radius
 
         case SollumType.BOUND_CYLINDER:
-            bound_xml = init_bound_child_xml(BoundCylinder(), obj)
-
-            bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-            extents = bbmax - bbmin
-            radius = extents.x * 0.5
-            length = extents.y
+            bound = init_bound_asset(BoundType.CYLINDER, obj)
+            radius, length = bound.cylinder_radius_length
 
             centroid, radius_around_centroid = get_centroid_of_cylinder(radius, length)
             volume, cg, inertia = get_mass_properties_of_cylinder(radius, length)
@@ -204,38 +247,35 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
             margin = min(0.04, min(radius, length * 0.5) / 4)
 
         case SollumType.BOUND_CAPSULE:
-            bound_xml = init_bound_child_xml(BoundCapsule(), obj)
-
-            bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-            extents = bbmax - bbmin
-            radius = extents.x * 0.5
-            length = extents.y - 2 * radius  # length without the top/bottom hemispheres
+            bound = init_bound_asset(BoundType.CAPSULE, obj)
+            radius, length = bound.capsule_radius_length
 
             centroid, radius_around_centroid = get_centroid_of_capsule(radius, length)
             volume, cg, inertia = get_mass_properties_of_capsule(radius, length)
             margin = radius  # in capsules the margin equals the capsule radius
 
         case SollumType.BOUND_PLANE:
-            bound_xml = init_bound_child_xml(BoundPlane(), obj)
-            bound_xml.box_max = Vector((0, 0, 0))
-            bound_xml.box_min = Vector((0, 0, 0))
-            bound_xml.composite_transform = Matrix.Identity(4)
+            bound = init_bound_asset(BoundType.PLANE, obj)
+            bound.extent = Vector((0, 0, 0)), Vector((0, 0, 0))
+            bound.composite_transform = Matrix.Identity(4)
 
-            plane_transform = get_composite_transforms(obj)
+            plane_transform = calc_composite_transforms(obj)
             centroid = plane_transform.to_translation()
-            cg = plane_transform.col[1].xyz.normalized() # normal is stored in the CG
+            normal = plane_transform.col[1].xyz.normalized()
+            bound.plane_normal = normal
+
             radius_around_centroid = 0.0
             volume = 1.0
+            cg = normal # normal is stored in the CG
             inertia = Vector((1.0, 1.0, 1.0))
             margin = 0.04
 
         case SollumType.BOUND_GEOMETRY:
-            bound_xml = create_bound_geometry_xml(obj)
+            bound, vertices, primitives = init_bound_geometry_asset(obj)
 
-            if bound_xml.vertices and bound_xml.polygons:
-                geom_center = np.array(bound_xml.geometry_center, dtype=np.float64)
-                mesh_vertices = np.array(bound_xml.vertices, dtype=np.float64) + geom_center
-                mesh_faces = np.array([[poly.v1, poly.v2, poly.v3] for poly in bound_xml.polygons])
+            if vertices and primitives:
+                mesh_vertices = np.array([v.co for v in vertices], dtype=np.float64)
+                mesh_faces = np.array([prim.vertices for prim in primitives])
 
                 centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
                 volume, cg, inertia = get_mass_properties_of_mesh(mesh_vertices, mesh_faces)
@@ -243,8 +283,10 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
             # R* seems to apply the margin to the bbox before calculating the actual margin from shrunk mesh, so
             # the default margin is applied
             bbox_margin = 0.04
-            bound_xml.box_min -= Vector((bbox_margin, bbox_margin, bbox_margin))
-            bound_xml.box_max += Vector((bbox_margin, bbox_margin, bbox_margin))
+            bbmin, bbmax = bound.extent
+            bbmin -= Vector((bbox_margin, bbox_margin, bbox_margin))
+            bbmax += Vector((bbox_margin, bbox_margin, bbox_margin))
+            bound.extent = bbmin, bbmax
 
             # CW calculates the shrunk mesh on import now (though it doesn't update the margin!)
             # _, margin = shrink_mesh(mesh_vertices, mesh_faces)
@@ -257,18 +299,17 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
             if not validate_bvh_collision_materials(obj, verbose=True):
                 return None
 
-            bound_xml = create_bvh_xml(obj)
+            bound, vertices, primitives = init_bound_bvh_asset(obj)
 
-            primitives = []
-            if bound_xml.vertices and bound_xml.polygons:
-                geom_center = np.array(bound_xml.geometry_center, dtype=np.float64)
-                mesh_vertices = np.array(bound_xml.vertices, dtype=np.float64) + geom_center
+            non_tri_primitives = []
+            if vertices and primitives:
+                mesh_vertices = np.array([v.co for v in vertices], dtype=np.float64)
                 mesh_faces = []
-                for poly in bound_xml.polygons:
-                    if not isinstance(poly, PolyTriangle):
-                        primitives.append(poly)
+                for prim in primitives:
+                    if prim.primitive_type != BoundPrimitiveType.TRIANGLE:
+                        non_tri_primitives.append(prim)
                         continue
-                    mesh_faces.append([poly.v1, poly.v2, poly.v3])
+                    mesh_faces.append(prim.vertices)
 
                 centroid, radius_around_centroid = get_centroid_of_mesh(mesh_vertices)
                 if len(mesh_faces) > 0:
@@ -284,16 +325,19 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
             inertia = Vector((1.0, 1.0, 1.0))
             margin = 0.04  # BVHs always have this margin
 
-            bound_xml.box_min -= Vector((margin, margin, margin))
-            bound_xml.box_max += Vector((margin, margin, margin))
+            bbmin, bbmax = bound.extent
+            bbmin -= Vector((margin, margin, margin))
+            bbmax += Vector((margin, margin, margin))
+            bound.extent = bbmin, bbmax
 
             # Grow radius_around_centroid to fit all primitives
-            for prim in primitives:
-                match prim:
-                    case PolyBox():
+            for prim in non_tri_primitives:
+                match prim.primitive_type:
+                    case BoundPrimitiveType.BOX:
                         # Calculate the opposite corners of the box. The corners stored in the vertices array are
                         # already inside the bounding sphere, but the opposite corners may not be.
-                        v = mesh_vertices[[prim.v1, prim.v2, prim.v3, prim.v4]]
+                        v0, v1, v2, v3 = prim.vertices
+                        v = mesh_vertices[[v0, v1, v2, v3]]
                         v0b = Vector((v[1] + v[2] + v[3] - v[0]) * 0.5)
                         v1b = Vector((v[0] + v[2] + v[3] - v[1]) * 0.5)
                         v2b = Vector((v[0] + v[1] + v[3] - v[2]) * 0.5)
@@ -302,18 +346,20 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
                         radius_around_centroid = grow_sphere(centroid, radius_around_centroid, v1b, 0.0)
                         radius_around_centroid = grow_sphere(centroid, radius_around_centroid, v2b, 0.0)
                         radius_around_centroid = grow_sphere(centroid, radius_around_centroid, v3b, 0.0)
-                    case PolySphere():
+                    case BoundPrimitiveType.SPHERE:
                         # The sphere center vertex is inside the bounding sphere but the whole sphere may not be.
+                        v = prim.vertices[0]
                         radius_around_centroid = grow_sphere(
-                            centroid, radius_around_centroid, Vector(mesh_vertices[prim.v]), prim.radius)
-                    case PolyCapsule() | PolyCylinder():
+                            centroid, radius_around_centroid, Vector(mesh_vertices[v]), prim.radius)
+                    case BoundPrimitiveType.CAPSULE | BoundPrimitiveType.CYLINDER:
                         # Capsules and cylinders are approximated by two spheres on their ends.
+                        v0, v1 = prim.vertices
                         radius_around_centroid = grow_sphere(
-                            centroid, radius_around_centroid, Vector(mesh_vertices[prim.v1]), prim.radius)
+                            centroid, radius_around_centroid, Vector(mesh_vertices[v0]), prim.radius)
                         radius_around_centroid = grow_sphere(
-                            centroid, radius_around_centroid, Vector(mesh_vertices[prim.v2]), prim.radius)
+                            centroid, radius_around_centroid, Vector(mesh_vertices[v1]), prim.radius)
                     case _:
-                        assert False, f"Unknown primitive type '{type(prim)}'"
+                        assert False, f"Unknown primitive type '{prim.primitive_type}'"
 
         case _:
             assert False, f"Unknown bound type '{obj.sollum_type}'"
@@ -328,25 +374,26 @@ def create_bound_xml(obj: bpy.types.Object, is_root: bool = False, allow_planes:
         # When root, the bound can be positioned not in 0,0,0 without a composite parent.
         # So take the composite transform we calculated and apply it to this bound. Only
         # translation, rotation still requires the composite parent.
-        transform = bound_xml.composite_transform.transposed()
+        transform = bound.composite_transform.transposed()
         offset = transform.translation
         centroid = Vector(offset)
         cg = Vector(offset)
-        bound_xml.box_min += offset
-        bound_xml.box_max += offset
 
         # Clear the composite transform translation so it doesn't show a warning if this
         # is the only transform (no rotation, no scale)
         transform.translation = Vector((0.0, 0.0, 0.0))
-        bound_xml.composite_transform = transform.transposed()
+        bound.composite_transform = transform.transposed()
 
-    set_bound_centroid(bound_xml, centroid, radius_around_centroid)
-    set_bound_mass_properties(bound_xml, volume, cg, inertia)
-    bound_xml.margin = margin
-    return bound_xml
+    bound.centroid = centroid
+    bound.radius_around_centroid = radius_around_centroid
+    bound.volume = volume
+    bound.cg = cg
+    bound.inertia = inertia
+    bound.margin = margin
+    return bound
 
 
-def validate_collision_materials(obj: bpy.types.Object, verbose: bool = False) -> bool:
+def validate_collision_materials(obj: Object, verbose: bool = False) -> bool:
     assert obj.type == "MESH", "Expected bound mesh object"
     mesh = obj.data
     non_col_mats = []
@@ -383,11 +430,11 @@ def validate_collision_materials(obj: bpy.types.Object, verbose: bool = False) -
     return True
 
 
-def has_col_mats(obj: bpy.types.Object) -> bool:
+def has_collision_materials(obj: Object) -> bool:
     return validate_collision_materials(obj, verbose=False)
 
 
-def validate_bvh_collision_materials(geom_obj: bpy.types.Object, verbose: bool = False) -> bool:
+def validate_bvh_collision_materials(geom_obj: Object, verbose: bool = False) -> bool:
     valid = True
     for child in geom_obj.children:
         if child.type != "MESH" or child.sollum_type not in BOUND_POLYGON_TYPES:
@@ -398,53 +445,21 @@ def validate_bvh_collision_materials(geom_obj: bpy.types.Object, verbose: bool =
     return valid
 
 
-def bound_geom_has_mats(geom_obj: bpy.types.Object) -> bool:
-    return validate_bvh_collision_materials(geom_obj, verbose=False)
+def has_bvh_collision_materials(obj: Object) -> bool:
+    return validate_bvh_collision_materials(obj, verbose=False)
 
 
-def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object):
-    """Initialize ``bound_xml`` bound child properties from object blender properties."""
-    bound_xml.composite_transform = get_composite_transforms(obj).transposed()
+def init_bound_geometry_primitives(
+    bound: AssetBound,
+    obj: Object
+) -> tuple[list[BoundVertex], list[BoundPrimitive]]:
+    """Create the vertices, primitives, and vertex colors of a bound geometry or BVH from ``obj``."""
+    vertices, primitives = create_bound_geometry_vertices_and_primitives(bound, obj)
 
-    if obj.type == "MESH":
-        bbmin, bbmax = get_bound_extents(obj)
-    elif obj.type == "EMPTY":
-        bbmin, bbmax = get_bvh_extents(obj, bound_xml.composite_transform)
-    else:
-        return bound_xml
+    bound.geometry_vertices = vertices
+    bound.geometry_primitives = primitives
 
-    set_bound_extents(bound_xml, bbmin, bbmax)
-
-    set_composite_xml_flags(bound_xml, obj)
-    set_bound_col_mat_xml_properties(bound_xml, obj.active_material)
-
-    return bound_xml
-
-
-def create_bound_geometry_xml(obj: bpy.types.Object):
-    geom_xml = init_bound_child_xml(BoundGeometry(), obj)
-    geom_xml.material_index = 0
-
-    create_bound_geom_xml_data(geom_xml, obj)
-
-    return geom_xml
-
-
-def create_bvh_xml(obj: bpy.types.Object):
-    geom_xml = init_bound_child_xml(BoundGeometryBVH(), obj)
-    geom_xml.material_index = 0
-
-    create_bound_geom_xml_data(geom_xml, obj)
-
-    return geom_xml
-
-
-def create_bound_geom_xml_data(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object):
-    """Create the vertices, polygons, and vertex colors of a ``BoundGeometry`` or ``BoundGeometryBVH`` from ``obj``."""
-    create_bound_xml_polys(geom_xml, obj)
-    geom_xml.geometry_center = center_verts_to_geometry(geom_xml)
-
-    num_vertices = len(geom_xml.vertices)
+    num_vertices = len(vertices)
 
     if num_vertices == 0:
         logger.warning(f"{SOLLUMZ_UI_NAMES[obj.sollum_type]} '{obj.name}' has no geometry!")
@@ -455,31 +470,31 @@ def create_bound_geom_xml_data(geom_xml: BoundGeometry | BoundGeometryBVH, obj: 
             f"(has {num_vertices})!"
         )
 
-
-def center_verts_to_geometry(geom_xml: BoundGeometry | BoundGeometryBVH):
-    """Position verts such that the origin is at their center of geometry. Returns the center of geometry."""
-    # the center is really just the bounding-box center
-    geom_center = get_bound_center_from_bounds(geom_xml.box_min, geom_xml.box_max)
-    geom_xml.vertices = [Vector(vert) - geom_center for vert in geom_xml.vertices]
-    return Vector(geom_center)
+    return vertices, primitives
 
 
-def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object):
+def create_bound_geometry_vertices_and_primitives(
+    bound: AssetBound,
+    obj: Object
+) -> tuple[list[BoundVertex], list[BoundPrimitive]]:
     # Create mappings of vertices and materials by index to build the new geom_xml vertices
     ind_by_vert: dict[tuple, int] = {}
-    ind_by_mat: dict[bpy.types.Material, int] = {}
+    data_by_mat: dict[Material, CollisionMaterial] = {}
 
-    def get_vert_index(vert: Vector, vert_color: Optional[tuple[int, int, int, int]] = None):
+    vertices = []
+    vertex_colors = []
+
+    def _get_vert_index(vert: Vector, vert_color: Optional[tuple[int, int, int, int]] = None) -> int:
         default_vert_color = (255, 255, 255, 255)
 
         # These are safety checks in case the user mixed poly primitives and poly meshes with color attributes
         # This doesn't occur in original .ybns, if they have vertex colors, only poly triangles (meshes) are used.
-        if vert_color is not None and len(geom_xml.vertex_colors) != len(geom_xml.vertices):
+        if vert_color is not None and len(vertex_colors) != len(vertices):
             # This vertex has color but previous ones didn't, assign a default color to all previous vertices
-            for _ in range(len(geom_xml.vertex_colors), len(geom_xml.vertices)):
-                geom_xml.vertex_colors.append(default_vert_color)
+            for _ in range(len(vertex_colors), len(vertices)):
+                vertex_colors.append(default_vert_color)
 
-        if vert_color is None and len(geom_xml.vertex_colors) != 0:
+        if vert_color is None and len(vertex_colors) != 0:
             # There are already vertex colors in this geometry, assign a default color
             vert_color = default_vert_color
 
@@ -492,98 +507,42 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
 
         vert_ind = len(ind_by_vert)
         ind_by_vert[vertex_id] = vert_ind
-        geom_xml.vertices.append(Vector(vert))
+        vertices.append(Vector(vert))
         if vert_color is not None:
-            geom_xml.vertex_colors.append(vert_color)
+            vertex_colors.append(vert_color)
 
         return vert_ind
 
-    def get_mat_index(mat: bpy.types.Material):
-        if mat in ind_by_mat:
-            return ind_by_mat[mat]
+    def _get_mat_data(mat: Material) -> CollisionMaterial:
+        if mat in data_by_mat:
+            return data_by_mat[mat]
 
-        mat_xml = create_col_mat_xml(mat)
-        mat_ind = len(geom_xml.materials)
-        geom_xml.materials.append(mat_xml)
+        mat_data = create_collision_material_data(mat)
+        data_by_mat[mat] = mat_data
+        return mat_data
 
-        ind_by_mat[mat] = mat_ind
+    if bound.bound_type == BoundType.GEOMETRY:
+        # If the bound object is a mesh, just convert its mesh data into triangles
+        primitives = create_bound_geometry_primitive_mesh(obj, bound, _get_vert_index, _get_mat_data)
+    else:
+        # For empty bound objects with children, create the bound polygons from its children
+        primitives = []
+        for child in obj.children_recursive:
+            if child.sollum_type not in BOUND_POLYGON_TYPES:
+                logger.warning(
+                    f"'{child.name}' is being exported as bound poly but has no bound poly Sollumz type! Please, use a "
+                    f"bound poly type instead of '{SOLLUMZ_UI_NAMES[child.sollum_type]}'."
+                )
+                continue
 
-        return mat_ind
+            primitives.extend(create_bound_geometry_primitive(child, bound, _get_vert_index, _get_mat_data))
 
-    # If the bound object is a mesh, just convert its mesh data into triangles
-    if not isinstance(geom_xml, BoundGeometryBVH):
-        create_bound_geom_xml_triangles(obj, geom_xml, get_vert_index, get_mat_index)
-        return
-
-    # For empty bound objects with children, create the bound polygons from its children
-    for child in obj.children_recursive:
-        if child.sollum_type not in BOUND_POLYGON_TYPES:
-            logger.warning(
-                f"'{child.name}' is being exported as bound poly but has no bound poly Sollumz type! Please, use a "
-                f"bound poly type instead of '{SOLLUMZ_UI_NAMES[child.sollum_type]}'."
-            )
-            continue
-
-        create_bound_xml_poly_shape(child, geom_xml, get_vert_index, get_mat_index)
-
-
-def create_bound_geom_xml_triangles(obj: bpy.types.Object, geom_xml: BoundGeometry, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    """Create all bound poly triangles and vertices for a ``BoundGeometry`` object."""
-    obj_eval, mesh = create_export_mesh(obj)
-
-    transforms = get_bound_poly_transforms_to_apply(obj, geom_xml.composite_transform)
-    triangles = create_poly_xml_triangles(mesh, transforms, get_vert_index, get_mat_index)
-    geom_xml.polygons = triangles
-
-    obj_eval.to_mesh_clear()
+    has_colors = bool(vertex_colors)
+    vertices = [BoundVertex(v, vertex_colors[i] if has_colors else None) for i, v in enumerate(vertices)]
+    return vertices, primitives
 
 
-def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBVH, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    obj_eval, mesh = create_export_mesh(obj)
-
-    transforms = get_bound_poly_transforms_to_apply(obj, geom_xml.composite_transform)
-
-    match obj.sollum_type:
-        case SollumType.BOUND_POLY_TRIANGLE:
-            triangles = create_poly_xml_triangles(mesh, transforms, get_vert_index, get_mat_index)
-            geom_xml.polygons.extend(triangles)
-        case SollumType.BOUND_POLY_BOX:
-            box_xml = create_poly_box_xml(obj, transforms, get_vert_index, get_mat_index)
-            geom_xml.polygons.append(box_xml)
-        case SollumType.BOUND_POLY_SPHERE:
-            sphere_xml = create_poly_sphere_xml(obj, transforms, get_vert_index, get_mat_index)
-            geom_xml.polygons.append(sphere_xml)
-        case SollumType.BOUND_POLY_CYLINDER:
-            cylinder_xml = create_poly_cylinder_capsule_xml(
-                PolyCylinder, obj, transforms, get_vert_index, get_mat_index)
-            geom_xml.polygons.append(cylinder_xml)
-        case SollumType.BOUND_POLY_CAPSULE:
-            capsule_xml = create_poly_cylinder_capsule_xml(PolyCapsule, obj, transforms, get_vert_index, get_mat_index)
-            geom_xml.polygons.append(capsule_xml)
-
-    obj_eval.to_mesh_clear()
-
-
-def get_bound_poly_transforms_to_apply(obj: bpy.types.Object, composite_transform: Matrix):
-    """Get the transforms to apply directly to BoundGeometry vertices."""
-    composite_transform = composite_transform.transposed()
-    parent_inverse = get_parent_inverse(obj)
-
-    # Apply any transforms not covered in composite_transform
-    matrix = composite_transform.inverted() @ parent_inverse @ obj.matrix_world
-
-    return matrix
-
-
-def get_scale_to_apply_to_bound(bound_obj: bpy.types.Object) -> Vector:
-    """Get scale to apply to bound object based on "Apply Parent Transforms" option."""
-    parent_inverse = get_parent_inverse(bound_obj)
-    scale = (parent_inverse @ bound_obj.matrix_world).to_scale()
-
-    return scale
-
-
-def create_export_mesh(obj: bpy.types.Object):
+def create_export_mesh(obj: Object) -> tuple[Object, Mesh]:
     """Get an evaluated mesh from ``obj`` with normals and loop triangles calculated.
     Original mesh is not affected."""
     obj_eval = get_evaluated_obj(obj)
@@ -595,8 +554,55 @@ def create_export_mesh(obj: bpy.types.Object):
     return obj_eval, mesh
 
 
-def _batch_extract_mesh_tri_data(mesh: bpy.types.Mesh, transforms: Matrix, color_attr):
-    """Batch extract all triangle mesh."""
+def create_bound_geometry_primitive_mesh(
+    obj: Object,
+    bound: AssetBound,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> list[BoundPrimitive]:
+    """Create all bound poly triangles and vertices for a ``BoundGeometry`` object."""
+    obj_eval, mesh = create_export_mesh(obj)
+
+    transforms = calc_bound_primitives_transforms_to_apply(obj, bound.composite_transform)
+    triangles = create_primitive_triangles(mesh, transforms, get_vert_index, get_mat_data)
+
+    obj_eval.to_mesh_clear()
+
+    return triangles
+
+
+def create_bound_geometry_primitive(
+    obj: Object,
+    bound: AssetBound,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> Sequence[BoundPrimitive]:
+    obj_eval, mesh = create_export_mesh(obj)
+
+    transforms = calc_bound_primitives_transforms_to_apply(obj, bound.composite_transform)
+
+    match obj.sollum_type:
+        case SollumType.BOUND_POLY_TRIANGLE:
+            primitives = create_primitive_triangles(mesh, transforms, get_vert_index, get_mat_data)
+        case SollumType.BOUND_POLY_BOX:
+            box = create_primitive_box(obj, transforms, get_vert_index, get_mat_data)
+            primitives = (box,)
+        case SollumType.BOUND_POLY_SPHERE:
+            sphere = create_primitive_sphere(obj, transforms, get_vert_index, get_mat_data)
+            primitives = (sphere,)
+        case SollumType.BOUND_POLY_CYLINDER:
+            cylinder = create_primitive_cylinder(obj, transforms, get_vert_index, get_mat_data)
+            primitives = (cylinder,)
+        case SollumType.BOUND_POLY_CAPSULE:
+            capsule = create_primitive_capsule(obj, transforms, get_vert_index, get_mat_data)
+            primitives = (capsule,)
+
+    obj_eval.to_mesh_clear()
+    return primitives
+
+
+def _batch_extract_mesh_tri_data(mesh: Mesh, transforms: Matrix, color_attr):
+    """Batch extract all triangle mesh data."""
     num_tris = len(mesh.loop_triangles)
     num_loops = len(mesh.loops)
     num_verts = len(mesh.vertices)
@@ -622,6 +628,7 @@ def _batch_extract_mesh_tri_data(mesh: bpy.types.Mesh, transforms: Matrix, color
 
     loop_positions = transformed_positions[loop_to_vert]
 
+    # Extract colors if available
     colors_int = None
     if color_attr is not None:
         colors_float = np.empty(num_loops * 4, dtype=np.float32)
@@ -665,8 +672,13 @@ def _dedupe_bound_vertices(loop_positions, loop_to_vert, colors_int, tri_loop_in
     return unique_positions, unique_colors, tri_vert_indices
 
 
-def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    """Create all bound polygon triangle XML objects for this BoundGeometry/BVH."""
+def create_primitive_triangles(
+    mesh: Mesh,
+    transforms: Matrix,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> list[BoundPrimitive]:
+    """Create all primitive triangles objects for this mesh."""
     color_attr_name = get_color_attr_name(0)
     color_attr = mesh.color_attributes.get(color_attr_name, None)
     if color_attr is not None and (color_attr.domain != "CORNER" or color_attr.data_type != "BYTE_COLOR"):
@@ -690,45 +702,51 @@ def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert
         local_to_global[i] = get_vert_index(pos, vert_color=vert_color)
 
     unique_mat_indices = np.unique(tri_mat_indices)
-    mat_index_map = {}
+    mat_data_map = {}
     for mat_idx in unique_mat_indices:
         mat = mesh.materials[int(mat_idx)]
-        mat_index_map[int(mat_idx)] = get_mat_index(mat)
+        mat_data_map[int(mat_idx)] = get_mat_data(mat)
 
-    triangles: list[PolyTriangle] = []
+    triangles: list[BoundPrimitive] = []
     for t in range(num_tris):
-        triangle = PolyTriangle()
-        triangle.material_index = mat_index_map[int(tri_mat_indices[t])]
-        triangle.v1 = int(local_to_global[tri_vert_indices[t, 0]])
-        triangle.v2 = int(local_to_global[tri_vert_indices[t, 1]])
-        triangle.v3 = int(local_to_global[tri_vert_indices[t, 2]])
-        triangles.append(triangle)
+        mat_data = mat_data_map[int(tri_mat_indices[t])]
+        v0 = int(local_to_global[tri_vert_indices[t, 0]])
+        v1 = int(local_to_global[tri_vert_indices[t, 1]])
+        v2 = int(local_to_global[tri_vert_indices[t, 2]])
+        triangles.append(BoundPrimitive.new_triangle(v0, v1, v2, mat_data))
 
     return triangles
 
 
-def create_poly_box_xml(obj: bpy.types.Object, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    box_xml = PolyBox()
-    box_xml.material_index = get_mat_index(obj.active_material)
+def create_primitive_box(
+    obj: Object,
+    transforms: Matrix,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> BoundPrimitive:
+    mat_data = get_mat_data(obj.active_material)
     indices = []
     bound_box = [transforms @ Vector(pos) for pos in obj.bound_box]
     corners = [bound_box[0], bound_box[5], bound_box[2], bound_box[7]]
     for vert in corners:
         indices.append(get_vert_index(vert))
 
-    box_xml.v1 = indices[0]
-    box_xml.v2 = indices[1]
-    box_xml.v3 = indices[2]
-    box_xml.v4 = indices[3]
+    v0 = indices[0]
+    v1 = indices[1]
+    v2 = indices[2]
+    v3 = indices[3]
 
-    return box_xml
+    return BoundPrimitive.new_box(v0, v1, v2, v3, mat_data)
 
 
-def create_poly_sphere_xml(obj: bpy.types.Object, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    sphere_xml = PolySphere()
-    sphere_xml.material_index = get_mat_index(obj.active_material)
+def create_primitive_sphere(
+    obj: Object,
+    transforms: Matrix,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> BoundPrimitive:
+    mat_data = get_mat_data(obj.active_material)
     vert_ind = get_vert_index(transforms.translation)
-    sphere_xml.v = vert_ind
 
     # Assuming bounding box forms a cube. Get the sphere enclosed by the cube
     # scale = transforms.to_scale()
@@ -737,17 +755,19 @@ def create_poly_sphere_xml(obj: bpy.types.Object, transforms: Matrix, get_vert_i
 
     radius = (bbmax.x - bbmin.x) / 2
 
-    sphere_xml.radius = radius
-
-    return sphere_xml
+    return BoundPrimitive.new_sphere(vert_ind, radius, mat_data)
 
 
-def create_poly_cylinder_capsule_xml(poly_type: Type[T_PolyCylCap], obj: bpy.types.Object, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
-    poly_xml = poly_type()
-
+def _create_primitive_cylinder_or_capsule(
+    is_capsule: bool,
+    obj: Object,
+    transforms: Matrix,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> BoundPrimitive:
     position = transforms.translation
 
-    poly_xml.material_index = get_mat_index(obj.active_material)
+    mat_data = get_mat_data(obj.active_material)
 
     # Only apply scale so we can get the oriented bounding box
     # scale = transforms.to_scale()
@@ -758,46 +778,60 @@ def create_poly_cylinder_capsule_xml(poly_type: Type[T_PolyCylCap], obj: bpy.typ
     # Assumes X and Y scale are uniform
     radius = (bbmax.x - bbmin.x) / 2
 
-    if poly_type is PolyCapsule:
+    if is_capsule:
         height = height - (radius * 2)
 
     vertical = Vector((0, 0, height / 2))
     vertical.rotate(transforms.to_euler("XYZ"))
 
-    v1 = position - vertical
-    v2 = position + vertical
+    v0 = get_vert_index(position - vertical)
+    v1 = get_vert_index(position + vertical)
 
-    poly_xml.v1 = get_vert_index(v1)
-    poly_xml.v2 = get_vert_index(v2)
-
-    poly_xml.radius = radius
-
-    return poly_xml
-
-
-def create_col_mat_xml(mat: bpy.types.Material):
-    mat_xml = ColMaterial()
-    set_col_mat_xml_properties(mat_xml, mat)
-    return mat_xml
+    return (
+        BoundPrimitive.new_capsule(v0, v1, radius, mat_data)
+        if is_capsule
+        else BoundPrimitive.new_cylinder(v0, v1, radius, mat_data)
+    )
 
 
-def set_composite_xml_flags(bound_xml: BoundChild, obj: bpy.types.Object):
-    def set_flags(prop_name: str):
-        flags_data_block = getattr(obj, prop_name)
-        flags_xml = getattr(bound_xml, prop_name)
-
-        for flag_name in BoundFlags.__annotations__:
-            if flag_name not in flags_data_block or not flags_data_block[flag_name]:
-                continue
-
-            flags_xml.append(flag_name.upper())
-
-    set_flags("composite_flags1")
-    set_flags("composite_flags2")
+def create_primitive_cylinder(
+    obj: Object,
+    transforms: Matrix,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> BoundPrimitive:
+    return _create_primitive_cylinder_or_capsule(False, obj, transforms, get_vert_index, get_mat_data)
 
 
-def get_composite_transforms(bound_obj: bpy.types.Object):
-    """Get CompositeTransforms for bound object. This is all transforms except
+def create_primitive_capsule(
+    obj: Object,
+    transforms: Matrix,
+    get_vert_index: Callable[[Vector], int],
+    get_mat_data: Callable[[Material], CollisionMaterial]
+) -> BoundPrimitive:
+    return _create_primitive_cylinder_or_capsule(True, obj, transforms, get_vert_index, get_mat_data)
+
+
+def create_collision_material_data(mat: Material) -> CollisionMaterial:
+    if mat is None:
+        raise ValueError("Material is None")
+    if mat.sollum_type != MaterialType.COLLISION:
+        raise ValueError(f"Material '{mat}' is not a collision material")
+
+    col_props = mat.collision_properties
+    flags_lo, flags_hi = get_collision_mat_raw_flags(mat.collision_flags)
+    return CollisionMaterial(
+        material_index=col_props.collision_index,
+        material_color_index=col_props.material_color_index,
+        procedural_id=col_props.procedural_id,
+        room_id=col_props.room_id,
+        ped_density=col_props.ped_density,
+        material_flags=CollisionMaterialFlags(((flags_hi & 0xFF) << 8) | (flags_lo & 0xFF)),
+    )
+
+
+def calc_composite_transforms(bound_obj: Object) -> Matrix:
+    """Get composite transforms for bound object. This is all transforms except
     for the pose and scale."""
     pose_inverse = get_pose_inverse(bound_obj)
     parent_inverse = get_parent_inverse(bound_obj)
@@ -807,75 +841,36 @@ def get_composite_transforms(bound_obj: bpy.types.Object):
     return get_matrix_without_scale(export_transforms)
 
 
-def set_bound_col_mat_xml_properties(bound_xml: Bound, mat: bpy.types.Material):
-    if mat is None or mat.sollum_type != MaterialType.COLLISION:
-        return
+def calc_scale_to_apply_to_bound(bound_obj: Object) -> Vector:
+    """Get scale to apply to bound object based on "Apply Parent Transforms" option."""
+    parent_inverse = get_parent_inverse(bound_obj)
+    scale = (parent_inverse @ bound_obj.matrix_world).to_scale()
 
-    bound_xml.material_index = mat.collision_properties.collision_index
-    bound_xml.procedural_id = mat.collision_properties.procedural_id
-    bound_xml.room_id = mat.collision_properties.room_id
-    bound_xml.ped_density = mat.collision_properties.ped_density
-    bound_xml.material_color_index = mat.collision_properties.material_color_index
-    flags_lo, flags_hi = get_collision_mat_raw_flags(mat.collision_flags)
-    bound_xml.unk_flags = flags_lo
-    bound_xml.poly_flags = flags_hi
+    return scale
 
 
-def set_col_mat_xml_properties(mat_xml: ColMaterial, mat: bpy.types.Material):
-    mat_xml.type = mat.collision_properties.collision_index
-    mat_xml.procedural_id = mat.collision_properties.procedural_id
-    mat_xml.room_id = mat.collision_properties.room_id
-    mat_xml.ped_density = mat.collision_properties.ped_density
-    mat_xml.material_color_index = mat.collision_properties.material_color_index
-    for flag_name in CollisionMatFlags.__annotations__.keys():
-        if flag_name not in mat.collision_flags or not mat.collision_flags[flag_name]:
-            continue
-        mat_xml.flags.append(f"FLAG_{flag_name.upper()}")
-
-    if not mat_xml.flags:
-        mat_xml.flags.append("NONE")
-
-
-def set_bound_extents(bound_xml: Bound, bbmin: Vector, bbmax: Vector):
-    bound_xml.box_max = bbmax
-    bound_xml.box_min = bbmin
-
-
-def get_bound_extents(obj: bpy.types.Object):
-    scale = get_scale_to_apply_to_bound(obj)
+def calc_bound_extents(obj: Object) -> tuple[Vector, Vector]:
+    scale = calc_scale_to_apply_to_bound(obj)
 
     bbs = [scale * Vector(corner) for corner in obj.bound_box]
 
     return get_min_vector_list(bbs), get_max_vector_list(bbs)
 
 
-def get_bvh_extents(obj: bpy.types.Object, composite_transform: Matrix):
-    transforms_to_apply = get_bound_poly_transforms_to_apply(obj, composite_transform)
+def calc_bound_bvh_extents(obj: Object, composite_transform: Matrix) -> tuple[Vector, Vector]:
+    transforms_to_apply = calc_bound_primitives_transforms_to_apply(obj, composite_transform)
 
     bbmin, bbmax = get_combined_bound_box_tight(obj, matrix=transforms_to_apply)
 
     return bbmin, bbmax
 
 
-def get_composite_extents(composite_xml: BoundComposite):
-    """Get composite extents based on child bound extents"""
-    corner_vecs: list[Vector] = []
+def calc_bound_primitives_transforms_to_apply(obj: Object, composite_transform: Matrix) -> Matrix:
+    """Get the transforms to apply directly to bound geometry vertices."""
+    composite_transform = composite_transform.transposed()
+    parent_inverse = get_parent_inverse(obj)
 
-    for child in composite_xml.children:
-        transform = child.composite_transform.transposed()
-        child_corners = get_corners_from_extents(child.box_min, child.box_max)
-        # Get AABB with transforms applied
-        corner_vecs.extend([transform @ corner for corner in child_corners])
+    # Apply any transforms not covered in composite_transform
+    matrix = composite_transform.inverted() @ parent_inverse @ obj.matrix_world
 
-    return get_min_vector_list(corner_vecs), get_max_vector_list(corner_vecs)
-
-
-def set_bound_centroid(bound_xml: Bound, centroid: Vector, radius_around_centroid: float):
-    bound_xml.box_center = centroid
-    bound_xml.sphere_radius = radius_around_centroid
-
-
-def set_bound_mass_properties(bound_xml: Bound, volume: float, cg: Vector, inertia: Vector):
-    bound_xml.sphere_center = cg
-    bound_xml.volume = volume
-    bound_xml.inertia = inertia
+    return matrix

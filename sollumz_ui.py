@@ -21,7 +21,6 @@ from .lods import (
     SOLLUMZ_OT_SHOW_SHATTERMAPS
 )
 from .icons import icon_manager
-from .meta import DEV_MODE
 
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
@@ -136,7 +135,7 @@ class SollumzFileSettingsPanel:
 
 
 class SollumzImportSettingsPanel(SollumzFileSettingsPanel):
-    operator_id = {"SOLLUMZ_OT_import_assets_legacy", "SOLLUMZ_OT_import_assets"}
+    operator_id = {"SOLLUMZ_OT_import_assets"}
 
     def get_settings(self, context: bpy.types.Context):
         return get_import_settings(context)
@@ -146,21 +145,13 @@ class SollumzImportSettingsPanel(SollumzFileSettingsPanel):
 
 
 class SollumzExportSettingsPanel(SollumzFileSettingsPanel):
-    operator_id = {"SOLLUMZ_OT_export_assets_legacy", "SOLLUMZ_OT_export_assets"}
+    operator_id = {"SOLLUMZ_OT_export_assets"}
 
     def get_settings(self, context: bpy.types.Context):
         return get_export_settings(context)
 
     def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzExportSettings):
         ...
-
-
-class SOLLUMZ_PT_import_asset(bpy.types.Panel, SollumzImportSettingsPanel):
-    bl_label = "Import Asset"
-    bl_order = 0
-
-    def draw_settings(self, layout: bpy.types.UILayout, settings: SollumzImportSettings):
-        layout.prop(settings, "import_as_asset")
 
 
 class SOLLUMZ_PT_import_textures(bpy.types.Panel, SollumzImportSettingsPanel):
@@ -247,7 +238,7 @@ class SOLLUMZ_PT_import_ytyp_concrete(bpy.types.Panel, _SollumzImportYtypPanel):
     """Panel with YMAP import settings used in the 'Import YTYP' button.
     Same as the generic one but without the header.
     """
-    operator_id = {"SOLLUMZ_OT_importytyp", "SOLLUMZ_OT_import_ytyp_io"}
+    operator_id = {"SOLLUMZ_OT_import_ytyp_io"}
     bl_options = {"HIDE_HEADER"}
     bl_order = 0
 
@@ -477,21 +468,12 @@ class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        import_op, export_op = (
-            ("sollumz.import_assets_legacy", "sollumz.export_assets_legacy")
-            if get_addon_preferences(context).legacy_import_export
-            else ("sollumz.import_assets", "sollumz.export_assets")
-        )
-
         row = layout.row()
-        row.operator(import_op, icon="IMPORT")
-        op = row.operator(export_op, icon="EXPORT")
+        row.operator("sollumz.import_assets", icon="IMPORT")
+        op = row.operator("sollumz.export_assets", icon="EXPORT")
         if context.scene.sollumz_export_path != "":
             op.directory = context.scene.sollumz_export_path
             op.direct_export = True
-
-        if DEV_MODE:
-            layout.operator("sollumz.dev_test_export_assets")
 
 
 class GeneralToolChildPanel:

@@ -9,7 +9,10 @@ from ...shared.multiselection import (
     multiselect_ui_draw_list,
     MultiSelectUIFlagsPanel,
 )
-from ..operators import ytyp as ytyp_ops
+from ..operators import (
+    ytyp as ytyp_ops,
+    mlo as mlo_ops,
+)
 from ..gta5.presets.mlo_room import SOLLUMZ_PT_mlo_room_presets
 from ..gta5.presets.mlo_portal import SOLLUMZ_PT_mlo_portal_presets
 from ..gta5.presets.mlo_timecycle_modifier import SOLLUMZ_PT_mlo_timecycle_modifier_presets
@@ -30,7 +33,12 @@ class SOLLUMZ_PT_MLO_PANEL(ArchetypeChildPanel, TabbedPanelHelper, bpy.types.Pan
         return selected_archetype is not None and selected_archetype.type == ArchetypeType.MLO
 
     def draw_before(self, context: bpy.types.Context):
-        self.layout.label(text="MLO")
+        split = self.layout.split(factor=0.333333, align=True)
+        split.label(text="MLO")
+        split.label(text="")
+        row = split.row(align=True)
+        row.operator(mlo_ops.SOLLUMZ_OT_mlo_create_instance.bl_idname, icon="OUTLINER_OB_GROUP_INSTANCE")
+        row.operator(mlo_ops.SOLLUMZ_OT_mlo_refresh_instances.bl_idname, text="", icon="FILE_REFRESH")
 
 
 class MloChildTabPanel(TabPanel):

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import bpy
@@ -11,6 +12,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ... import logger
 from ...sollumz_operators import ExportAssetsOperatorImpl, ImportAssetsOperatorImpl
+from ..properties import get_texture_name
 from ..utils import (
     get_selected_txd,
     get_selected_txd_source,
@@ -49,19 +51,7 @@ class SOLLUMZ_OT_txd_delete(Operator):
         return len(context.scene.sz_txds.texture_dictionaries) > 0
 
     def execute(self, context):
-        coll = context.scene.sz_txds.texture_dictionaries
-
-        indices_to_remove = sorted(coll.selected_items_indices, reverse=True)
-        if not indices_to_remove:
-            indices_to_remove = [coll.active_index]
-
-        new_active_index = max(indices_to_remove[-1] - 1, 0)
-        for idx in indices_to_remove:
-            coll.remove(idx)
-
-        if len(coll) > 0:
-            coll.select(min(new_active_index, len(coll) - 1))
-
+        context.scene.sz_txds.texture_dictionaries.remove_selected()
         return {"FINISHED"}
 
 
@@ -136,19 +126,7 @@ class SOLLUMZ_OT_txd_delete_texture(Operator):
         return txd is not None and len(txd.textures) > 0
 
     def execute(self, context):
-        txd = get_selected_txd(context)
-
-        indices_to_remove = sorted(txd.textures.selected_items_indices, reverse=True)
-        if not indices_to_remove:
-            indices_to_remove = [txd.textures.active_index]
-
-        new_active_index = max(indices_to_remove[-1] - 1, 0)
-        for idx in indices_to_remove:
-            txd.textures.remove(idx)
-
-        if len(txd.textures) > 0:
-            txd.textures.select(min(new_active_index, len(txd.textures) - 1))
-
+        get_selected_txd(context).textures.remove_selected()
         return {"FINISHED"}
 
 
@@ -180,19 +158,7 @@ class SOLLUMZ_OT_txd_delete_source(Operator):
         return txd is not None and len(txd.sources) > 0
 
     def execute(self, context):
-        txd = get_selected_txd(context)
-
-        indices_to_remove = sorted(txd.sources.selected_items_indices, reverse=True)
-        if not indices_to_remove:
-            indices_to_remove = [txd.sources.active_index]
-
-        new_active_index = max(indices_to_remove[-1] - 1, 0)
-        for idx in indices_to_remove:
-            txd.sources.remove(idx)
-
-        if len(txd.sources) > 0:
-            txd.sources.select(min(new_active_index, len(txd.sources) - 1))
-
+        get_selected_txd(context).sources.remove_selected()
         return {"FINISHED"}
 
 
@@ -229,10 +195,64 @@ class SOLLUMZ_OT_txd_refresh_sources(Operator):
 
     def execute(self, context):
         txd = get_selected_txd(context)
-        for src in txd.sources:
-            src.refresh(context)
-        txd.refresh_from_sources()
+        txd.refresh_from_sources(context)
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_txd_find_missing(Operator):
+    """Find images whose files are missing and replace them with matching textures from the available texture dictionaries"""
+
+    bl_idname = "sollumz.txd_find_missing"
+    bl_label = "Find Missing Textures using TXDs"
+    bl_options = {"UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return any(len(txd.textures) > 0 for txd in context.scene.sz_txds.texture_dictionaries)
+
+    def execute(self, context):
+        txd_images = set()
+        txd_images_by_name = {}
+        for txd in context.scene.sz_txds.texture_dictionaries:
+            for slot in txd.textures:
+                if slot.image is not None:
+                    if name := slot.name:
+                        txd_images_by_name.setdefault(name, slot.image)
+                    txd_images.add(slot.image)
+
+        replaced = []
+        for image in list(bpy.data.images):
+            if image in txd_images or not self._has_missing_file(image):
+                continue
+
+            new_image = txd_images_by_name.get(get_texture_name(image))
+            if new_image is None or new_image is image:
+                continue
+
+            try:
+                image.user_remap(new_image)
+            except Exception as e:
+                logger.warning(f"Failed to update texture '{image.name}': {e}")
+                continue
+
+            replaced.append(image)
+
+        # `batch_remove` requires the IDs to be fully unused. `user_remap` leaves them at zero users, but an
+        # image kept around by a fake user must not be deleted.
+        unused = [image for image in replaced if image.users == 0]
+        if unused:
+            bpy.data.batch_remove(unused)
+
+        self.report({"INFO"}, f"Found {len(replaced)} missing texture(s).")
+        return {"FINISHED"}
+
+    def _has_missing_file(self, image: bpy.types.Image) -> bool:
+        """An image whose source file is neither on disk nor packed."""
+        return (
+            not image.packed_files
+            and image.source == "FILE"
+            and not os.path.exists(bpy.path.abspath(image.filepath, library=image.library))
+        )
 
 
 class SOLLUMZ_OT_import_ytd(ImportAssetsOperatorImpl, Operator):

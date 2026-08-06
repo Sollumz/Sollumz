@@ -1,234 +1,236 @@
 import os
 import bpy
+from bpy.types import (
+    Object,
+    Material,
+    Image,
+    Bone,
+    ArmatureBones,
+)
 import numpy as np
-from traceback import format_exc
 from mathutils import Matrix, Vector, Quaternion
 from typing import Optional
-from .fragment_merger import FragmentMerger
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, material_from_image, create_blender_object
 from ..tools.meshhelper import create_uv_attr
 from ..tools.utils import multiply_homogeneous, get_filename
 from ..sollumz_properties import BOUND_TYPES, SollumType, MaterialType
-from ..sollumz_preferences import get_import_settings
-from szio.gta5.cwxml import (
-    YFT,
-    Fragment,
-    PhysicsLOD,
-    PhysicsGroup,
-    PhysicsChild,
-    Window,
-    Archetype,
-    GlassWindow,
-    Drawable,
-    Bone,
+from szio.gta5 import (
+    AssetWithDependencies,
+    SkelBone,
+    AssetFragment,
+    AssetDrawable,
+    PhysGroup,
+    FragVehicleWindow,
+    try_load_asset,
+    AssetFormat,
+    LodLevel,
+    AssetTextureDictionary,
 )
-from ..ydr.ydrimport import apply_translation_limits, create_armature_obj_from_skel, create_drawable_skel, apply_rotation_limits, create_joint_constraints, create_light_objs, create_drawable_obj, create_drawable_as_asset, shadergroup_to_materials, create_drawable_models
+from ..ydr.ydrimport import create_drawable, create_drawable_models, shader_group_to_materials_with_hi, create_armature_obj_from_skel, extract_embedded_textures_from_hd_txd
 from ..ybn.ybnimport import create_bound_object, create_bound_composite
-from .. import logger
-from .properties import LODProperties, FragArchetypeProperties, GlassTypes, FragmentTemplateAsset
+from ..ydr.lights import create_light_objs, serialize_lights_to_asset
+from .properties import LODProperties, GroupFlagBit, GlassTypes
 from ..tools.blenderhelper import get_child_of_bone
+from ..ytd.ytdimport import try_load_hd_txd
+from ..iecontext import import_context
+from .. import logger
 
 
-def import_yft(filepath: str):
-    import_settings = get_import_settings()
+def find_yft_external_dependencies(asset: AssetFragment, name: str) -> AssetWithDependencies | None:
+    prefers_xml = import_context().asset_target.format == AssetFormat.CWXML
+    if is_hi_frag(name):
+        # User selected a _hi.yft, look for the base .yft file
+        non_hi_frag = try_load_non_hi_frag(name, prefers_xml)
+        hi_frag = asset
+        name = make_frag_base_name(name)
 
-    if is_hi_yft_filepath(filepath):
-        # User selected a _hi.yft.xml, look for the base .yft.xml file
-        non_hi_filepath = make_non_hi_yft_filepath(filepath)
-        hi_filepath = filepath
-
-        if not os.path.exists(non_hi_filepath):
-            logger.error("Trying to import a _hi.yft.xml without its base .yft.xml! Please, make sure the non-hi "
-                         f"{os.path.basename(non_hi_filepath)} is in the same folder as {os.path.basename(hi_filepath)}.")
+        if not non_hi_frag:
+            logger.error("Trying to import a _hi.yft without its base .yft! Please, make sure the non-hi "
+                         f"{name}.yft is in the same folder as {name}_hi.yft.")
             return None
     else:
         # User selected the base .yft.xml, optionally look for the _hi.yft.xml
-        non_hi_filepath = filepath
-        hi_filepath = make_hi_yft_filepath(filepath)
-    name = get_filename(non_hi_filepath)
-    yft_xml = YFT.from_xml_file(non_hi_filepath)
+        non_hi_frag = asset
+        hi_frag = try_load_hi_frag(name, prefers_xml)
 
-    # Import the _hi.yft.xml if it exists
-    hi_xml = YFT.from_xml_file(hi_filepath) if os.path.exists(hi_filepath) else None
+    hd_txd = try_load_hd_txd(name, prefers_xml, "+hifr")
 
-    if import_settings.import_as_asset:
-        return create_fragment_as_asset(yft_xml, hi_xml, name, non_hi_filepath)
-
-    return create_fragment_obj(yft_xml, non_hi_filepath, name,
-                               split_by_group=import_settings.split_by_group, hi_xml=hi_xml)
+    deps = {}
+    if hi_frag:
+        deps["hi"] = hi_frag
+    if hd_txd:
+        deps["hd_txd"] = hd_txd
+    return AssetWithDependencies(name, non_hi_frag, deps)
 
 
-def is_hi_yft_filepath(yft_filepath: str):
-    """Is this a _hi.yft.xml file?"""
-    return os.path.basename(yft_filepath).endswith("_hi.yft.xml")
+def import_yft(asset: AssetWithDependencies, name: str) -> Object | None:
+    non_hi_frag = asset.main_asset
+    hi_frag = asset.dependencies.get("hi", None)
+    hd_txd = asset.dependencies.get("hd_txd", None)
+    extract_embedded_textures_from_hd_txd(hd_txd, "+hifr")
+
+    if import_context().settings.import_as_asset:
+        return create_fragment_as_asset(non_hi_frag, hi_frag, name, hd_txd, "+hifr")
+
+    return create_fragment(non_hi_frag, hi_frag, name, hd_txd, "+hifr")
 
 
-def make_hi_yft_filepath(yft_filepath: str) -> str:
-    """Get the _hi.yft.xml filepath at the provided non-hi yft filepath."""
-    yft_dir = os.path.dirname(yft_filepath)
-    yft_name = get_filename(yft_filepath)
-
-    hi_path = os.path.join(yft_dir, f"{yft_name}_hi.yft.xml")
-    return hi_path
+def is_hi_frag(name: str) -> bool:
+    """Is this a _hi.yft file?"""
+    return name.endswith("_hi")
 
 
-def make_non_hi_yft_filepath(yft_filepath: str) -> str:
-    """Get the base .yft.xml filepath at the provided hi yft filepath."""
-    yft_dir = os.path.dirname(yft_filepath)
-    yft_name = get_filename(yft_filepath)
-    if yft_name.endswith("_hi"):
-        yft_name = yft_name[:-3]  # trim '_hi'
-
-    non_hi_path = os.path.join(yft_dir, f"{yft_name}.yft.xml")
-    return non_hi_path
+def make_frag_base_name(name: str) -> str:
+    if name.endswith("_hi"):
+        name = name[:-3]  # trim '_hi'
+    return name
 
 
-def create_fragment_obj(frag_xml: Fragment, filepath: str, name: Optional[str] = None, split_by_group: bool = False, hi_xml: Optional[Fragment] = None):
-    if hi_xml is not None:
-        frag_xml = merge_hi_fragment(frag_xml, hi_xml)
+def try_load_non_hi_frag(name: str, prefers_xml: bool) -> AssetFragment | None:
+    name = make_frag_base_name(name)
+    d = import_context().directory
+    non_hi_frag = None
 
-    drawable_xml = frag_xml.drawable
-    if drawable_xml.is_empty and frag_xml.cloths and not frag_xml.cloths[0].drawable.is_empty:
-        # We have a fragment without a main drawable, only the cloth drawable. So shallow-copy properties we may need
-        # from the cloth drawable, except the drawable models. Creating the cloth drawable model will be handled by
-        # `create_env_cloth_meshes`
-        cloth_drawable_xml = frag_xml.cloths[0].drawable
-        drawable_xml.name = cloth_drawable_xml.name
-        drawable_xml.bounding_sphere_center = cloth_drawable_xml.bounding_sphere_center
-        drawable_xml.bounding_sphere_radius = cloth_drawable_xml.bounding_sphere_radius
-        drawable_xml.bounding_box_min = cloth_drawable_xml.bounding_box_min
-        drawable_xml.bounding_box_max = cloth_drawable_xml.bounding_box_max
-        drawable_xml.lod_dist_high = cloth_drawable_xml.lod_dist_high
-        drawable_xml.lod_dist_med = cloth_drawable_xml.lod_dist_med
-        drawable_xml.lod_dist_low = cloth_drawable_xml.lod_dist_low
-        drawable_xml.lod_dist_vlow = cloth_drawable_xml.lod_dist_vlow
-        drawable_xml.shader_group = cloth_drawable_xml.shader_group
-        drawable_xml.skeleton = cloth_drawable_xml.skeleton
-        drawable_xml.joints = cloth_drawable_xml.joints
+    possible_exts = (".yft", ".yft.xml")
+    if prefers_xml:
+        possible_exts = possible_exts[::-1]
 
-    materials = shadergroup_to_materials(drawable_xml.shader_group, filepath)
+    for ext in possible_exts:
+        non_hi_path = d / f"{name}{ext}"
+        if non_hi_path.is_file():
+            non_hi_frag = try_load_asset(non_hi_path)
+            if non_hi_frag:
+                break
 
-    frag_obj = create_frag_armature(frag_xml, name)
+    return non_hi_frag
 
-    drawable_obj = create_fragment_drawable(frag_xml, frag_obj, filepath, materials, split_by_group)
-    damaged_drawable_obj = create_fragment_drawable(
-        frag_xml, frag_obj, filepath, materials, split_by_group, damaged=True)
 
-    create_frag_collisions(frag_xml, frag_obj)
-    if damaged_drawable_obj is not None:
-        create_frag_collisions(frag_xml, frag_obj, damaged=True)
+def try_load_hi_frag(name: str, prefers_xml: bool) -> AssetFragment | None:
+    name = make_frag_base_name(name)
+    d = import_context().directory
+    hi_frag = None
 
-    create_phys_lod(frag_xml, frag_obj)
-    set_all_bone_physics_properties(frag_obj.data, frag_xml)
+    possible_exts = (".yft", ".yft.xml")
+    if prefers_xml:
+        possible_exts = possible_exts[::-1]
 
-    create_phys_child_meshes(frag_xml, frag_obj, drawable_obj, materials)
+    for ext in possible_exts:
+        hi_path = d / f"{name}_hi{ext}"
+        if hi_path.is_file():
+            hi_frag = try_load_asset(hi_path)
+            if hi_frag:
+                break
 
-    create_env_cloth_meshes(frag_xml, frag_obj, drawable_obj, materials)
+    return hi_frag
 
-    if frag_xml.vehicle_glass_windows:
-        create_vehicle_windows(frag_xml, frag_obj, materials)
 
-    if frag_xml.glass_windows:
-        set_all_glass_window_properties(frag_xml, frag_obj)
+def create_fragment(
+    frag: AssetFragment,
+    hi_frag: Optional[AssetFragment],
+    name: Optional[str],
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> Object:
+    shader_group = frag.base_drawable.shader_group
+    hi_shader_group = hi_frag.base_drawable.shader_group if hi_frag else None
 
-    if frag_xml.lights:
-        create_frag_lights(frag_xml, frag_obj)
+    materials, hi_materials = shader_group_to_materials_with_hi(shader_group, hi_shader_group, hd_txd, hd_txd_suffix)
+
+    frag_obj = create_frag_armature(frag, name)
+
+    drawable_obj = create_frag_drawable(frag, hi_frag, frag_obj,  materials, hi_materials)
+    damaged_drawable_obj = create_frag_drawable(frag, hi_frag, frag_obj, materials, hi_materials, damaged=True)
+
+    if frag.physics:
+        create_frag_collisions(frag, frag_obj)
+        if damaged_drawable_obj is not None:
+            create_frag_collisions(frag, frag_obj, damaged=True)
+
+        create_phys_lod(frag, frag_obj)
+        apply_phys_groups_to_bones(frag, frag_obj)
+
+        create_phys_child_meshes(frag, hi_frag, frag_obj, drawable_obj, materials, hi_materials)
+
+    create_frag_env_cloth(frag, frag_obj, drawable_obj, materials)
+
+    create_frag_vehicle_windows(frag, frag_obj)
+
+    if (lights := frag.lights):
+        lights_obj = create_light_objs(lights, frag_obj, f"{frag_obj.name}.lights")
+        lights_obj.parent = frag_obj
 
     return frag_obj
 
 
-def create_frag_armature(frag_xml: Fragment, name: Optional[str] = None):
+def create_frag_armature(frag: AssetFragment, name: Optional[str] = None) -> Object:
     """Create the fragment armature along with the bones and rotation limits."""
-    name = name or frag_xml.name.replace("pack:/", "")
-    drawable_xml = frag_xml.drawable
-    frag_obj = create_armature_obj_from_skel(drawable_xml.skeleton, name, SollumType.FRAGMENT)
-    create_joint_constraints(frag_obj, drawable_xml.joints)
-
-    set_fragment_properties(frag_xml, frag_obj)
-
+    name = name or frag.name.replace("pack:/", "")
+    drawable = frag.base_drawable
+    frag_obj = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.FRAGMENT)
+    frag_obj.fragment_properties.template_asset = frag.template_asset.name
+    frag_obj.fragment_properties.unbroken_elasticity = frag.unbroken_elasticity
+    frag_obj.fragment_properties.gravity_factor = frag.gravity_factor
+    frag_obj.fragment_properties.buoyancy_factor = frag.buoyancy_factor
     return frag_obj
 
 
-def create_fragment_drawable(frag_xml: Fragment, frag_obj: bpy.types.Object, filepath: str, materials: list[bpy.types.Material], split_by_group: bool = False, damaged: bool = False) -> Optional[bpy.types.Object]:
+def create_frag_drawable(
+    frag: AssetFragment,
+    hi_frag: Optional[AssetFragment],
+    frag_obj: Object,
+    materials: list[Material],
+    hi_materials: list[Material],
+    damaged: bool = False
+) -> Optional[Object]:
+    skip_models = False
     if damaged:
-        if not frag_xml.extra_drawables:
+        extra_drawables = frag.extra_drawables
+        if not extra_drawables:
             return None
 
-        drawable_xml = frag_xml.extra_drawables[0]
+        drawable = extra_drawables[0]
+        assert hi_frag is None, "Only vehicles have _hi and they shouldn't have a damaged model"
+        hi_drawable = None
         drawable_name = f"{frag_obj.name}.damaged.mesh"
+        external_skeleton = frag.base_drawable.skeleton
     else:
-        drawable_xml = frag_xml.drawable
+        drawable = frag.base_drawable
+        hi_drawable = hi_frag.base_drawable if hi_frag else None
         drawable_name = f"{frag_obj.name}.mesh"
+        external_skeleton = None
 
-    drawable_obj = create_drawable_obj(
-        drawable_xml,
-        filepath,
-        name=drawable_name,
-        materials=materials,
-        split_by_group=split_by_group,
-        external_armature=frag_obj
+        # If we have a fragment without a main drawable, so base_drawable is the cloth drawable. Don't create cloth
+        # models here (skip_models=True). Creating the cloth drawable model will be handled by `create_frag_env_cloth`
+        skip_models = frag.drawable is None
+
+    drawable_obj = create_drawable(
+        drawable,
+        hi_drawable,
+        drawable_name,
+        materials,
+        hi_materials,
+        external_armature=frag_obj,
+        external_skeleton=external_skeleton,
+        skip_models=skip_models,
     )
     drawable_obj.parent = frag_obj
 
     return drawable_obj
 
 
-def merge_hi_fragment(frag_xml: Fragment, hi_xml: Fragment) -> Fragment:
-    """Merge the _hi.yft variant of a Fragment (highest LOD, only used for vehicles)."""
-    non_hi_children = frag_xml.physics.lod1.children
-    hi_children = hi_xml.physics.lod1.children
+def create_frag_collisions(frag: AssetFragment, frag_obj: Object, damaged: bool = False) -> Optional[Object]:
+    lod1 = frag.physics.lod1
+    bounds = None
+    if damaged:
+        bounds = lod1.damaged_archetype.bounds if lod1.damaged_archetype else None
+    else:
+        bounds = lod1.archetype.bounds
 
-    if len(non_hi_children) != len(hi_children):
-        logger.warning(
-            f"Failed to merge Fragments, {frag_xml.name} and {hi_xml.name} have different physics data!")
-        return frag_xml
+    if bounds is None:
+        return None
 
-    frag_xml = FragmentMerger(frag_xml, hi_xml).merge()
-
-    return frag_xml
-
-
-def create_phys_lod(frag_xml: Fragment, frag_obj: bpy.types.Object):
-    """Create the Fragment.Physics.LOD1 data-block. (Currently LOD1 is only supported)"""
-    lod_xml = frag_xml.physics.lod1
-
-    if not lod_xml.groups:
-        return
-
-    lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
-    set_lod_properties(lod_xml, lod_props)
-    set_archetype_properties(lod_xml.archetype, lod_props.archetype_properties)
-
-
-def set_all_bone_physics_properties(armature: bpy.types.Armature, frag_xml: Fragment):
-    """Set the physics group properties for all bones in the armature."""
-    groups_xml: list[PhysicsGroup] = frag_xml.physics.lod1.groups
-
-    for group_xml in groups_xml:
-        if group_xml.name not in armature.bones:
-            # Bone not found, try a case-insensitive search
-            group_name_lower = group_xml.name.lower()
-            for armature_bone in armature.bones:
-                if group_name_lower == armature_bone.name.lower():
-                    group_xml.name = armature_bone.name  # update group name to match actual bone name
-                    bone = armature_bone
-                    break
-            else:
-                # Still no bone found
-                logger.warning(f"No bone exists for the physics group {group_xml.name}! Skipping...")
-                continue
-        else:
-            bone = armature.bones[group_xml.name]
-
-        bone.sollumz_use_physics = True
-        set_group_properties(group_xml, bone)
-
-
-def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object, damaged: bool = False) -> Optional[bpy.types.Object]:
-    lod1 = frag_xml.physics.lod1
-    bounds_xml = lod1.damaged_archetype.bounds if damaged else lod1.archetype.bounds
-
-    if bounds_xml is None or not bounds_xml.children:
+    bounds_children = bounds.children
+    if not bounds_children:
         return None
 
     col_name_suffix = ".damaged.col" if damaged else ".col"
@@ -236,14 +238,14 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object, damag
     composite_obj = create_empty_object(SollumType.BOUND_COMPOSITE, name=composite_name)
     composite_obj.parent = frag_obj
 
-    for i, bound_xml in enumerate(bounds_xml.children):
-        if bound_xml is None:
+    for i, bound in enumerate(bounds_children):
+        if bound is None:
             continue
 
-        bound_obj = create_bound_object(bound_xml)
+        bound_obj = create_bound_object(bound)
         bound_obj.parent = composite_obj
 
-        bone = find_bound_bone(i, frag_xml)
+        bone = find_bound_bone(i, frag)
         if bone is None:
             continue
 
@@ -262,50 +264,170 @@ def create_frag_collisions(frag_xml: Fragment, frag_obj: bpy.types.Object, damag
         bound_obj.matrix_local = drawable.frag_bound_matrix.transposed()
 
 
-def find_bound_bone(bound_index: int, frag_xml: Fragment) -> Bone | None:
+def find_bound_bone(bound_index: int, frag: AssetFragment) -> SkelBone | None:
     """Get corresponding bound bone based on children"""
-    children = frag_xml.physics.lod1.children
+    children = frag.physics.lod1.children
 
     if bound_index >= len(children):
-        return
+        return None
 
     corresponding_child = children[bound_index]
-    for bone in frag_xml.drawable.skeleton.bones:
+    for bone in frag.base_drawable.skeleton.bones:
         if bone.tag != corresponding_child.bone_tag:
             continue
 
         return bone
 
+    return None
 
-def create_phys_child_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):
-    """Create all Fragment.Physics.LOD1.Children meshes. (Only LOD1 currently supported)"""
-    lod_xml = frag_xml.physics.lod1
-    children_xml: list[PhysicsChild] = lod_xml.children
-    bones = frag_xml.drawable.skeleton.bones
 
-    bone_name_by_tag: dict[str, Bone] = {
-        bone.tag: bone.name for bone in bones}
+def create_phys_lod(frag: AssetFragment, frag_obj: Object):
+    """Create the Fragment.Physics.LOD1 data-block. (Currently LOD1 is only supported)"""
+    lod = frag.physics.lod1
 
-    for child_xml in children_xml:
-        if child_xml.drawable.is_empty:
-            continue
+    if not lod.groups:
+        return
 
-        if child_xml.bone_tag not in bone_name_by_tag:
+    lod_props: LODProperties = frag_obj.fragment_properties.lod_properties
+    lod_props.min_move_force = lod.min_move_force
+    lod_props.unbroken_cg_offset = lod.unbroken_cg_offset
+    lod_props.damping_linear_c = lod.damping_linear_c
+    lod_props.damping_linear_v = lod.damping_linear_v
+    lod_props.damping_linear_v2 = lod.damping_linear_v2
+    lod_props.damping_angular_c = lod.damping_angular_c
+    lod_props.damping_angular_v = lod.damping_angular_v
+    lod_props.damping_angular_v2 = lod.damping_angular_v2
+
+    arch = lod.archetype
+    arch_props = lod_props.archetype_properties
+    arch_props.gravity_factor = arch.gravity_factor
+    arch_props.max_speed = arch.max_speed
+    arch_props.max_ang_speed = arch.max_ang_speed
+    arch_props.buoyancy_factor = arch.buoyancy_factor
+
+
+def apply_phys_groups_to_bones(frag: AssetFragment, frag_obj: Object):
+    """Set the physics group properties for all bones in the armature."""
+    armature = frag_obj.data
+    groups = frag.physics.lod1.groups
+
+    for group in groups:
+        bone = armature.bones.get(group.name, None)
+        if bone is None:
+            # Bone not found, try a case-insensitive search
+            group_name_lower = group.name.lower()
+            for armature_bone in armature.bones:
+                if group_name_lower == armature_bone.name.lower():
+                    bone = armature_bone
+                    break
+            else:
+                # Still no bone found
+                logger.warning(f"No bone exists for the physics group {group.name}! Skipping...")
+                continue
+
+        bone.sollumz_use_physics = True
+        apply_phys_group_to_bone(frag, group, bone)
+
+
+def apply_phys_group_to_bone(frag: AssetFragment, group: PhysGroup, bone: Bone):
+    group_props = bone.group_properties
+    for i in range(len(group_props.flags)):
+        group_props.flags[i] = (group.flags & (1 << i)) != 0
+    group_props.strength = group.strength
+    group_props.force_transmission_scale_up = group.force_transmission_scale_up
+    group_props.force_transmission_scale_down = group.force_transmission_scale_down
+    group_props.joint_stiffness = group.joint_stiffness
+    group_props.min_soft_angle_1 = group.min_soft_angle_1
+    group_props.max_soft_angle_1 = group.max_soft_angle_1
+    group_props.max_soft_angle_2 = group.max_soft_angle_2
+    group_props.max_soft_angle_3 = group.max_soft_angle_3
+    group_props.rotation_speed = group.rotation_speed
+    group_props.rotation_strength = group.rotation_strength
+    group_props.restoring_strength = group.restoring_strength
+    group_props.restoring_max_torque = group.restoring_max_torque
+    group_props.latch_strength = group.latch_strength
+    group_props.min_damage_force = group.min_damage_force
+    group_props.damage_health = group.damage_health
+    group_props.weapon_health = group.weapon_health
+    group_props.weapon_scale = group.weapon_scale
+    group_props.vehicle_scale = group.vehicle_scale
+    group_props.ped_scale = group.ped_scale
+    group_props.ragdoll_scale = group.ragdoll_scale
+    group_props.explosion_scale = group.explosion_scale
+    group_props.object_scale = group.object_scale
+    group_props.ped_inv_mass_scale = group.ped_inv_mass_scale
+    group_props.melee_scale = group.melee_scale
+
+    if (group.flags & 2) != 0:  # flag 2 indicates that the group has a glass window
+        glass_windows = frag.glass_windows
+        if 0 <= group.glass_window_index < len(glass_windows):
+            glass_window = glass_windows[group.glass_window_index]
+            glass_type_idx = glass_window.glass_type
+            if 0 <= glass_type_idx < len(GlassTypes):
+                group_props.glass_type = GlassTypes[glass_type_idx][0]
+            else:
+                logger.warning(
+                    f"Bone '{bone.name}' has breakable glass but is using unknown glass type {glass_type_idx}."
+                )
+                group_props.flags[GroupFlagBit.USE_GLASS_WINDOW] = False
+        else:
             logger.warning(
-                "A fragment child has an invalid bone tag! Skipping...")
+                f"Bone '{bone.name}' has breakable glass but its glass entry is missing "
+                f"(index {group.glass_window_index}, num. entries {len(glass_windows)})."
+            )
+            group_props.flags[GroupFlagBit.USE_GLASS_WINDOW] = False
+
+
+def create_phys_child_meshes(
+    frag: AssetFragment,
+    hi_frag: Optional[AssetFragment],
+    frag_obj: Object,
+    drawable_obj: Object,
+    materials: list[Material],
+    hi_materials: list[Material],
+):
+    """Create all Fragment.Physics.LOD1.Children meshes. (Only LOD1 currently supported)"""
+    lod = frag.physics.lod1
+    children = lod.children
+    hi_children = hi_frag.physics.lod1.children if hi_frag else []
+    bones = frag.base_drawable.skeleton.bones
+
+    bone_name_by_tag: dict[str, SkelBone] = {bone.tag: bone.name for bone in bones}
+
+    for i, child in enumerate(children):
+        if not child.drawable.models:
             continue
 
-        bone_name = bone_name_by_tag[child_xml.bone_tag]
+        if child.bone_tag not in bone_name_by_tag:
+            logger.warning("A fragment child has an invalid bone tag! Skipping...")
+            continue
+
+        bone_name = bone_name_by_tag[child.bone_tag]
+
+        child_drawable = child.drawable
+        hi_child_drawable = None
+        if hi_children:
+            hi_child = hi_children[i]
+            hi_child_drawable = hi_child.drawable
 
         create_phys_child_models(
-            child_xml.drawable, frag_obj, materials, bone_name, drawable_obj)
+            child_drawable, hi_child_drawable, frag_obj,
+            materials, hi_materials, bone_name, drawable_obj
+        )
 
 
-def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object, materials: list[bpy.types.Material], bone_name: str, drawable_obj: bpy.types.Object):
+def create_phys_child_models(
+    drawable: AssetDrawable,
+    hi_drawable: Optional[AssetDrawable],
+    frag_obj: Object,
+    materials: list[Material],
+    hi_materials: list[Material],
+    bone_name: str,
+    drawable_obj: Object
+):
     """Create a single physics child mesh"""
     # There is usually only one drawable model in each frag child
-    child_objs = create_drawable_models(
-        drawable_xml, materials, f"{bone_name}.child")
+    child_objs = create_drawable_models(drawable, hi_drawable, materials, hi_materials, f"{bone_name}.child")
 
     for child_obj in child_objs:
         add_child_of_bone_constraint(child_obj, frag_obj, bone_name)
@@ -316,25 +438,25 @@ def create_phys_child_models(drawable_xml: Drawable, frag_obj: bpy.types.Object,
     return child_objs
 
 
-def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, drawable_obj: bpy.types.Object, materials: list[bpy.types.Material]):
-    if not frag_xml.cloths:
-        return
+def create_frag_env_cloth(frag: AssetFragment, frag_obj: Object, drawable_obj: Object, materials: list[Material]) -> Object | None:
+    cloths = frag.cloths
+    if not cloths:
+        return None
 
-    from szio.gta5.cwxml import EnvironmentCloth
     from ..ydr.cloth import ClothAttr, mesh_add_cloth_attribute
 
-    cloth: EnvironmentCloth = frag_xml.cloths[0]  # game only supports a single environment cloth per fragment
-    if cloth.drawable.is_empty:
-        return
+    cloth = cloths[0]  # game only supports a single environment cloth per fragment
+    if not cloth.drawable:
+        return None
 
-    model_objs = create_drawable_models(cloth.drawable, materials, f"{frag_obj.name}.cloth")
+    model_objs = create_drawable_models(cloth.drawable, None, materials, None, f"{frag_obj.name}.cloth")
     assert model_objs and len(model_objs) == 1, "Too many models in cloth drawable!"
 
     model_obj = model_objs[0]
     model_obj.parent = drawable_obj
 
     bones = cloth.drawable.skeleton.bones
-    bone_index = cloth.drawable.drawable_models_high[0].bone_index
+    bone_index = cloth.drawable.models[LodLevel.HIGH][0].bone_index
     bone_name = bones[bone_index].name
     add_child_of_bone_constraint(model_obj, frag_obj, bone_name)
 
@@ -350,14 +472,11 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
     cloth_to_mesh_map[mesh_to_cloth_map] = np.arange(len(mesh_to_cloth_map))
     pinned_vertices_count = cloth.controller.cloth_high.pinned_vertices_count
     vertices_count = len(cloth.controller.cloth_high.vertex_positions)
-    force_transform = np.fromstring(cloth.user_data or "", dtype=int, sep=" ")
+    force_transform = cloth.user_data  # np.fromstring(cloth.user_data or "", dtype=int, sep=" ")
     # TODO: store switch distances somewhere or maybe on export can be derived from existing LOD distances
     # switch_distance_up = cloth.controller.cloth_high.switch_distance_up
     # switch_distance_down = cloth.controller.cloth_high.switch_distance_down
 
-    # TODO: pin radius
-    #       There can be multiple pin radius per vertex, find a model with pin radius set
-    #       Check if pin radius is only used with character cloth
     has_pinned = pinned_vertices_count > 0
     has_pin_radius = len(pin_radius) > 0
     num_pin_radius_sets = len(pin_radius) // vertices_count
@@ -435,8 +554,7 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
 
     cloth_props = frag_obj.fragment_properties.cloth
     cloth_props.weight = cloth.controller.cloth_high.cloth_weight
-    if cloth.tuning:
-        tuning = cloth.tuning
+    if (tuning := cloth.tuning):
         cloth_props.enable_tuning = True
         cloth_props.tuning_flags.total = str(tuning.flags)
         cloth_props.extra_force = tuning.extra_force
@@ -449,39 +567,65 @@ def create_env_cloth_meshes(frag_xml: Fragment, frag_obj: bpy.types.Object, draw
             cloth_props.non_pin_vert0 = cloth_to_mesh_map[tuning.non_pin_vert0]
             cloth_props.non_pin_vert1 = cloth_to_mesh_map[tuning.non_pin_vert1]
 
-    if cloth.controller.cloth_high.bounds:
-        cloth_bounds = create_bound_composite(cloth.controller.cloth_high.bounds)
-        cloth_bounds.name = f"{frag_obj.name}.cloth_world_bounds"
+    if (bounds := cloth.controller.cloth_high.bounds):
+        cloth_bounds = create_bound_composite(bounds, f"{frag_obj.name}.cloth_world_bounds")
         cloth_props.world_bounds = cloth_bounds
 
+    return model_obj
 
-def create_vehicle_windows(frag_xml: Fragment, frag_obj: bpy.types.Object, materials: list[bpy.types.Material]):
-    for window_xml in frag_xml.vehicle_glass_windows:
-        window_bone = get_window_bone(window_xml, frag_xml, frag_obj.data.bones)
-        col_obj = get_window_col(frag_obj, window_bone.name)
 
-        window_name = f"{window_bone.name}_shattermap"
+def create_frag_vehicle_windows(frag: AssetFragment, frag_obj: Object):
+    vehicle_windows = frag.vehicle_windows
+    if not vehicle_windows:
+        return
+
+    for vw in vehicle_windows:
+        window_bone = find_frag_vehicle_window_bone(vw, frag, frag_obj.data.bones)
+        col_obj = find_frag_vehicle_window_col(frag_obj, window_bone.name)
 
         if col_obj is None:
             logger.warning(
-                f"Window with ItemID {window_xml.item_id} has no associated collision! Is the file malformed?")
+                f"Window with component ID {vw.component_id} has no associated collision! Is the file malformed?"
+            )
             continue
 
-        col_obj.child_properties.is_veh_window = True
+        has_shattermap = vw.shattermap.shape != (0, 0)
+        if has_shattermap:
+            if import_context().settings.frag_import_vehicle_windows:
+                mode = "MANUAL"
+                shattermap_name = f"{window_bone.name}_shattermap"
+                shattermap_obj = create_frag_vehicle_window_shattermap(vw, shattermap_name, window_bone.matrix_local)
+                shattermap_obj.parent = col_obj
+            else:
+                mode = "AUTO"
+        else:
+            mode = "MANUAL_NO_SHATTERMAP"
 
-        window_mat = get_veh_window_material(window_xml, frag_xml.drawable, materials)
-
-        if window_mat is not None:
-            col_obj.child_properties.window_mat = window_mat
-
-        if window_xml.shattermap:
-            shattermap_obj = create_shattermap_obj(window_xml, window_name, window_bone.matrix_local)
-            shattermap_obj.parent = col_obj
-
-        set_veh_window_properties(window_xml, col_obj)
+        col_obj.child_properties.shattermap_mode = mode
+        col_obj.vehicle_window_properties.data_min = vw.data_min
+        col_obj.vehicle_window_properties.data_max = vw.data_max
+        col_obj.vehicle_window_properties.cracks_texture_tiling = vw.scale
 
 
-def get_window_col(frag_obj: bpy.types.Object, bone_name: str) -> Optional[bpy.types.Object]:
+def find_frag_vehicle_window_bone(window: FragVehicleWindow, frag: AssetFragment, bones: ArmatureBones) -> Bone:
+    """Get bone connected to window based on the bone tag of the physics child associated with the window."""
+    children = frag.physics.lod1.children
+    child_index = window.component_id
+
+    if not (0 <= child_index < len(children)):
+        return bones[0]
+
+    bone_tag = children[child_index].bone_tag
+
+    for bone in bones:
+        if bone.bone_properties.tag == bone_tag:
+            return bone
+
+    # Return root bone if no bone is found
+    return bones[0]
+
+
+def find_frag_vehicle_window_col(frag_obj: Object, bone_name: str) -> Object | None:
     for obj in frag_obj.children_recursive:
         if obj.sollum_type in BOUND_TYPES:
             col_bone = get_child_of_bone(obj)
@@ -489,254 +633,133 @@ def get_window_col(frag_obj: bpy.types.Object, bone_name: str) -> Optional[bpy.t
             if col_bone is not None and col_bone.name == bone_name:
                 return obj
 
-
-def get_veh_window_material(window_xml: Window, drawable_xml: Drawable, materials: list[bpy.types.Material]):
-    """Get vehicle window material based on UnkUShort1."""
-    # UnkUShort1 indexes the geometry that the window uses.
-    # The VehicleGlassWindow uses the same material that the geometry uses.
-    geometry_index = window_xml.unk_ushort_1
-    return get_geometry_material(drawable_xml, materials, geometry_index)
+    return None
 
 
-def get_window_bone(window_xml: Window, frag_xml: Fragment, bpy_bones: bpy.types.ArmatureBones) -> bpy.types.Bone:
-    """Get bone connected to window based on the bone tag of the physics child associated with the window."""
-    children_xml: list[PhysicsChild] = frag_xml.physics.lod1.children
+def create_frag_vehicle_window_shattermap(window: FragVehicleWindow, name: str, transform: Matrix) -> Object:
+    proj_mat = Matrix(window.basis)
+    proj_mat[3][3] = 1
+    proj_mat.transpose()
+    proj_mat.invert_safe()
 
-    child_id: int = window_xml.item_id
+    vw_min = Vector((0, 0, 0))
+    vw_max = Vector((window.width, window.height, 1))
 
-    if child_id < 0 or child_id >= len(children_xml):
-        return bpy_bones[0]
+    v0 = multiply_homogeneous(proj_mat, Vector((vw_min.x, vw_min.y, 0)))
+    v1 = multiply_homogeneous(proj_mat, Vector((vw_min.x, vw_max.y, 0)))
+    v2 = multiply_homogeneous(proj_mat, Vector((vw_max.x, vw_max.y, 0)))
+    v3 = multiply_homogeneous(proj_mat, Vector((vw_max.x, vw_min.y, 0)))
+    verts = v0, v1, v2, v3
+    faces = [[0, 1, 2, 3]]
 
-    child_xml = children_xml[child_id]
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.transform(transform.inverted())
 
-    for bone in bpy_bones:
-        if bone.bone_properties.tag != child_xml.bone_tag:
-            continue
-
-        return bone
-
-    # Return root bone if no bone is found
-    return bpy_bones[0]
-
-
-def create_shattermap_obj(window_xml: Window, name: str, window_matrix: Matrix):
-    try:
-        mesh = create_shattermap_mesh(window_xml, name, window_matrix)
-    except:
-        logger.error(f"Error during creation of vehicle window mesh:\n{format_exc()}")
-        return
+    uvs = np.array([[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]], dtype=np.float64)
+    create_uv_attr(mesh, 0, initial_values=uvs)
 
     shattermap_obj = create_blender_object(SollumType.SHATTERMAP, name, mesh)
 
-    if window_xml.shattermap:
-        shattermap_mat = shattermap_to_material(window_xml.shattermap, name)
+    if window.shattermap is not None:
+        shattermap_mat = shattermap_to_material(window.shattermap, name)
         mesh.materials.append(shattermap_mat)
 
     return shattermap_obj
 
 
-def create_shattermap_mesh(window_xml: Window, name: str, window_matrix: Matrix):
-    verts = calculate_window_verts(window_xml)
-    faces = [[0, 1, 2, 3]]
-
-    mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], faces)
-    mesh.transform(window_matrix.inverted())
-
-    uvs = np.array([[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]], dtype=np.float64)
-    create_uv_attr(mesh, 0, initial_values=uvs)
-
-    return mesh
-
-
-def calculate_window_verts(window_xml: Window):
-    """Calculate the 4 vertices of the window from the projection matrix."""
-    proj_mat = get_window_projection_matrix(window_xml)
-
-    min = Vector((0, 0, 0))
-    max = Vector((window_xml.width / 2, window_xml.height, 1))
-
-    v0 = multiply_homogeneous(proj_mat, Vector((min.x, min.y, 0)))
-    v1 = multiply_homogeneous(proj_mat, Vector((min.x, max.y, 0)))
-    v2 = multiply_homogeneous(proj_mat, Vector((max.x, max.y, 0)))
-    v3 = multiply_homogeneous(proj_mat, Vector((max.x, min.y, 0)))
-
-    return v0, v1, v2, v3
-
-
-def get_window_projection_matrix(window_xml: Window):
-    proj_mat: Matrix = window_xml.projection_matrix
-    # proj_mat[3][3] is currently an unknown value so it is set to 1 (CW does the same)
-    proj_mat[3][3] = 1
-
-    return proj_mat.transposed().inverted_safe()
-
-
-def get_rgb(value):
-    if value == "##":
-        return [0, 0, 0, 1]
-    elif value == "--":
-        return [1, 1, 1, 1]
-    else:
-        value = int(value, 16)
-        return [value / 255, value / 255, value / 255, 1]
-
-
-def shattermap_to_image(shattermap, name):
-    width = int(len(shattermap[0]) / 2)
-    height = int(len(shattermap))
-
-    img = bpy.data.images.new(name, width, height)
-
-    pixels = []
-    i = 0
-    for row in reversed(shattermap):
-        frow = [row[x:x + 2] for x in range(0, len(row), 2)]
-        # Need to check for malformed shattermaps. ZModeler shattermaps seem to be missing a value of "--" when "--" appears in a row. We check for this specific case and insert a "--" to the row.
-        # We don't handle other malformed data, an error will be logged in the try/except below.
-        if len(frow) == (width - 1):
-            try:
-                idx = frow.index("--")
-            except ValueError:
-                idx = None
-            if idx is not None:
-                frow.insert(idx, "--")
-        for value in frow:
-            pixels.append(get_rgb(value))
-            i += 1
-
-    pixels = [chan for px in pixels for chan in px]
-    try:
-        img.pixels = pixels
-    except ValueError:
-        logger.error("Cannot create shattermap, shattermap data is malformed")
-
-    return img
-
-
-def shattermap_to_material(shattermap, name):
+def shattermap_to_material(shattermap: np.ndarray, name: str) -> Material:
     img = shattermap_to_image(shattermap, name)
     img.pack()
     mat = material_from_image(img, name, "ShatterMap")
     return mat
 
 
-def get_geometry_material(drawable_xml: Drawable, materials: list[bpy.types.Material], geometry_index: int) -> bpy.types.Material | None:
-    """Get the material that the given geometry uses."""
-    for dmodel in drawable_xml.drawable_models_high:
-        geometries = dmodel.geometries
+def shattermap_to_image(shattermap: np.ndarray, name: str) -> Image:
+    """Converts a shattermap 2D array to a Blender image.
 
-        if geometry_index > len(geometries):
-            return None
+    Args:
+        shattermap: 2D array of floats, shape (height, width).
+        name: name for new image.
+    """
+    height, width = shattermap.shape
+    pixels = np.empty((height, width, 4), dtype=np.float32)
+    pixels[:, :, 0] = shattermap
+    pixels[:, :, 1] = shattermap
+    pixels[:, :, 2] = shattermap
+    pixels[:, :, 3] = 1.0
 
-        geometry = geometries[geometry_index]
-        shader_index = geometry.shader_index
+    img = bpy.data.images.new(name, width, height)
+    try:
+        img.pixels = pixels.ravel()
+    except ValueError:
+        logger.error("Cannot create shattermap, shattermap data is malformed")
 
-        if shader_index > len(materials):
-            return None
-
-        return materials[shader_index]
-
-
-def set_all_glass_window_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
-    """Set the glass window properties for all bones in the fragment."""
-    groups_xml: list[PhysicsGroup] = frag_xml.physics.lod1.groups
-    glass_windows_xml: list[GlassWindow] = frag_xml.glass_windows
-    armature: bpy.types.Armature = frag_obj.data
-
-    for group_xml in groups_xml:
-        if (group_xml.glass_flags & 2) == 0:  # flag 2 indicates that the group has a glass window
-            continue
-        if group_xml.name not in armature.bones:
-            continue
-
-        glass_window_xml = glass_windows_xml[group_xml.glass_window_index]
-        glass_type_idx = glass_window_xml.flags & 0xFF
-        if glass_type_idx >= len(GlassTypes):
-            continue
-
-        bone = armature.bones[group_xml.name]
-        bone.group_properties.glass_type = GlassTypes[glass_type_idx][0]
+    return img
 
 
-def create_frag_lights(frag_xml: Fragment, frag_obj: bpy.types.Object):
-    lights_parent = create_light_objs(frag_xml.lights, frag_obj)
-    lights_parent.name = f"{frag_obj.name}.lights"
-    lights_parent.parent = frag_obj
-
-
-def set_fragment_properties(frag_xml: Fragment, frag_obj: bpy.types.Object):
-    # unknown_c0 include "entity class" and "attach bottom end" but those are always 0 in game assets and seem unused
-    frag_obj.fragment_properties.template_asset = FragmentTemplateAsset((frag_xml.unknown_c0 >> 8) & 0xFF).name
-    frag_obj.fragment_properties.unbroken_elasticity = frag_xml.unknown_cc
-    frag_obj.fragment_properties.gravity_factor = frag_xml.gravity_factor
-    frag_obj.fragment_properties.buoyancy_factor = frag_xml.buoyancy_factor
-
-
-def set_lod_properties(lod_xml: PhysicsLOD, lod_props: LODProperties):
-    lod_props.min_move_force = lod_xml.unknown_1c
-    lod_props.unbroken_cg_offset = lod_xml.unknown_50
-    lod_props.damping_linear_c = lod_xml.damping_linear_c
-    lod_props.damping_linear_v = lod_xml.damping_linear_v
-    lod_props.damping_linear_v2 = lod_xml.damping_linear_v2
-    lod_props.damping_angular_c = lod_xml.damping_angular_c
-    lod_props.damping_angular_v = lod_xml.damping_angular_v
-    lod_props.damping_angular_v2 = lod_xml.damping_angular_v2
-
-
-def set_archetype_properties(arch_xml: Archetype, arch_props: FragArchetypeProperties):
-    arch_props.name = arch_xml.name
-    arch_props.gravity_factor = arch_xml.unknown_48
-    arch_props.max_speed = arch_xml.unknown_4c
-    arch_props.max_ang_speed = arch_xml.unknown_50
-    arch_props.buoyancy_factor = arch_xml.unknown_54
-
-
-def set_group_properties(group_xml: PhysicsGroup, bone: bpy.types.Bone):
-    bone.group_properties.name = group_xml.name
-    for i in range(len(bone.group_properties.flags)):
-        bone.group_properties.flags[i] = (group_xml.glass_flags & (1 << i)) != 0
-    bone.group_properties.strength = group_xml.strength
-    bone.group_properties.force_transmission_scale_up = group_xml.force_transmission_scale_up
-    bone.group_properties.force_transmission_scale_down = group_xml.force_transmission_scale_down
-    bone.group_properties.joint_stiffness = group_xml.joint_stiffness
-    bone.group_properties.min_soft_angle_1 = group_xml.min_soft_angle_1
-    bone.group_properties.max_soft_angle_1 = group_xml.max_soft_angle_1
-    bone.group_properties.max_soft_angle_2 = group_xml.max_soft_angle_2
-    bone.group_properties.max_soft_angle_3 = group_xml.max_soft_angle_3
-    bone.group_properties.rotation_speed = group_xml.rotation_speed
-    bone.group_properties.rotation_strength = group_xml.rotation_strength
-    bone.group_properties.restoring_strength = group_xml.restoring_strength
-    bone.group_properties.restoring_max_torque = group_xml.restoring_max_torque
-    bone.group_properties.latch_strength = group_xml.latch_strength
-    bone.group_properties.min_damage_force = group_xml.min_damage_force
-    bone.group_properties.damage_health = group_xml.damage_health
-    bone.group_properties.weapon_health = group_xml.unk_float_5c
-    bone.group_properties.weapon_scale = group_xml.unk_float_60
-    bone.group_properties.vehicle_scale = group_xml.unk_float_64
-    bone.group_properties.ped_scale = group_xml.unk_float_68
-    bone.group_properties.ragdoll_scale = group_xml.unk_float_6c
-    bone.group_properties.explosion_scale = group_xml.unk_float_70
-    bone.group_properties.object_scale = group_xml.unk_float_74
-    bone.group_properties.ped_inv_mass_scale = group_xml.unk_float_78
-    bone.group_properties.melee_scale = group_xml.unk_float_a8
-
-
-def set_veh_window_properties(window_xml: Window, window_obj: bpy.types.Object):
-    window_obj.vehicle_window_properties.data_min = window_xml.unk_float_17
-    window_obj.vehicle_window_properties.data_max = window_xml.unk_float_18
-    window_obj.vehicle_window_properties.cracks_texture_tiling = window_xml.cracks_texture_tiling
-
-
-def create_fragment_as_asset(frag_xml: Fragment, hi_frag_xml: Optional[Fragment], name: str, filepath: str):
+def create_fragment_as_asset(
+    frag: AssetFragment,
+    hi_frag: Optional[AssetFragment],
+    name: str,
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> Object:
     """Create fragment as an asset with all meshes joined together."""
-    if hi_frag_xml is not None:
-        frag_xml = merge_hi_fragment(frag_xml, hi_frag_xml)
-
-    frag_xml.drawable.drawable_models_low = []
-    frag_xml.drawable.drawable_models_med = []
-    frag_xml.drawable.drawable_models_vlow = []
 
     from ..ydr.ydrimport import convert_object_to_asset
-    frag_obj = create_fragment_obj(frag_xml, filepath, name)
-    convert_object_to_asset(name, frag_obj)
+    skel = frag.base_drawable.skeleton
+    lights = frag.lights
+    bounds = frag.physics and frag.physics.lod1 and frag.physics.lod1.archetype and frag.physics.lod1.archetype.bounds
+    frag.lights = []
+    frag_obj = create_fragment(frag, hi_frag, name, hd_txd, hd_txd_suffix)
+    asset_obj = convert_object_to_asset(name, frag_obj)
+    serialize_lights_to_asset(asset_obj, lights)
+    if bounds:
+        import json
+
+        COLS_KEY = "sz_asset_collisions"
+
+        cols_serialized = {
+            "bb_min": tuple(bounds.bb_min),
+            "bb_max": tuple(bounds.bb_max),
+        }
+        cols_serialized_str = json.dumps(
+            cols_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[COLS_KEY] = cols_serialized_str
+        if data := asset_obj.data:
+                data[COLS_KEY] = cols_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[COLS_KEY] = cols_serialized_str
+
+    if skel:
+        import json
+        from dataclasses import asdict
+        SKEL_KEY = "sz_asset_skeleton"
+
+        skel_serialized = asdict(skel)
+        for bone in skel_serialized["bones"]:
+            bone.pop("translation_limit")
+            bone.pop("rotation_limit")
+            for k, v in bone.items():
+                match v:
+                    case Vector() | Quaternion():
+                        bone[k] = tuple(v)
+
+        skel_serialized_str = json.dumps(
+            skel_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[SKEL_KEY] = skel_serialized_str
+        if data := asset_obj.data:
+                data[SKEL_KEY] = skel_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[SKEL_KEY] = skel_serialized_str
+
+    return asset_obj

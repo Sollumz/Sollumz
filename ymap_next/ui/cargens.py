@@ -7,6 +7,7 @@ from bpy.types import (
 )
 
 from ...icons import icon
+from ...meta import DEV_MODE
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -27,8 +28,25 @@ from ..properties.map import (
     MAP_CARGEN_FLAG_PROPS,
     get_maps,
 )
-from .common import draw_cache_result
+from .common import draw_cache_result, is_valid_cache_result
 from .map import MapChildTabPanel
+
+
+def _draw_extra_map_datas(layout: UILayout, cargen, enabled: bool = True):
+    """Draw the extra container rows (name dropdown + remove button) and the quick-add dropdown of a car generator."""
+    if not cargen.map_data_uuid and not cargen.extra_map_datas:
+        return
+
+    icon_map_container = icon("map_container")
+    col = layout.column(align=True)
+    col.enabled = enabled
+    for i, ref in enumerate(cargen.extra_map_datas):
+        row = col.row(align=True)
+        row.prop(ref, "map_data_name", text=" ", icon_value=icon_map_container)
+        op = row.operator(map_cargens_ops.SOLLUMZ_OT_map_cargen_remove_extra_map_data.bl_idname, text="", icon="X")
+        op.index = i
+
+    col.prop(cargen, "new_map_data_name", text=" ", icon_value=icon_map_container)
 
 
 class SOLLUMZ_PT_map_cargens(MapChildTabPanel, Panel):
@@ -84,10 +102,13 @@ class SOLLUMZ_PT_map_cargens(MapChildTabPanel, Panel):
         row.alignment = "RIGHT"
         SOLLUMZ_PT_cargen_presets.draw_panel_header(row)
 
-        layout.prop(active, "uuid_str")
-        row = layout.row()
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
+        col = layout.column(align=True)
+        row = col.row(align=True)
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))
+        _draw_extra_map_datas(col, active, enabled=not has_multiple_selection)
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "linked_collection")
@@ -155,8 +176,8 @@ class SOLLUMZ_PT_map_object_cargen_properties(Panel):
 
     @classmethod
     def poll(cls, context):
-        aobj = context.active_object
-        return aobj is not None
+        acargen = active_cargen_from_active_object(context)
+        return is_valid_cache_result(acargen)
 
     def draw(self, context):
         layout = self.layout
@@ -193,6 +214,8 @@ class SOLLUMZ_PT_map_object_cargen_properties(Panel):
         n = len(collection.objects)
         split.row().label(text=f"{collection.name} ({n} cargen{'s' if n != 1 else ''})")
         layout.operator(map_cargens_ops.SOLLUMZ_OT_map_cargen_move_to_new_collection.bl_idname)
+
+        layout.prop(context.active_object, "sz_cargen_map_data_name", icon_value=icon("map_container"))
 
         layout.separator()
 

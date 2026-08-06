@@ -18,15 +18,9 @@ from szio.gta5 import (
     STANDARD_VERTEX_ATTR_DTYPES,
     CharacterCloth as IOCharacterCloth,
 )
-from szio.gta5.cwxml import (
-    CharacterCloth as CWXMLCharacterCloth,
-)
-from .cloth_char_io import (
+from .cloth_char import (
     CLOTH_CHAR_VERTEX_GROUP_NAME,
     cloth_char_get_mesh_to_cloth_bindings,
-)
-from .cloth_char import (
-    cloth_char_get_mesh_to_cloth_bindings as legacy_cloth_char_get_mesh_to_cloth_bindings,
 )
 from .cloth_diagnostics import (
     ClothDiagMeshMaterialError,
@@ -174,7 +168,7 @@ class VertexBufferBuilder:
         bone_by_vgroup: Optional[dict[int, int]] = None,
         domain: VBBuilderDomain = VBBuilderDomain.FACE_CORNER,
         materials: Optional[list[bpy.types.Material]] = None,
-        char_cloth: IOCharacterCloth | CWXMLCharacterCloth | None = None,  # legacy export still passes cwxml instance directly
+        char_cloth: IOCharacterCloth | None = None,
     ):
         self.mesh = mesh
         self.domain = domain
@@ -187,21 +181,16 @@ class VertexBufferBuilder:
         self.mesh.loops.foreach_get("vertex_index", self._loop_to_vert_inds)
 
         if domain == VBBuilderDomain.VERTEX:
-            # Build vert->loops mapping by sorting loop indices by their vertex index
+            # Find each vertex's first loop by sorting loop indices by their vertex index, then
+            # locating the boundaries between vertices
             num_verts = len(mesh.vertices)
             sorted_loop_indices = np.argsort(self._loop_to_vert_inds)
             sorted_vert_indices = self._loop_to_vert_inds[sorted_loop_indices]
 
-            # Find boundaries between vertices using searchsorted
             vert_boundaries = np.searchsorted(sorted_vert_indices, np.arange(num_verts + 1))
 
-            self._vert_to_loops = [
-                sorted_loop_indices[vert_boundaries[i]:vert_boundaries[i + 1]].tolist()
-                for i in range(num_verts)
-            ]
             self._vert_to_first_loop = sorted_loop_indices[vert_boundaries[:-1]]
         else:
-            self._vert_to_loops = None
             self._vert_to_first_loop = None
 
         self._char_cloth = char_cloth
@@ -283,8 +272,7 @@ class VertexBufferBuilder:
             # Count loops per vertex for averaging
             loop_counts = np.bincount(self._loop_to_vert_inds, minlength=num_verts)
 
-            # Average and normalize
-            vertex_normals /= loop_counts[:, np.newaxis]
+            vertex_normals /= np.maximum(loop_counts, 1)[:, np.newaxis]
             norms = np.linalg.norm(vertex_normals, axis=1, keepdims=True)
             vertex_normals = np.divide(
                 vertex_normals, norms,
@@ -393,15 +381,23 @@ class VertexBufferBuilder:
             self.mesh.loop_triangles.foreach_get("vertices", tri_verts)
             tri_verts = tri_verts.reshape((-1, 3))
 
-            mat_is_ped_cloth_mask = np.array([
-                ShaderManager.find_shader(m.shader_properties.filename).is_ped_cloth
-                for m in self.materials
-            ])
+            # `find_shader` returns None for unknown/custom shaders, which are never ped cloth.
+            mat_is_ped_cloth_mask = np.array(
+                [
+                    (shader := ShaderManager.find_shader(m.shader_properties.filename)) is not None
+                    and shader.is_ped_cloth
+                    for m in self.materials
+                ],
+                dtype=bool,
+            )
+
+            if len(mat_is_ped_cloth_mask) == 0:
+                mat_is_ped_cloth_mask = np.zeros(1, dtype=bool)
+            tri_mat_indices %= len(mat_is_ped_cloth_mask)
 
             # Check all triangles with any vertex weighted to CLOTH
             cloth_bind_tris_mask = cloth_bind_verts_mask[tri_verts].any(axis=1)
             cloth_bind_tris_mat_indices = tri_mat_indices[cloth_bind_tris_mask]
-            cloth_bind_tris_mat_indices %= len(mat_is_ped_cloth_mask)
             cloth_bind_tris_mat_not_ped_cloth_mask = ~mat_is_ped_cloth_mask[cloth_bind_tris_mat_indices]
             if cloth_bind_tris_mat_not_ped_cloth_mask.any():
                 n = cloth_bind_tris_mat_not_ped_cloth_mask.sum()
@@ -433,15 +429,9 @@ class VertexBufferBuilder:
             cloth_bind_verts_pos = mesh_verts_pos.reshape((num_verts, 3))[cloth_bind_verts_mask]
             cloth_bind_verts_normal = mesh_verts_normal.reshape((num_verts, 3))[cloth_bind_verts_mask]
 
-            if isinstance(self._char_cloth, IOCharacterCloth):
-                cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = cloth_char_get_mesh_to_cloth_bindings(
-                    self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
-                )
-            else:
-                assert isinstance(self._char_cloth, CWXMLCharacterCloth)
-                cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = legacy_cloth_char_get_mesh_to_cloth_bindings(
-                    self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
-                )
+            cloth_bind_weights_arr, cloth_bind_ind_arr, cloth_bind_errors = cloth_char_get_mesh_to_cloth_bindings(
+                self._char_cloth, cloth_bind_verts_pos, cloth_bind_verts_normal
+            )
 
             if cloth_bind_errors:
                 n = len(cloth_bind_errors)

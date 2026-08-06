@@ -36,7 +36,7 @@ class SOLLUMZ_OT_base:
         except:
             result = False
             self.error(
-                f"Error occured running operator : {self.bl_idname} \n {traceback.format_exc()}")
+                f"Error occurred running operator : {self.bl_idname} \n {traceback.format_exc()}")
         end = time.time()
 
         if self.bl_showtime and result == True:

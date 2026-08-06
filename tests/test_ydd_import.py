@@ -1,4 +1,4 @@
-"""Tests for external skeleton loading when importing drawable dictionaries (ydd/yddimport_io)."""
+"""Tests for external skeleton loading when importing drawable dictionaries (ydd/yddimport)."""
 
 from pathlib import Path
 
@@ -10,7 +10,7 @@ from ..iecontext import (
     ImportSettings,
     import_context_scope,
 )
-from ..ydd.yddimport_io import try_load_external_skeleton
+from ..ydd.yddimport import try_load_external_skeleton
 from .shared import asset_path, log_capture
 
 

@@ -13,6 +13,7 @@ from bpy.types import (
 )
 
 from ...sollumz_preferences import get_addon_preferences
+from ...sollumz_operators import SOLLUMZ_OT_import_assets
 from .library import (
     asset_cache_path,
     build_library,
@@ -35,11 +36,10 @@ def _output_directory_choice_items(self, context):
 
 _build_library_progress = None
 
-# TODO(ymap): remove 'Import To Asset Library' from regular import settings and make a special operator here
-#             Should help with people accidentally toggling it on
-
 
 def temporary_ui(layout):
+    op = layout.operator(SOLLUMZ_OT_import_assets.bl_idname, text="Import To Asset Library", icon="IMPORT")
+    op.import_as_asset = True
     layout.operator(SOLLUMZ_OT_build_game_asset_library.bl_idname)
     if _build_library_progress is not None:
         completed, total = _build_library_progress

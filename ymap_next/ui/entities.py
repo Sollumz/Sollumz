@@ -5,6 +5,7 @@ from bpy.types import (
 )
 
 from ...icons import icon
+from ...meta import DEV_MODE
 from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
     MultiSelectUIListMixin,
@@ -36,7 +37,7 @@ from ..properties.filters import (
 from ..properties.map import (
     get_maps,
 )
-from .common import draw_cache_result
+from .common import draw_cache_result, is_valid_cache_result
 from .map import MapChildTabPanel
 
 
@@ -103,6 +104,10 @@ class SOLLUMZ_PT_map_entities(MapChildTabPanel, Panel):
         row = layout.row(align=True)
         row.operator(instancing_ops.SOLLUMZ_OT_map_instance_entities.bl_idname, icon="LINKED")
         row.operator(instancing_ops.SOLLUMZ_OT_map_remove_entity_instances.bl_idname, icon="UNLINKED")
+
+        row = layout.row(align=True)
+        row.operator(map_ops.SOLLUMZ_OT_map_show_entities.bl_idname, icon="HIDE_OFF")
+        row.operator(map_ops.SOLLUMZ_OT_map_hide_entities.bl_idname, icon="HIDE_ON")
 
 
 class SOLLUMZ_PT_map_entity_tabs(TabbedPanelHelper, Panel):
@@ -171,7 +176,8 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
         row.alignment = "RIGHT"
         SOLLUMZ_PT_entity_presets.draw_panel_header(row)
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         layout.prop(selection.owner, selection.propnames.map_data_name, icon_value=icon("map_container"))
         row = layout.row()
         row.enabled = not has_multiple_selection
@@ -372,8 +378,8 @@ class SOLLUMZ_PT_map_object_entity_properties(Panel):
 
     @classmethod
     def poll(cls, context):
-        aobj = context.active_object
-        return aobj is not None
+        aentity = active_entity_from_active_object(context)
+        return is_valid_cache_result(aentity)
 
     def draw(self, context):
         layout = self.layout

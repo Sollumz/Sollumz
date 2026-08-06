@@ -33,7 +33,9 @@ class ProcessPool:
         while self._remaining_commands and len(self._processes) < self.max_parallel:
             cmd = self._remaining_commands.pop()
             logger.info(f"Launching subprocess: {cmd}")
-            p = subprocess.Popen(cmd)
+            # Keep a stdin pipe open so workers launched with --exit-with-parent can detect when
+            # this process dies (their stdin returns EOF, even if we crash) and terminate themselves.
+            p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
             self._processes.append(p)
 
         # Still busy while anything is running or queued

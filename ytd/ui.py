@@ -31,6 +31,13 @@ class SOLLUMZ_UL_txd_list(MultiSelectUIListMixin, UIList):
     multiselect_operator = txd_select_ops.SOLLUMZ_OT_txd_select_one.bl_idname
     default_item_icon = "TEXTURE"
 
+    def draw_item_extra(self, context, layout: UILayout, data, item, icon, active_data, active_propname, index):
+        if any(t.image and t.image.sz_is_hd for t in item.textures):
+            row = layout.row(align=True)
+            row.alignment = "RIGHT"
+            row.active = False
+            row.label(text="HD")
+
 
 class SOLLUMZ_UL_txd_texture_list(MultiSelectUIListMixin, UIList):
     bl_idname = "SOLLUMZ_UL_txd_texture_list"
@@ -88,7 +95,13 @@ class SOLLUMZ_UL_txd_texture_list(MultiSelectUIListMixin, UIList):
         self.draw_item_extra(context, layout, data, item, icon, active_data, active_propname, index)
 
     def draw_item_extra(self, context, layout: UILayout, data, item, icon, active_data, active_propname, index):
-        layout.template_ID(item, "image", open="image.open")
+        row = layout.row(align=True)
+        row.template_ID(item, "image", open="image.open")
+        if image := item.image:
+            subrow = row.row(align=True)
+            subrow.alignment = "RIGHT"
+            subrow.scale_x = 0.65
+            subrow.prop(image, "sz_is_hd", toggle=True, text="HD")
 
     def get_item_icon(self, item) -> str | int:
         return UILayout.icon(item.image) if item.image is not None else "ERROR"
@@ -115,44 +128,48 @@ class SOLLUMZ_UL_txd_source_list(MultiSelectUIListMixin, UIList):
             self_cls.last_filter_options[f"{multiselect_collection_name}_{self.list_id}"] = filter_opts
 
         collection: MultiSelectCollection = getattr(data, multiselect_collection_name)
-        icon = self.get_item_icon(item)
-        match icon:
-            case str():
-                icon_str, icon_value = icon, 0
-            case int():
-                icon_str, icon_value = "NONE", icon
-            case _:
-                raise ValueError(f"Invalid item icon. Only str or int supported, got '{icon}'")
+        # The source_type dropdown already shows the icon
+        # icon = self.get_item_icon(item)
+        # match icon:
+        #     case str():
+        #         icon_str, icon_value = icon, 0
+        #     case int():
+        #         icon_str, icon_value = "NONE", icon
+        #     case _:
+        #         raise ValueError(f"Invalid item icon. Only str or int supported, got '{icon}'")
 
         selection_indices = collection.selection_indices
         is_selected = len(selection_indices) > 1 and any(i.index == index for i in selection_indices)
-        is_active = index == collection.active_index
+        # is_active = index == collection.active_index
         layout.active = len(selection_indices) <= 1 or is_selected
 
-        if is_active:
-            layout.label(text="", icon=icon_str, icon_value=icon_value)
-        else:
-            row = layout.row(align=True)
-            row.alignment = "LEFT"
-            op = row.operator(
-                self.multiselect_operator,
-                text="",
-                icon=icon_str,
-                icon_value=icon_value,
-                emboss=is_selected or is_active,
-            )
-            op.index = index
-            filter_opts.apply_to_operator(op)
+        # Don't really have space for the multiselect operator...
+        # row = layout.row(align=True)
+        # row.alignment = "LEFT"
+        # row.scale_x = 0.75
+        # if is_active:
+        #     row.label(text="")
+        # else:
+        #     op = row.operator(
+        #         self.multiselect_operator,
+        #         text="",
+        #         emboss=is_selected or is_active,
+        #     )
+        #     op.index = index
+        #     filter_opts.apply_to_operator(op)
 
         self.draw_item_extra(context, layout, data, item, icon, active_data, active_propname, index)
 
     def draw_item_extra(self, context, layout: UILayout, data, item, icon, active_data, active_propname, index):
         row = layout.row(align=True)
-        row.prop(item, "object_name", text="")
-        row.prop(item, "object_include_children", text="", icon="OUTLINER")
-
-    def get_item_icon(self, item) -> str | int:
-        return "OBJECT_DATA"
+        row.prop(item, "source_type", text="", icon_only=True)
+        match item.source_type:
+            case "OBJECT":
+                row.prop(item, "object_name", text="")
+                row.prop(item, "object_include_children", text="", icon="OUTLINER")
+            case "COLLECTION":
+                row.prop(item, "collection_name", text="")
+                row.prop(item, "collection_include_children", text="", icon="OUTLINER")
 
 
 class SOLLUMZ_UL_txd_source_image_list(MultiSelectUIListMixin, UIList):
@@ -316,6 +333,8 @@ class SOLLUMZ_PT_txd_list_panel(TxdToolChildPanel, Panel):
         row = list_col.row()
         row.operator(txd_ops.SOLLUMZ_OT_import_ytd.bl_idname, icon="IMPORT")
         row.operator(txd_ops.SOLLUMZ_OT_export_ytd.bl_idname, icon="EXPORT")
+
+        list_col.operator(txd_ops.SOLLUMZ_OT_txd_find_missing.bl_idname, icon="VIEWZOOM")
 
 
 class SOLLUMZ_PT_txd_textures_panel(TxdToolChildPanel, Panel):

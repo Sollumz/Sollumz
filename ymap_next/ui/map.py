@@ -12,6 +12,7 @@ from bpy.types import (
 )
 
 from ...icons import icon
+from ...meta import DEV_MODE
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -97,15 +98,6 @@ class SOLLUMZ_PT_maps_tool_panel(TabbedPanelHelper, Panel):
             return
 
         if groups and (active_group := groups.active_item):
-            if active_group.has_incomplete_lod_hierarchy:
-                box = layout.box()
-                box.alert = True
-                col = box.column(align=True)
-                col.label(text="Incomplete LOD hierarchy", icon="ERROR")
-                col.label(text="Some containers were imported without related YMAP")
-                col.label(text="files. Their hierarchy values are kept as-is on export")
-                col.label(text="and editing them is limited.")
-
             layout.prop(active_group, "scripted")
 
             if bpy.app.version >= (4, 1, 0):
@@ -270,7 +262,8 @@ class SOLLUMZ_PT_map_tcms(MapChildTabPanel, Panel):
         row.alignment = "RIGHT"
         SOLLUMZ_PT_timecycle_modifier_presets.draw_panel_header(row)
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))
@@ -329,16 +322,42 @@ class SOLLUMZ_PT_map_occluders(MapChildTabPanel, Panel):
             return
 
         has_multiple_selection = occluders.has_multiple_selection
-        selection = occluders.selection
+        # selection = occluders.selection
         active = occluders.active_item
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))
-        row = layout.row()
+        col = layout.column(align=True)
+        row = col.row(align=True)
         row.enabled = not has_multiple_selection
         row.prop(active, "linked_object")
+        if obj := active.linked_object:
+            self._draw_occluder_object_export_mode(row, obj)
+        self._draw_extra_linked_objects(col, active, enabled=not has_multiple_selection)
+
+    def _draw_occluder_object_export_mode(self, row, obj):
+        row.prop(obj, "sz_occluder_export_mode", text="", icon_only=True)
+
+    def _draw_extra_linked_objects(self, layout, occl, enabled: bool = True):
+        """Draw the extra linked object rows (object selector + export mode + remove button) and the quick-add selector
+        of an occluder."""
+        if not occl.linked_object and not occl.extra_linked_objects:
+            return
+
+        col = layout.column(align=True)
+        col.enabled = enabled
+        for i, ref in enumerate(occl.extra_linked_objects):
+            row = col.row(align=True)
+            row.prop(ref, "object", text=" ")
+            op = row.operator(map_ops.SOLLUMZ_OT_map_occluder_remove_extra_linked_object.bl_idname, text="", icon="X")
+            op.index = i
+            if obj := ref.object:
+                self._draw_occluder_object_export_mode(row, obj)
+
+        col.prop(occl, "new_linked_object", text=" ")
 
 
 class SOLLUMZ_PT_map_lod_lights(MapChildTabPanel, Panel):
@@ -493,7 +512,8 @@ class SOLLUMZ_PT_map_lod_lights(MapChildTabPanel, Panel):
         selection = lod_lights.selection
         active = lod_lights.active_item
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))

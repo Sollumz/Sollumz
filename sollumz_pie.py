@@ -1,6 +1,5 @@
 import bpy
 from bpy.types import Menu
-from .sollumz_preferences import get_addon_preferences
 
 
 def find_missing_files(filepath):
@@ -16,13 +15,6 @@ class SOLLUMZ_MT_pie_menu(Menu):
 
         layout = self.layout
 
-        if get_addon_preferences(context).legacy_import_export:
-            import_op = "sollumz.import_assets_legacy"
-            export_op = "sollumz.export_assets_legacy"
-        else:
-            import_op = "sollumz.import_assets"
-            export_op = "sollumz.export_assets"
-
         pie = layout.menu_pie()
         # Left
         pie.operator("sollumz.autoconvertmaterials",
@@ -33,12 +25,16 @@ class SOLLUMZ_MT_pie_menu(Menu):
         # Bottom
         pie.separator()
         # Top
-        pie.operator("file.find_missing_files",
-                     text="Find Missing Textures", icon='VIEWZOOM')
+        col = pie.column()
+        col.emboss = "PIE_MENU" if bpy.app.version >= (5, 0, 0) else "RADIAL_MENU"
+        col.scale_x = 1.1
+        col.scale_y = 1.4
+        col.operator("file.find_missing_files", text="Find Missing Textures", icon='VIEWZOOM')
+        col.operator("sollumz.txd_find_missing", icon="BLANK1")
         # Top-left
-        pie.operator(import_op, icon="IMPORT")
+        pie.operator("sollumz.import_assets", icon="IMPORT")
         # Top-right
-        op = pie.operator(export_op, icon="EXPORT")
+        op = pie.operator("sollumz.export_assets", icon="EXPORT")
         if context.scene.sollumz_export_path != "":
             op.directory = context.scene.sollumz_export_path
             op.direct_export = True

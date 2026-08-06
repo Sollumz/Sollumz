@@ -5,6 +5,7 @@ import bpy
 import numpy as np
 from bpy.types import (
     Depsgraph,
+    Object,
 )
 from bpy_extras.mesh_utils import mesh_linked_triangles
 from mathutils import Quaternion, Vector
@@ -39,6 +40,7 @@ from szio.gta5 import (
 )
 from szio.gta5.maps import MAP_DISTANT_LOD_LIGHT_DTYPE, MAP_GRASS_INSTANCES_UNPACKED_DTYPE, MAP_LOD_LIGHT_DTYPE
 
+from .. import logger
 from ..iecontext import ExportBundle, export_context
 from ..shared.game_assets.asset_info import AssetInfoCache
 from ..tools.blenderhelper import remove_number_suffix
@@ -55,6 +57,7 @@ from .properties.map import (
     MapGroup,
     MapLodLights,
     MapOccluder,
+    MapOccluderExportMode,
     MapPartitionMode,
     MapTimecycleModifier,
 )
@@ -117,12 +120,17 @@ def _ensure_auto_partitions_generated(map_group: MapGroup):
             generate_partitions(map_group, map_data, settings)
 
 
+def _entity_log_display_name(entity: MapEntity) -> str:
+    """String used to identify an entity in log messages."""
+    pos = obj.matrix_world.translation if (obj := entity.linked_object) else entity.position
+    return f"{entity.archetype_name} at ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})"
+
+
 def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
+    # Map data UUID -> parent map data UUID
+    map_parent_uuids = {m.uuid: m.parent_uuid for m in map_group.maps}
     # Pre-compute which maps are parents (have children pointing to them)
-    parent_map_uuids = set()
-    for map_data in map_group.maps:
-        if map_data.parent_uuid:
-            parent_map_uuids.add(map_data.parent_uuid)
+    parent_map_uuids = {parent_uuid for parent_uuid in map_parent_uuids.values() if parent_uuid}
 
     # Maps with an incomplete LOD hierarchy: their entities' unresolved parent_index values are
     # exported verbatim instead of recomputed (see _export_entity)
@@ -130,27 +138,58 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
 
     # Group entities, cargens, tcms, and grass batches by map_data_uuid
     entities_by_map: dict[bytes, list[MapEntity]] = defaultdict(list)
+    unassigned_entities: list[str] = []
     for entity in map_group.entities:
-        entities_by_map[entity.map_data_uuid].append(entity)
+        entity_map_uuid = entity.map_data_uuid
+        if entity_map_uuid not in map_parent_uuids:
+            unassigned_entities.append(_entity_log_display_name(entity))
+        else:
+            entities_by_map[entity_map_uuid].append(entity)
 
-    cargens_by_map: dict[bytes, list[MapCarGen]] = defaultdict(list)
+    cargens_by_map: dict[bytes, list[MapCarGenerator]] = defaultdict(list)
+    cargen_objs_by_map: dict[bytes, list[Object]] = defaultdict(list)
+    unassigned_cargens: list[str] = []
     for cargen in map_group.cargens:
-        cargens_by_map[cargen.map_data_uuid].append(cargen)
+        for map_uuid, exported in _export_cargens(map_group, cargen).items():
+            cargens_by_map[map_uuid].extend(exported)
+        num_unassigned_objs = 0
+        for map_uuid, objs in cargen.objects_by_map_data(map_group).items():
+            cargen_objs_by_map[map_uuid].extend(objs)
+            if map_uuid not in map_parent_uuids:
+                num_unassigned_objs += len(objs)
+        if num_unassigned_objs:
+            objs_str = "1 object" if num_unassigned_objs == 1 else f"{num_unassigned_objs} objects"
+            unassigned_cargens.append(f"{cargen.name} ({objs_str})")
 
     tcms_by_map: dict[bytes, list[MapTimecycleModifier]] = defaultdict(list)
+    unassigned_tcms: list[str] = []
     for tcm in map_group.timecycle_modifiers:
-        tcms_by_map[tcm.map_data_uuid].append(tcm)
+        tcm_map_uuid = tcm.map_data_uuid
+        if tcm_map_uuid not in map_parent_uuids:
+            unassigned_tcms.append(tcm.name)
+        else:
+            tcms_by_map[tcm_map_uuid].append(tcm)
 
     grass_by_map: dict[bytes, list[MapGrassBatch]] = defaultdict(list)
+    unassigned_grass: list[str] = []
     for grass_batch in map_group.grass_batches:
-        grass_by_map[grass_batch.map_data_uuid].append(grass_batch)
+        grass_map_uuid = grass_batch.map_data_uuid
+        if grass_map_uuid not in map_parent_uuids:
+            unassigned_grass.append(grass_batch.name)
+        else:
+            grass_by_map[grass_map_uuid].append(grass_batch)
 
-        if obj := grass_batch.linked_object:
-            disable_grass_batch_modifier_preview(obj, grass_batch)
+            if obj := grass_batch.linked_object:
+                disable_grass_batch_modifier_preview(obj, grass_batch)
 
     occl_by_map: dict[bytes, list[MapOccluder]] = defaultdict(list)
+    unassigned_occl: list[str] = []
     for occl in map_group.occluders:
-        occl_by_map[occl.map_data_uuid].append(occl)
+        occl_map_uuid = occl.map_data_uuid
+        if occl_map_uuid not in map_parent_uuids:
+            unassigned_occl.append(occl.name)
+        else:
+            occl_by_map[occl_map_uuid].append(occl)
 
     # Pre-compute lod_lights export data. Each item produces both an IOMapLodLights (for the child map)
     # and an IOMapDistantLodLights (for the parent map). The property items are also bucketed for the
@@ -159,29 +198,68 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
     distant_lod_lights_by_parent: dict[bytes, IOMapDistantLodLights] = {}
     lls_by_map: dict[bytes, list[MapLodLights]] = defaultdict(list)
     distant_lls_by_parent: dict[bytes, list[MapLodLights]] = defaultdict(list)
+    unassigned_ll: list[str] = []
     for ll in map_group.lod_lights:
-        if not ll.map_data_uuid:
-            continue
-        lls_by_map[ll.map_data_uuid].append(ll)
-        lod_lights, distant_lod_lights = _export_lod_lights(ll)
-        lod_lights_by_child[ll.map_data_uuid] = lod_lights
-        child_map = map_group.find_map(ll.map_data_uuid)
-        if child_map is not None and child_map.parent_uuid:
-            distant_lls_by_parent[child_map.parent_uuid].append(ll)
-            distant_lod_lights_by_parent[child_map.parent_uuid] = distant_lod_lights
+        ll_map_uuid = ll.map_data_uuid
+        if ll_map_uuid not in map_parent_uuids:
+            unassigned_ll.append(ll.name)
+        else:
+            lls_by_map[ll_map_uuid].append(ll)
+            lod_lights, distant_lod_lights = _export_lod_lights(ll)
+            lod_lights_by_child[ll_map_uuid] = lod_lights
+            child_map = map_group.find_map(ll_map_uuid)
+            if child_map is not None and child_map.parent_uuid:
+                distant_lls_by_parent[child_map.parent_uuid].append(ll)
+                distant_lod_lights_by_parent[child_map.parent_uuid] = distant_lod_lights
+
+    # Warn about items whose container reference is empty or does not resolve to an existing container: they are not
+    # included in any exported .ymap
+    def _warn_unassigned(subject_one: str, subject_many: str, names: list[str]):
+        if not names:
+            return
+        subject = subject_one if len(names) == 1 else subject_many.format(n=len(names))
+        shown = ", ".join(names[:6]) + (", ..." if len(names) > 6 else "")
+        logger.warning(f"{subject} not assigned to any container, not exported: {shown}")
+
+    _warn_unassigned("1 entity is", "{n} entities are", unassigned_entities)
+    _warn_unassigned("1 car generator has objects", "{n} car generators have objects", unassigned_cargens)
+    _warn_unassigned("1 timecycle modifier is", "{n} timecycle modifiers are", unassigned_tcms)
+    _warn_unassigned("1 grass batch is", "{n} grass batches are", unassigned_grass)
+    _warn_unassigned("1 occluder is", "{n} occluders are", unassigned_occl)
+    _warn_unassigned("1 LOD lights item is", "{n} LOD lights items are", unassigned_ll)
 
     # Pre-compute entity indices for parent_index recomputation.
     # For each entity, compute its index within its map data's entity list (preserving insertion order
     # for stable round-trips) and which map data it belongs to.
     entity_index_in_map: dict[bytes, int] = {}
     entity_map_data_uuid: dict[bytes, bytes] = {}
-    entity_num_children = Counter()
     for map_uuid, entities in entities_by_map.items():
         for i, entity in enumerate(entities):
             entity_index_in_map[entity.uuid] = i
             entity_map_data_uuid[entity.uuid] = map_uuid
-            if parent_uuid := entity.parent_uuid:
+
+    # Validate parent links. A entity parent_index can only reference another entity in the same map or in
+    # the map's direct parent map (via LOD_IN_PARENT_MAP). Any other link is invalid, so it is exported
+    # unlinked (parent_index = -1) and excluded from num_children.
+    entity_num_children = Counter()
+    invalid_parent_links: set[bytes] = set()
+    invalid_names_by_map: dict[bytes, list[str]] = defaultdict(list)
+    for map_uuid, entities in entities_by_map.items():
+        for entity in entities:
+            if not (parent_uuid := entity.parent_uuid):
+                continue
+            parent_map_uuid = entity_map_data_uuid.get(parent_uuid, b"")
+            if parent_map_uuid in map_parent_uuids and parent_map_uuid in (map_uuid, map_parent_uuids[map_uuid]):
                 entity_num_children[parent_uuid] += 1
+            else:
+                invalid_parent_links.add(entity.uuid)
+                invalid_names_by_map[map_uuid].append(_entity_log_display_name(entity))
+
+    for map_data in map_group.maps:
+        if names := invalid_names_by_map.get(map_data.uuid):
+            subject = "1 entity has a LOD parent" if len(names) == 1 else f"{len(names)} entities have LOD parents"
+            shown = ", ".join(names[:6]) + (", ..." if len(names) > 6 else "")
+            logger.warning(f"{map_data.name}: {subject} in unreachable containers, exported unlinked: {shown}")
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
     asset_info_cache = AssetInfoCache()
@@ -217,7 +295,7 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
                 map_group,
                 depsgraph,
                 entities=entities_by_map[map_uuid],
-                cargens=cargens_by_map[map_uuid],
+                cargen_objects=cargen_objs_by_map[map_uuid],
                 tcms=tcms_by_map[map_uuid],
                 grass_batches=grass_by_map[map_uuid],
                 occluders=occl_by_map[map_uuid],
@@ -257,16 +335,20 @@ def create_map_data_assets(map_group: MapGroup) -> list[ExportBundle]:
         # Entities
         if map_entities := entities_by_map[map_uuid]:
             map_data_asset.entities = [
-                _export_entity(e, entity_index_in_map, entity_map_data_uuid, entity_num_children, locked_map_uuids)
+                _export_entity(
+                    e,
+                    entity_index_in_map,
+                    entity_map_data_uuid,
+                    entity_num_children,
+                    invalid_parent_links,
+                    locked_map_uuids,
+                )
                 for e in map_entities
             ]
 
         # Cargens
         if map_cargens := cargens_by_map[map_uuid]:
-            exported_cargens = []
-            for cargen in map_cargens:
-                exported_cargens.extend(_export_cargens(cargen))
-            map_data_asset.car_generators = exported_cargens
+            map_data_asset.car_generators = map_cargens
 
         # Timecycle Modifiers
         if map_tcms := tcms_by_map[map_uuid]:
@@ -345,6 +427,7 @@ def _export_entity(
     entity_index_in_map: dict[bytes, int],
     entity_map_data_uuid: dict[bytes, bytes],
     entity_num_children: dict[bytes, int],
+    invalid_parent_links: set[bytes],
     locked_map_uuids: set[bytes],
 ) -> Entity | EntityMloInstance:
     entity_flags = EntityFlags(int(e.flags.total))
@@ -355,7 +438,7 @@ def _export_entity(
         # ...plus children known to be in non-imported .ymap files.
         num_children += e.num_children_missing
 
-    if e.parent_uuid:
+    if e.parent_uuid and e.uuid not in invalid_parent_links:
         # Resolved parent: always recompute, even in locked containers. The parent may live in an
         # unlocked, editable container; when nothing was edited this equals the imported values
         # because a locked container's own entity list is frozen.
@@ -369,13 +452,15 @@ def _export_entity(
             # Parent is in the same map data, ensure flag is not set
             entity_flags &= ~EntityFlags.LOD_IN_PARENT_MAP
         lod_level = EntityLodLevel[e.lod_level]
-    elif e.map_data_uuid in locked_map_uuids and e.parent_index != -1:
+    elif not e.parent_uuid and e.map_data_uuid in locked_map_uuids and e.parent_index != -1:
         # Unresolvable parent in a non-imported .ymap: preserve parent_index verbatim, flags
         # untouched so LOD_IN_PARENT_MAP round-trips.
         parent_index = e.parent_index
         lod_level = EntityLodLevel[e.lod_level]
     else:
-        # No parent. An HD entity without a parent is ORPHANHD.
+        # No parent, or an invalid parent link being exported unlinked. An HD entity without a parent
+        # is ORPHANHD.
+        entity_flags &= ~EntityFlags.LOD_IN_PARENT_MAP
         parent_index = -1
         lod_level = EntityLodLevel.ORPHANHD if e.lod_level == "HD" else EntityLodLevel[e.lod_level]
 
@@ -427,41 +512,41 @@ def _export_entity(
     return Entity(**common)
 
 
-def _export_cargens(cargen: MapCarGen) -> list[MapCarGenerator]:
-    results = []
-    coll = cargen.linked_collection
-    if coll is None:
-        return results
-
+def _export_cargens(map_group: MapGroup, cargen: MapCarGen) -> dict[bytes, list[MapCarGenerator]]:
+    """Exported car generator instances grouped by the container UUID each object is assigned to."""
     flags = MapCarGeneratorFlags(0)
     for prop_name, flag in MAP_CARGEN_FLAG_PROPS:
         if getattr(cargen, prop_name):
             flags |= flag
     creation_rule = MapCarGeneratorCreationRule[cargen.creation_rule]
 
-    for obj in coll.objects:
-        angle = -obj.rotation_euler.z
-        width, length, _ = obj.dimensions
-        orient_x = math.sin(angle) * length
-        orient_y = math.cos(angle) * length
+    results = {}
+    for map_uuid, objs in cargen.objects_by_map_data(map_group).items():
+        exported = []
+        for obj in objs:
+            angle = -obj.rotation_euler.z
+            width, length, _ = obj.dimensions
+            orient_x = math.sin(angle) * length
+            orient_y = math.cos(angle) * length
 
-        results.append(
-            MapCarGenerator(
-                position=Vector(obj.location),
-                orient_x=orient_x,
-                orient_y=orient_y,
-                perpendicular_length=width,
-                car_model=cargen.model,
-                flags=flags,
-                creation_rule=creation_rule,
-                body_color_remap_1=cargen.body_color_remap[0],
-                body_color_remap_2=cargen.body_color_remap[1],
-                body_color_remap_3=cargen.body_color_remap[2],
-                body_color_remap_4=cargen.body_color_remap[3],
-                pop_group=cargen.model_set,
-                livery=cargen.livery,
+            exported.append(
+                MapCarGenerator(
+                    position=Vector(obj.location),
+                    orient_x=orient_x,
+                    orient_y=orient_y,
+                    perpendicular_length=width,
+                    car_model=cargen.model,
+                    flags=flags,
+                    creation_rule=creation_rule,
+                    body_color_remap_1=cargen.body_color_remap[0],
+                    body_color_remap_2=cargen.body_color_remap[1],
+                    body_color_remap_3=cargen.body_color_remap[2],
+                    body_color_remap_4=cargen.body_color_remap[3],
+                    pop_group=cargen.model_set,
+                    livery=cargen.livery,
+                )
             )
-        )
+        results[map_uuid] = exported
 
     return results
 
@@ -532,16 +617,58 @@ _MODEL_OCCLUDER_MAX_VERTS = 255
 
 
 def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[MapBoxOccluder], list[MapModelOccluder]]:
-    obj = occl.linked_object
-    if obj is None or obj.data is None:
-        return [], []
+    boxes: list[MapBoxOccluder] = []
+    models: list[MapModelOccluder] = []
+
+    # Non-box triangles are pooled by flag (each MapModelOccluder has a single flag) across all
+    # linked objects, then the pool is combined and greedily split so chunks can pack triangles
+    # across original islands and objects and produce fewer occluders than splitting each island
+    # in isolation.
+    model_pool: dict[int, list[tuple[np.ndarray, np.ndarray]]] = defaultdict(list)
+
+    for obj in occl.linked_objects():
+        if obj.data is None:
+            continue
+        skipped = _collect_occluder_object_geometry(obj, depsgraph, boxes, model_pool)
+        if skipped:
+            logger.warning(
+                f"Occluder '{occl.name}': {skipped} mesh island(s) in object '{obj.name}' are not box-shaped "
+                "and were skipped (export mode is Boxes Only)"
+            )
+
+    for flag_value, parts in model_pool.items():
+        tris_list = []
+        offset = 0
+        for v, t in parts:
+            tris_list.append(t + offset)
+            offset += len(v)
+        combined_verts = np.concatenate([v for v, _ in parts])
+        combined_tris = np.concatenate(tris_list)
+        models.extend(_export_model_occluders(combined_verts, combined_tris, flag_value))
+
+    return boxes, models
+
+
+def _collect_occluder_object_geometry(
+    obj: Object,
+    depsgraph: Depsgraph,
+    boxes: list[MapBoxOccluder],
+    model_pool: dict[int, list[tuple[np.ndarray, np.ndarray]]],
+) -> int:
+    """Split one linked object's mesh islands into box occluders and pooled model-occluder triangles,
+    honoring the object's export mode. Returns the number of islands skipped by the Boxes Only mode.
+    """
+    mode = obj.sz_occluder_export_mode
+    try_boxes = mode != MapOccluderExportMode.MODELS_ONLY.name
+    boxes_only = mode == MapOccluderExportMode.BOXES_ONLY.name
+    skipped_non_box_islands = 0
 
     obj_eval = obj.evaluated_get(depsgraph)
     mesh_eval = obj_eval.to_mesh()
     try:
         num_verts = len(mesh_eval.vertices)
         if num_verts == 0:
-            return [], []
+            return 0
 
         local_co = np.empty((num_verts, 3), dtype=np.float32)
         mesh_eval.vertices.foreach_get("co", local_co.ravel())
@@ -556,14 +683,6 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
         mesh_eval.calc_loop_triangles()
         islands = mesh_linked_triangles(mesh_eval)
 
-        boxes = []
-        models = []
-
-        # Non-box triangles are pooled by flag (each MapModelOccluder has a single flag), then
-        # the pool is combined and greedily split so chunks can pack triangles across original
-        # islands and produce fewer occluders than splitting each island in isolation.
-        model_pool: dict[int, list[tuple[np.ndarray, np.ndarray]]] = defaultdict(list)
-
         for island in islands:
             if not island:
                 continue
@@ -574,13 +693,18 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
             )
             uniq_vert_indices_in_island_tris, uniq_inverse = np.unique(island_tris, return_inverse=True)
 
-            # A box occluder is a cube (8 verts) or a plane (4 verts).
-            if len(uniq_vert_indices_in_island_tris) in (4, 8) and bool(np.all(tri_flags == 0)):
+            # A box occluder is a cube (8 verts) or a plane (4 verts). Flagged islands are never
+            # boxes, box occluders cannot carry flags.
+            if try_boxes and len(uniq_vert_indices_in_island_tris) in (4, 8) and bool(np.all(tri_flags == 0)):
                 box_verts = world_co[uniq_vert_indices_in_island_tris]
                 box_tris = uniq_inverse.reshape(-1, 3)  # island_tris remapped to 0..len(uniq)-1
                 if box := _try_export_box_occluder(box_verts, box_tris):
                     boxes.append(box)
                     continue
+
+            if boxes_only:
+                skipped_non_box_islands += 1
+                continue
 
             # A single island may have multiple flag values, split the triangles by flag
             for flag_val in np.unique(tri_flags):
@@ -588,20 +712,10 @@ def _export_occluders(occl: MapOccluder, depsgraph: Depsgraph) -> tuple[list[Map
                 sub_tris = island_tris[mask]
                 sub_tris_uniq, sub_tris_inverse_index = np.unique(sub_tris, return_inverse=True)
                 model_pool[int(flag_val)].append((world_co[sub_tris_uniq], sub_tris_inverse_index.reshape(-1, 3)))
-
-        for flag_value, parts in model_pool.items():
-            tris_list = []
-            offset = 0
-            for v, t in parts:
-                tris_list.append(t + offset)
-                offset += len(v)
-            combined_verts = np.concatenate([v for v, _ in parts])
-            combined_tris = np.concatenate(tris_list)
-            models.extend(_export_model_occluders(combined_verts, combined_tris, flag_value))
-
-        return boxes, models
     finally:
         obj_eval.to_mesh_clear()
+
+    return skipped_non_box_islands
 
 
 def _try_export_box_occluder(verts: np.ndarray, tris: np.ndarray) -> MapBoxOccluder | None:

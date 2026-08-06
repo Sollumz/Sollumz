@@ -1,34 +1,46 @@
-import os
-import shutil
-import math
-import bmesh
 import bpy
-import zlib
+import bmesh
+from bpy.types import (
+    Object,
+    Material,
+    Mesh,
+    Bone,
+    Armature,
+    PoseBone,
+    ShaderNodeTexImage,
+    LimitLocationConstraint,
+    LimitRotationConstraint,
+)
 import numpy as np
 from numpy.typing import NDArray
-from typing import Callable, Optional
+from typing import Optional
 from collections import defaultdict
+from dataclasses import replace
+from pathlib import Path
 from mathutils import Quaternion, Vector, Matrix
 
 from ..lods import operates_on_lod_level
-from .model_data import get_faces_subset
 
-from szio.gta5.cwxml import (
-    BoneLimit,
-    Drawable,
-    Texture,
-    Skeleton,
-    Bone,
-    Joints,
-    RotationLimit,
-    DrawableModel,
-    Geometry,
-    Shader,
+from szio.types import DataSource
+from szio.gta5 import (
+    AssetBound,
+    AssetDrawable,
+    AssetFragDrawable,
+    AssetTextureDictionary,
+    LodLevel as IOLodLevel,
+    EmbeddedTexture,
+    ShaderGroup,
+    ShaderInst,
     ShaderParameter,
-    ArrayShaderParameter,
-    VectorShaderParameter,
-    TextureShaderParameter,
-    VertexBuffer,
+    Model,
+    VertexDataType,
+    Geometry,
+    Skeleton,
+    SkelBone,
+    SkelBoneTranslationLimit,
+    SkelBoneRotationLimit,
+    SkelBoneFlags,
+    CharacterCloth,
 )
 from szio.gta5.shader import (
     ShaderManager,
@@ -36,11 +48,7 @@ from szio.gta5.shader import (
     ShaderParameterFloatVectorDef,
     ShaderParameterType,
 )
-from szio.gta5.cwxml import CharacterCloth
-from ..tools import jenkhash
 from ..tools.meshhelper import (
-    get_bound_center_from_bounds,
-    get_sphere_radius,
     get_mesh_used_colors_indices,
     get_mesh_used_texcoords_indices,
     get_used_colors,
@@ -50,143 +58,158 @@ from ..tools.meshhelper import (
     get_normal_required,
     get_tangent_required,
 )
-from ..tools.utils import get_filename, get_max_vector_list, get_min_vector_list
 from ..shared.shader_nodes import SzShaderNodeParameter
-from ..tools.blenderhelper import get_child_of_constraint, get_pose_inverse, remove_number_suffix, get_evaluated_obj
+from ..tools.blenderhelper import get_child_of_constraint, remove_number_suffix, get_evaluated_obj
 from ..sollumz_helper import get_export_transforms_to_apply, get_sollumz_materials
 from ..sollumz_properties import (
-    SOLLUMZ_UI_NAMES,
     BOUND_TYPES,
     LODLevel,
     SollumType
 )
-from ..sollumz_preferences import get_export_settings
-from ..ybn.ybnexport import create_composite_xml, create_bound_xml
+from ..ybn.ybnexport import (
+    create_bound_composite_asset,
+    create_bound_asset,
+)
 from .properties import get_model_properties
 from .render_bucket import RenderBucket
 from .vertex_buffer_builder import VertexBufferBuilder, VBBuilderDomain, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, try_get_bone_by_vgroup, remove_unused_uvs
 from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
 from .cloth_diagnostics import cloth_export_context
-from .lights import create_xml_lights
+from .lights import export_lights
 
+from ..iecontext import export_context, ExportBundle
 from .. import logger
 
 
-def export_ydr(drawable_obj: bpy.types.Object, filepath: str) -> bool:
-    export_settings = get_export_settings()
+def export_ydr(obj: Object) -> ExportBundle:
+    embedded_tex = []
+    hd_tex: dict[str, EmbeddedTexture] = {}
+    d = create_drawable_asset(obj, out_embedded_textures=embedded_tex, out_hd_textures=hd_tex)
+    hd_txd = AssetTextureDictionary(textures=hd_tex) if hd_tex else None
+    return export_context().make_bundle(
+        d, ("+hidr", hd_txd),
+        extra_files=[t.data for t in embedded_tex],
+        secondary_extra_files=[("+hidr", [t.data for t in hd_tex.values()])],
+    )
 
-    drawable_xml = create_drawable_xml(drawable_obj, apply_transforms=export_settings.apply_transforms)
-    drawable_xml.write_xml(filepath)
 
-    write_embedded_textures(drawable_obj, filepath)
-    return True
-
-
-def create_drawable_xml(
-    drawable_obj: bpy.types.Object,
-    armature_obj: Optional[bpy.types.Object] = None,
-    materials: Optional[list[bpy.types.Material]] = None,
-    apply_transforms: bool = False,
-    char_cloth_xml: Optional[CharacterCloth] = None,
-):
+def create_drawable_asset(
+    drawable_obj: Object,
+    armature_obj: Object | None = None,
+    materials: list[Material] | None = None,
+    is_frag: bool = False,
+    parent_drawable: AssetDrawable | None = None,
+    out_embedded_textures: list[EmbeddedTexture] | None = None,
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
+    hi: bool = False,
+    char_cloth: CharacterCloth | None = None,
+) -> AssetDrawable | None:
     """Create a ``Drawable`` cwxml object. Optionally specify an external ``armature_obj`` if ``drawable_obj`` is not an armature."""
-    drawable_xml = Drawable()
-    drawable_xml.frag_bound_matrix = None
-
-    drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
-
-    set_drawable_xml_properties(drawable_obj, drawable_xml)
 
     materials = materials or get_sollumz_materials(drawable_obj)
 
-    create_shader_group_xml(materials, drawable_xml)
+    if parent_drawable is not None:
+        shader_group = None
+    else:
+        shader_group = create_shader_group(materials, out_hd_textures=out_hd_textures)
+        if not shader_group.shaders:
+            logger.warning(
+                f"{drawable_obj.name} has no Sollumz materials! Aborting..."
+            )
+            return None
 
-    if not drawable_xml.shader_group.shaders:
-        logger.warning(
-            f"{drawable_xml.name} has no Sollumz materials! Aborting...")
-        return drawable_xml
+        if out_embedded_textures is not None:
+            out_embedded_textures.extend(shader_group.embedded_textures.values())
+
+    drawable = AssetFragDrawable() if is_frag else AssetDrawable()
+    drawable.name = remove_number_suffix(drawable_obj.name.lower())
+    drawable.lod_thresholds = {
+        IOLodLevel.HIGH: drawable_obj.drawable_properties.lod_dist_high,
+        IOLodLevel.MEDIUM: drawable_obj.drawable_properties.lod_dist_med,
+        IOLodLevel.LOW: drawable_obj.drawable_properties.lod_dist_low,
+        IOLodLevel.VERYLOW: drawable_obj.drawable_properties.lod_dist_vlow,
+    }
+    drawable.shader_group = shader_group
 
     if armature_obj or drawable_obj.type == "ARMATURE":
         armature_obj = armature_obj or drawable_obj
-
-        drawable_xml.skeleton = create_skeleton_xml(armature_obj, apply_transforms)
-        drawable_xml.joints = create_joints_xml(armature_obj)
+        drawable.skeleton = create_skeleton(armature_obj, export_context().settings.apply_transforms)
 
         original_pose = armature_obj.data.pose_position
         armature_obj.data.pose_position = "REST"
     else:
-        drawable_xml.skeleton = None
-        drawable_xml.joints = None
+        drawable.skeleton = None
+
         armature_obj = None
-        original_pose = "POSE"
+        original_pose = None
 
-    create_model_xmls(drawable_xml, drawable_obj, materials, armature_obj, char_cloth_xml)
-
-    drawable_xml.lights = create_xml_lights(drawable_obj)
-
-    set_drawable_xml_flags(drawable_xml)
-    set_drawable_xml_extents(drawable_xml)
-
-    create_embedded_collision_xmls(drawable_obj, drawable_xml)
+    drawable.models = create_models(drawable, drawable_obj, materials, armature_obj, hi=hi, char_cloth=char_cloth)
+    if not is_frag:
+        drawable.lights = export_lights(drawable_obj)
+        drawable.bounds = create_embedded_bounds_asset(drawable_obj)
 
     if armature_obj is not None:
         armature_obj.data.pose_position = original_pose
 
-    return drawable_xml
+    return drawable
 
 
-def create_model_xmls(
-    drawable_xml: Drawable,
-    drawable_obj: bpy.types.Object,
-    materials: list[bpy.types.Material],
-    armature_obj: Optional[bpy.types.Object] = None,
-    char_cloth_xml: Optional[CharacterCloth] = None,
-):
+def create_models(
+    drawable: AssetDrawable,
+    drawable_obj: Object,
+    materials: list[Material],
+    armature_obj: Object | None,
+    hi: bool,
+    char_cloth: CharacterCloth | None,
+) -> dict[IOLodLevel, list[Model]]:
     model_objs = get_model_objs(drawable_obj)
 
     if armature_obj is not None:
         bones = armature_obj.data.bones
         model_objs = sort_skinned_models_by_bone(model_objs, bones)
 
+    lod_levels = (LODLevel.VERYHIGH,) if hi else (LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW)
+
+    models: dict[IOLodLevel, list[Model]] = defaultdict(list)
     for model_obj in model_objs:
         transforms_to_apply = get_export_transforms_to_apply(model_obj)
 
         lods = model_obj.sz_lods
-        for lod_level in LODLevel:
-            if lod_level == LODLevel.VERYHIGH:
-                continue
-
+        for lod_level in lod_levels:
             lod = lods.get_lod(lod_level)
             if lod.mesh is None:
                 continue
 
-            model_xml = create_model_xml(
-                model_obj, lod_level, materials, armature_obj, transforms_to_apply, char_cloth_xml
-            )
-            if not model_xml.geometries:
+            model = create_model(model_obj, lod_level, materials, armature_obj, transforms_to_apply, char_cloth)
+            if not model.geometries:
                 continue
 
-            append_model_xml(drawable_xml, model_xml, lod_level)
+            models[lod_level.to_io()].append(model)
 
     # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
     # drawable can be split by vertex group, we have to join each separate part into a single object.
-    join_skinned_models_for_each_lod(drawable_xml)
-    split_drawable_by_vert_count(drawable_xml)
+    for lod_level in models.keys():
+        models[lod_level] = join_skinned_models(models[lod_level])
+
+    for lod_level in models.keys():
+        models[lod_level] = split_models_by_vert_count(models[lod_level])
+
+    return models
 
 
-def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
+def get_model_objs(drawable_obj: Object) -> list[Object]:
     """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
     from .cloth import is_cloth_mesh_object
     return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh and not is_cloth_mesh_object(obj)]
 
 
-def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[bpy.types.Bone]):
+def sort_skinned_models_by_bone(model_objs: list[Object], bones: list[Bone]) -> list[Object]:
     """Sort all models with vertex groups by bone index. If a model has multiple vertex group uses the vertex group
     with the lowest bone index."""
     # This is necessary to ensure proper render order of each vertex group. With many vertex groups on a single object
     # you can just change the order, but if the object is split by group there is no way of manually sorting the vertex groups.
-    def get_model_bone_ind(obj: bpy.types.Object):
+    def get_model_bone_ind(obj: Object):
         bone_ind_by_name: dict[str, int] = {
             b.name: i for i, b in enumerate(bones)}
         bone_inds = [bone_ind_by_name[group.name]
@@ -203,20 +226,15 @@ def sort_skinned_models_by_bone(model_objs: list[bpy.types.Object], bones: list[
 
 
 @operates_on_lod_level
-def create_model_xml(
-    model_obj: bpy.types.Object,
+def create_model(
+    model_obj: Object,
     lod_level: LODLevel,
-    materials: list[bpy.types.Material],
-    armature_obj: Optional[bpy.types.Object] = None,
+    materials: list[Material],
+    armature_obj: Optional[Object] = None,
     transforms_to_apply: Optional[Matrix] = None,
-    char_cloth_xml: Optional[CharacterCloth] = None,
+    char_cloth: CharacterCloth | None = None,
     mesh_domain_override: Optional[VBBuilderDomain] = None,
-):
-    model_xml = DrawableModel()
-
-    bones = armature_obj.data.bones if armature_obj is not None else None
-    set_model_xml_properties(model_obj, lod_level, bones, model_xml)
-
+) -> Model:
     obj_eval = get_evaluated_obj(model_obj)
     mesh_eval = obj_eval.to_mesh()
     triangulate_mesh(mesh_eval)
@@ -224,22 +242,42 @@ def create_model_xml(
     if transforms_to_apply is not None:
         mesh_eval.transform(transforms_to_apply)
 
-    if char_cloth_xml:
+    if char_cloth:
         cloth_export_context().diagnostics.drawable_model_obj_name = model_obj.name
 
-    geometries = create_geometries_xml(
-        model_obj, mesh_eval, materials, armature_obj, char_cloth_xml, mesh_domain_override
+    geometries = create_geometries(
+        model_obj, mesh_eval, materials, armature_obj, char_cloth, mesh_domain_override
     )
-    model_xml.geometries = geometries
 
-    model_xml.bone_index = get_model_bone_index(model_obj)
+    if lod_level == LODLevel.HIGH:
+        fix_vehglass_geometry_for_shattermap_generation(mesh_eval, materials, geometries)
+
+    bone_index = get_model_bone_index(model_obj)
 
     obj_eval.to_mesh_clear()
 
-    return model_xml
+    bones = armature_obj.data.bones if armature_obj is not None else None
+    model_props = get_model_properties(model_obj, lod_level)
+    render_mask = model_props.render_mask
+    has_skin = bool(bones and model_obj.vertex_groups)
+    if has_skin:
+        flags = 1  # skin flag, same meaning as has_skin
+        matrix_count = len(bones)
+    else:
+        flags = 0
+        matrix_count = 0
+
+    return Model(
+        bone_index=bone_index,
+        geometries=geometries,
+        render_bucket_mask=render_mask,
+        has_skin=has_skin,
+        matrix_count=matrix_count,
+        flags=flags,
+    )
 
 
-def triangulate_mesh(mesh: bpy.types.Mesh):
+def triangulate_mesh(mesh: Mesh):
     temp_mesh = bmesh.new()
     temp_mesh.from_mesh(mesh)
 
@@ -251,38 +289,24 @@ def triangulate_mesh(mesh: bpy.types.Mesh):
     return mesh
 
 
-def get_model_bone_index(model_obj: bpy.types.Object):
+def get_model_bone_index(model_obj: Object) -> int:
     constraint = get_child_of_constraint(model_obj)
 
     if constraint is None:
         return 0
 
-    armature: bpy.types.Armature = constraint.target.data
+    armature: Armature = constraint.target.data
     bone_index = armature.bones.find(constraint.subtarget)
 
     return bone_index if bone_index != -1 else 0
 
 
-def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, bones: Optional[list[bpy.types.Bone]], model_xml: DrawableModel):
-    """Set ``DrawableModel`` properties for each lod in ``model_obj``"""
-    model_props = get_model_properties(model_obj, lod_level)
-
-    model_xml.render_mask = model_props.render_mask
-    model_xml.flags = 0
-    model_xml.matrix_count = 0
-    model_xml.has_skin = 1 if bones and model_obj.vertex_groups else 0
-
-    if model_xml.has_skin:
-        model_xml.flags = 1  # skin flag, same meaning as has_skin
-        model_xml.matrix_count = len(bones)
-
-
-def create_geometries_xml(
-    model_obj: bpy.types.Object,
-    mesh_eval: bpy.types.Mesh,
-    materials: list[bpy.types.Material],
-    armature_obj: Optional[bpy.types.Object],
-    char_cloth_xml: Optional[CharacterCloth],
+def create_geometries(
+    model_obj: Object,
+    mesh_eval: Mesh,
+    materials: list[Material],
+    armature_obj: Optional[Object],
+    char_cloth: CharacterCloth | None,
     mesh_domain_override: Optional[VBBuilderDomain],
 ) -> list[Geometry]:
     is_cable = is_cable_mesh(mesh_eval)
@@ -305,12 +329,14 @@ def create_geometries_xml(
             cable_material = mesh_eval.materials[cable_material_index].original
             cable_material_index_in_drawable = materials.index(cable_material)
 
-            geom_xml = Geometry()
-            geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(cable_vert_buffer["Position"])
-            geom_xml.shader_index = cable_material_index_in_drawable
-            geom_xml.vertex_buffer.data = cable_vert_buffer
-            geom_xml.index_buffer.data = cable_ind_buffer
-            cable_geometries.append(geom_xml)
+            geom = Geometry(
+                vertex_data_type=VertexDataType.DEFAULT,
+                vertex_buffer=cable_vert_buffer,
+                index_buffer=cable_ind_buffer,
+                bone_ids=np.empty(0),
+                shader_index=cable_material_index_in_drawable,
+            )
+            cable_geometries.append(geom)
 
         return cable_geometries
 
@@ -358,9 +384,8 @@ def create_geometries_xml(
     bones = armature_obj.data.bones if armature_obj is not None else None
     bone_by_vgroup = try_get_bone_by_vgroup(model_obj, armature_obj)
 
-    domain = VBBuilderDomain[get_export_settings(
-    ).mesh_domain] if mesh_domain_override is None else mesh_domain_override
-    vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain, materials, char_cloth_xml)
+    domain = export_context().settings.mesh_domain if mesh_domain_override is None else mesh_domain_override
+    vb_builder = VertexBufferBuilder(mesh_eval, bone_by_vgroup, domain, materials, char_cloth)
     total_vert_buffer = vb_builder.build()
     if domain == VBBuilderDomain.VERTEX:
         # bit dirty to use private data of the builder class, but we need this array here and it is already computed
@@ -389,29 +414,31 @@ def create_geometries_xml(
 
         vert_buffer, ind_buffer = dedupe_and_get_indices(vert_buffer)
 
-        geom_xml = Geometry()
-
-        geom_xml.bounding_box_max, geom_xml.bounding_box_min = get_geom_extents(vert_buffer["Position"])
-        geom_xml.shader_index = mat_index
-
         if bones and "BlendWeights" in vert_buffer.dtype.names:
-            geom_xml.bone_ids = get_bone_ids(bones)
+            bone_ids = get_bone_ids(bones)
+        else:
+            bone_ids = np.empty(0)
 
-        geom_xml.vertex_buffer.data = vert_buffer
-        geom_xml.index_buffer.data = ind_buffer
 
-        geometries.append(geom_xml)
+        geom = Geometry(
+            vertex_data_type=VertexDataType.DEFAULT,
+            vertex_buffer=vert_buffer,
+            index_buffer=ind_buffer,
+            bone_ids=bone_ids,
+            shader_index=mat_index,
+        )
+        geometries.append(geom)
 
     geometries = sort_geoms_by_shader(geometries)
 
     return geometries
 
 
-def sort_geoms_by_shader(geometries: list[Geometry]):
+def sort_geoms_by_shader(geometries: list[Geometry]) -> list[Geometry]:
     return sorted(geometries, key=lambda g: g.shader_index)
 
 
-def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.types.Material]):
+def get_loop_inds_by_material(mesh: Mesh, drawable_mats: list[Material]) -> dict[int, NDArray[np.uint32]]:
     loop_inds_by_mat: dict[int, NDArray[np.uint32]] = {}
 
     if not mesh.loop_triangles:
@@ -453,97 +480,80 @@ def get_loop_inds_by_material(mesh: bpy.types.Mesh, drawable_mats: list[bpy.type
     return loop_inds_by_mat
 
 
-def get_geom_extents(positions: NDArray[np.float32]):
-    return Vector(np.max(positions, axis=0)), Vector(np.min(positions, axis=0))
-
-
-def get_bone_ids(bones: list[bpy.types.Bone]):
+def get_bone_ids(bones: list[Bone]) -> list[int]:
     return [i for i in range(len(bones))]
 
 
-def append_model_xml(drawable_xml: Drawable, model_xml: DrawableModel, lod_level: LODLevel):
-    if lod_level == LODLevel.HIGH:
-        drawable_xml.drawable_models_high.append(model_xml)
+def fix_vehglass_geometry_for_shattermap_generation(
+    mesh_eval: Mesh,
+    materials: list[Material],
+    geometries: list[Geometry]
+):
+    any_bad_geometry = False
+    for geometry in geometries:
+        material = materials[geometry.shader_index]
+        if material.shader_properties.name in {"vehicle_vehglass", "vehicle_vehglass_inner"}:
+            blue_channel = geometry.vertex_buffer['Colour0'][:, 2]
+            if np.all(blue_channel == 0):
+                any_bad_geometry = True
+                blue_channel[:] = 255
 
-    elif lod_level == LODLevel.MEDIUM:
-        drawable_xml.drawable_models_med.append(model_xml)
-
-    elif lod_level == LODLevel.LOW:
-        drawable_xml.drawable_models_low.append(model_xml)
-
-    elif lod_level == LODLevel.VERYLOW:
-        drawable_xml.drawable_models_vlow.append(model_xml)
-
-
-def join_skinned_models_for_each_lod(drawable_xml: Drawable):
-    drawable_xml.drawable_models_high = join_skinned_models(
-        drawable_xml.drawable_models_high)
-    drawable_xml.drawable_models_med = join_skinned_models(
-        drawable_xml.drawable_models_med)
-    drawable_xml.drawable_models_low = join_skinned_models(
-        drawable_xml.drawable_models_low)
-    drawable_xml.drawable_models_vlow = join_skinned_models(
-        drawable_xml.drawable_models_vlow)
+    if any_bad_geometry:
+        logger.warning(
+            f"Mesh '{mesh_eval.name}' using VEHICLE VEHGLASS shader has color attribute 'Color 1' with no blue channel "
+            "data (all values are black). The blue channel is used to mark where vehicle glass borders connect to the "
+            "frame for shattermap generation. Please paint the blue channel on connected border vertices for correct "
+            "shattering behavior. Defaulting to treating the entire mesh as connected (blue = 255)."
+        )
 
 
-def join_skinned_models(model_xmls: list[DrawableModel]):
-    non_skinned_models = [model for model in model_xmls if model.has_skin == 0]
-    skinned_models = [model for model in model_xmls if model.has_skin == 1]
+def join_skinned_models(models: list[Model]) -> list[Model]:
+    non_skinned_models = [model for model in models if not model.has_skin]
+    skinned_models = [model for model in models if model.has_skin]
 
     if not skinned_models:
         return non_skinned_models
 
-    skinned_geoms: list[Geometry] = [
-        geom for model in skinned_models for geom in model.geometries]
-
-    skinned_model = DrawableModel()
-    skinned_model.has_skin = 1
-    skinned_model.render_mask = skinned_models[0].render_mask
-    skinned_model.matrix_count = skinned_models[0].matrix_count
-    skinned_model.flags = skinned_models[0].flags
+    skinned_geoms: list[Geometry] = [geom for model in skinned_models for geom in model.geometries]
 
     geoms_by_shader: dict[int, list[Geometry]] = defaultdict(list)
 
     for geom in skinned_geoms:
         geoms_by_shader[geom.shader_index].append(geom)
 
-    geoms = [join_geometries(
-        geoms, shader_ind) for shader_ind, geoms in geoms_by_shader.items()]
-    skinned_model.geometries = sort_geoms_by_shader(geoms)
+    joined_skinned_geoms = [join_geometries(geoms, shader_ind) for shader_ind, geoms in geoms_by_shader.items()]
+    joined_skinned_geoms = sort_geoms_by_shader(joined_skinned_geoms)
+    joined_skinned_model = Model(
+        bone_index=0,
+        geometries=joined_skinned_geoms,
+        render_bucket_mask=skinned_models[0].render_bucket_mask,
+        has_skin=True,
+        matrix_count=skinned_models[0].matrix_count,
+        flags=skinned_models[0].flags,
+    )
 
-    return [skinned_model, *non_skinned_models]
+    return [joined_skinned_model, *non_skinned_models]
 
 
-def join_geometries(geometry_xmls: list[Geometry], shader_index: int):
-    new_geom = Geometry()
-    new_geom.shader_index = shader_index
-
-    vert_arrs = get_valid_vert_arrs(geometry_xmls)
-    ind_arrs = get_valid_ind_arrs(geometry_xmls)
+def join_geometries(geometries: list[Geometry], shader_index: int) -> Geometry:
+    vert_arrs = [g.vertex_buffer for g in geometries]
+    ind_arrs = [g.index_buffer for g in geometries]
     vert_counts = [len(vert_arr) for vert_arr in vert_arrs]
 
-    new_geom.vertex_buffer.data = join_vert_arrs(vert_arrs)
-    new_geom.index_buffer.data = join_ind_arrs(ind_arrs, vert_counts)
+    joined_vertex_buffer = join_vert_arrs(vert_arrs)
+    joined_index_buffer = join_ind_arrs(ind_arrs, vert_counts)
+    bone_ids = list(np.unique([geom.bone_ids for geom in geometries]))
 
-    new_geom.bounding_box_max = get_max_vector_list(
-        geom.bounding_box_max for geom in geometry_xmls)
-    new_geom.bounding_box_min = get_min_vector_list(
-        geom.bounding_box_min for geom in geometry_xmls)
-    new_geom.bone_ids = list(
-        np.unique([geom.bone_ids for geom in geometry_xmls]))
-
-    return new_geom
-
-
-def get_valid_vert_arrs(geometry_xmls: list[Geometry]):
-    return [geom.vertex_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+    return Geometry(
+        vertex_data_type=VertexDataType.DEFAULT,
+        vertex_buffer=joined_vertex_buffer,
+        index_buffer=joined_index_buffer,
+        bone_ids=bone_ids,
+        shader_index=shader_index,
+    )
 
 
-def get_valid_ind_arrs(geometry_xmls: list[Geometry]):
-    return [geom.index_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
-
-
-def join_vert_arrs(vert_arrs: list[NDArray]):
+def join_vert_arrs(vert_arrs: list[NDArray]) -> NDArray:
     """Join vertex buffer structured arrays. Works with arrays that have different layouts."""
     num_verts = sum(len(vert_arr) for vert_arr in vert_arrs)
     struct_dtype = get_joined_vert_arr_dtype(vert_arrs)
@@ -572,6 +582,7 @@ def get_joined_vert_arr_dtype(vert_arrs: list[NDArray]):
         attr_names.extend(
             name for name in vert_arr.dtype.names if name not in attr_names)
 
+    from szio.gta5.cwxml import VertexBuffer
     return [VertexBuffer.VERT_ATTR_DTYPES[name] for name in attr_names]
 
 
@@ -583,54 +594,44 @@ def join_ind_arrs(ind_arrs: list[NDArray[np.uint32]], vert_counts: list[int]) ->
 
         return sum(num_verts for num_verts in vert_counts[:arr_ind])
 
-    offset_ind_arrs = [
-        ind_arr + get_vert_ind_offset(i) for i, ind_arr in enumerate(ind_arrs)]
+    offset_ind_arrs = [ind_arr + get_vert_ind_offset(i) for i, ind_arr in enumerate(ind_arrs)]
 
     return np.concatenate(offset_ind_arrs)
 
 
-def split_drawable_by_vert_count(drawable_xml: Drawable):
-    split_models_by_vert_count(drawable_xml.drawable_models_high)
-    split_models_by_vert_count(drawable_xml.drawable_models_med)
-    split_models_by_vert_count(drawable_xml.drawable_models_low)
-    split_models_by_vert_count(drawable_xml.drawable_models_vlow)
+def split_models_by_vert_count(models: list[Model]) -> list[Model]:
+    models_split = []
+    for model in models:
+        geoms_split = [geom_split for geom in model.geometries for geom_split in split_geom_by_vert_count(geom)]
+        models_split.append(replace(model, geometries=geoms_split))
+    return models_split
 
 
-def split_models_by_vert_count(model_xmls: list[DrawableModel]):
-    for model_xml in model_xmls:
-        geoms_split = [
-            geom_split for geom in model_xml.geometries for geom_split in split_geom_by_vert_count(geom)]
-        model_xml.geometries = geoms_split
-
-
-def split_geom_by_vert_count(geom_xml: Geometry):
-    if geom_xml.vertex_buffer.data is None or geom_xml.index_buffer.data is None:
+def split_geom_by_vert_count(geom: Geometry) -> list[Geometry]:
+    if geom.vertex_buffer is None or geom.index_buffer is None:
         raise ValueError(
             "Failed to split Geometry by vertex count. Vertex buffer and index buffer cannot be None!")
 
-    vert_buffers, ind_buffers = split_vert_buffers(geom_xml.vertex_buffer.data, geom_xml.index_buffer.data)
+    vert_buffers, ind_buffers = split_vert_buffers(geom.vertex_buffer, geom.index_buffer)
 
     geoms: list[Geometry] = []
 
     for vert_buffer, ind_buffer in zip(vert_buffers, ind_buffers):
-        new_geom = Geometry()
-        new_geom.bone_ids = geom_xml.bone_ids
-        new_geom.shader_index = geom_xml.shader_index
-        new_geom.bounding_box_max, new_geom.bounding_box_min = get_geom_extents(
-            vert_buffer["Position"])
-
-        new_geom.vertex_buffer.data = vert_buffer
-        new_geom.index_buffer.data = ind_buffer
+        new_geom = replace(
+            geom,
+            vertex_buffer=vert_buffer,
+            index_buffer=ind_buffer,
+        )
 
         geoms.append(new_geom)
 
-    return tuple(geoms)
+    return geoms
 
 
 def split_vert_buffers(
     vert_buffer: NDArray,
     ind_buffer: NDArray[np.uint32]
-) -> tuple[tuple[NDArray], tuple[NDArray[np.uint32]]]:
+) -> tuple[list[NDArray], list[NDArray[np.uint32]]]:
     """Splits vertex and index buffers on chunks that fit in 16-bit indices.
     Returns tuple of split vertex buffers and tuple of index buffers"""
     MAX_INDEX = 65535
@@ -665,350 +666,72 @@ def split_vert_buffers(
         split_vert_arrs.append(chunk_vertices_arr)
         split_ind_arrs.append(chunk_indices_arr)
 
-    return (tuple(split_vert_arrs), tuple(split_ind_arrs))
+    return (split_vert_arrs, split_ind_arrs)
 
 
-def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: Drawable):
-    shaders = get_shaders_from_blender(materials)
-    texture_dictionary = texture_dictionary_from_materials(materials)
-
-    drawable_xml.shader_group.shaders = shaders
-    drawable_xml.shader_group.texture_dictionary = texture_dictionary
-
-
-def texture_dictionary_from_materials(materials: list[bpy.types.Material]):
-    texture_dictionary: dict[str, Texture] = {}
-
-    for node in get_embedded_texture_nodes(materials):
-        texture_name = node.sollumz_texture_name
-
-        if texture_name in texture_dictionary or not texture_name:
-            continue
-
-        texture = texture_from_img_node(node)
-        texture_dictionary[texture_name] = texture
-
-    return list(texture_dictionary.values())
+def create_shader_group(
+    materials: list[Material],
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
+) -> ShaderGroup:
+    return ShaderGroup(
+        shaders=[create_shader(m) for m in materials],
+        embedded_textures=get_embedded_textures_from_materials(materials, out_hd_textures=out_hd_textures),
+    )
 
 
-def get_embedded_texture_nodes(materials: list[bpy.types.Material]):
-    nodes: list[bpy.types.ShaderNodeTexImage] = []
+def create_shader(material: Material) -> ShaderInst:
+    shader_def = ShaderManager.find_shader(material.shader_properties.filename)
+    parameters = create_shader_parameters_list_template(shader_def)
 
-    for mat in materials:
-        for node in mat.node_tree.nodes:
-            if not isinstance(node, bpy.types.ShaderNodeTexImage) or not node.texture_properties.embedded:
+    for node in material.node_tree.nodes:
+        param = None
+
+        if isinstance(node, bpy.types.ShaderNodeTexImage):
+            param_def = shader_def.parameter_map.get(node.name, None)
+            if not param_def:
                 continue
 
-            if not node.image:
+            texture_name = node.sollumz_texture_name or None
+            param = ShaderParameter(name=param_def.name, value=texture_name)
+        elif isinstance(node, SzShaderNodeParameter):
+            param_def = shader_def.parameter_map.get(node.name, None)
+            if not param_def:
                 continue
 
-            nodes.append(node)
-
-    return nodes
-
-
-def texture_from_img_node(node: bpy.types.ShaderNodeTexImage):
-    texture = Texture()
-    texture.name = node.sollumz_texture_name
-    texture.width = node.image.size[0]
-    texture.height = node.image.size[1]
-    texture.filename = texture.name + ".dds"
-    # Other texture properties (format, mipmaps, etc.) are set by CW when importing the texture
-    return texture
-
-
-def create_skeleton_xml(armature_obj: bpy.types.Object, apply_transforms: bool = False):
-    if armature_obj.type != "ARMATURE" or not armature_obj.pose.bones:
-        return None
-
-    skeleton_xml = Skeleton()
-    bones = armature_obj.pose.bones
-
-    if apply_transforms:
-        matrix = armature_obj.matrix_world.copy()
-        matrix.translation = Vector()
-    else:
-        matrix = Matrix()
-
-    for bone_index, pose_bone in enumerate(bones):
-
-        bone_xml = create_bone_xml(pose_bone, bone_index, armature_obj.data, matrix)
-
-        skeleton_xml.bones.append(bone_xml)
-
-    calculate_skeleton_unks(skeleton_xml)
-
-    return skeleton_xml
-
-
-def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, armature_matrix: Matrix):
-    bone = pose_bone.bone
-
-    bone_xml = Bone()
-    bone_xml.name = bone.name
-    bone_xml.index = bone_index
-    bone_xml.tag = bone.bone_properties.tag
-
-    bone_xml.parent_index = get_bone_parent_index(bone, armature)
-    bone_xml.sibling_index = get_bone_sibling_index(bone, armature)
-
-    set_bone_xml_flags(bone_xml, pose_bone)
-    set_bone_xml_transforms(bone_xml, bone, armature_matrix)
-
-    return bone_xml
-
-
-def get_bone_parent_index(bone: bpy.types.Bone, armature: bpy.types.Armature):
-    if bone.parent is None:
-        return -1
-
-    return get_bone_index(armature, bone.parent)
-
-
-def get_bone_sibling_index(bone: bpy.types.Bone, armature: bpy.types.Armature):
-    sibling_index = -1
-
-    if bone.parent is None:
-        return sibling_index
-
-    children = bone.parent.children
-
-    for i, child_bone in enumerate(children):
-        if child_bone != bone or i + 1 >= len(children):
-            continue
-
-        sibling_index = get_bone_index(armature, children[i + 1])
-        break
-
-    return sibling_index
-
-
-def set_bone_xml_flags(bone_xml: Bone, pose_bone: bpy.types.PoseBone):
-    bone = pose_bone.bone
-
-    for flag in bone.bone_properties.flags:
-        if not flag.name:
-            continue
-
-        bone_xml.flags.append(flag.name)
-
-    for constraint in pose_bone.constraints:
-        if constraint.type == "LIMIT_ROTATION":
-            bone_xml.flags.append("LimitRotation")
-
-        if constraint.type == "LIMIT_LOCATION":
-            bone_xml.flags.append("LimitTranslation")
-
-    if bone.children:
-        bone_xml.flags.append("Unk0")
-
-
-def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matrix: Matrix):
-    pos = armature_matrix @ bone.matrix_local.translation
-
-    if bone.parent is not None:
-        pos = armature_matrix @ bone.parent.matrix_local.inverted() @ bone.matrix_local.translation
-
-    bone_xml.translation = pos
-    bone_xml.rotation = bone.matrix.to_quaternion()
-    bone_xml.scale = bone.matrix.to_scale()
-
-    # transform_unk doesn't appear in openformats so oiv calcs it right
-    # what does it do? the bone length?
-    # default value for this seems to be <TransformUnk x="0" y="4" z="-3" w="0" />
-    bone_xml.transform_unk = Quaternion((0, 0, 4, -3))
-
-
-def calculate_skeleton_unks(skeleton_xml: Skeleton):
-    # from what oiv calcs Unknown50 and Unknown54 are related to BoneTag and Flags, and obviously the hierarchy of bones
-    # assuming those hashes/flags are all based on joaat
-    # Unknown58 is related to BoneTag, Flags, Rotation, Location and Scale. Named as DataCRC so we stick to CRC-32 as a hack, since we and possibly oiv don't know how R* calc them
-    # hopefully this doesn't break in game!
-    # hacky solution with inaccurate results, the implementation here is only to ensure they are unique regardless the correctness, further investigation is required
-    if not skeleton_xml.bones:
-        return
-
-    unk_50 = []
-    unk_58 = []
-
-    for bone in skeleton_xml.bones:
-        unk_50_str = " ".join((str(bone.tag), " ".join(bone.flags)))
-
-        translation = []
-        for item in bone.translation:
-            translation.append(str(item))
-
-        rotation = []
-        for item in bone.rotation:
-            rotation.append(str(item))
-
-        scale = []
-        for item in bone.scale:
-            scale.append(str(item))
-
-        unk_58_str = " ".join((str(bone.tag), " ".join(bone.flags), " ".join(
-            translation), " ".join(rotation), " ".join(scale)))
-        unk_50.append(unk_50_str)
-        unk_58.append(unk_58_str)
-
-    skeleton_xml.unknown_50 = jenkhash.Generate(" ".join(unk_50))
-    skeleton_xml.unknown_54 = zlib.crc32(" ".join(unk_50).encode())
-    skeleton_xml.unknown_58 = zlib.crc32(" ".join(unk_58).encode())
-
-
-def get_bone_index(armature: bpy.types.Armature, bone: bpy.types.Bone) -> Optional[int]:
-    """Get bone index on armature. Returns None if not found."""
-    index = armature.bones.find(bone.name)
-
-    if index == -1:
-        return None
-
-    return index
-
-
-def create_joints_xml(armature_obj: bpy.types.Object):
-    if armature_obj.pose is None:
-        return None
-
-    joints = Joints()
-
-    for pose_bone in armature_obj.pose.bones:
-        limit_rot_constraint = get_limit_rot_constraint(pose_bone)
-        limit_pos_constraint = get_limit_pos_constraint(pose_bone)
-        bone_tag = pose_bone.bone.bone_properties.tag
-
-        if limit_rot_constraint is not None:
-            joints.rotation_limits.append(
-                create_rotation_limit_xml(limit_rot_constraint, bone_tag))
-
-        if limit_pos_constraint is not None:
-            joints.translation_limits.append(
-                create_translation_limit_xml(limit_pos_constraint, bone_tag))
-
-    return joints
-
-
-def get_limit_rot_constraint(pose_bone: bpy.types.PoseBone) -> bpy.types.LimitRotationConstraint:
-    for constraint in pose_bone.constraints:
-        if constraint.type == "LIMIT_ROTATION":
-            return constraint
-
-
-def get_limit_pos_constraint(pose_bone: bpy.types.PoseBone) -> bpy.types.LimitLocationConstraint:
-    for constraint in pose_bone.constraints:
-        if constraint.type == "LIMIT_LOCATION":
-            return constraint
-
-
-def create_rotation_limit_xml(constraint: bpy.types.LimitRotationConstraint, bone_tag: int):
-    joint = RotationLimit()
-    set_joint_properties(joint, constraint, bone_tag)
-
-    return joint
-
-
-def create_translation_limit_xml(constraint: bpy.types.LimitRotationConstraint, bone_tag: int):
-    joint = BoneLimit()
-    set_joint_properties(joint, constraint, bone_tag)
-
-    return joint
-
-
-def set_joint_properties(joint: BoneLimit, constraint: bpy.types.LimitRotationConstraint | bpy.types.LimitLocationConstraint, bone_tag: int):
-    joint.bone_id = bone_tag
-    joint.min = Vector(
-        (constraint.min_x, constraint.min_y, constraint.min_z))
-    joint.max = Vector(
-        (constraint.max_x, constraint.max_y, constraint.max_z))
-
-    return joint
-
-
-def set_drawable_xml_flags(drawable_xml: Drawable):
-    drawable_xml.flags_high = len(drawable_xml.drawable_models_high)
-    drawable_xml.flags_med = len(drawable_xml.drawable_models_med)
-    drawable_xml.flags_low = len(drawable_xml.drawable_models_low)
-    drawable_xml.flags_vlow = len(drawable_xml.drawable_models_vlow)
-
-
-def set_drawable_xml_extents(drawable_xml: Drawable):
-    mins: list[Vector] = []
-    maxes: list[Vector] = []
-
-    for model_xml in drawable_xml.drawable_models_high:
-        for geometry in model_xml.geometries:
-            mins.append(geometry.bounding_box_min)
-            maxes.append(geometry.bounding_box_max)
-
-    bbmin = get_min_vector_list(mins)
-    bbmax = get_max_vector_list(maxes)
-
-    drawable_xml.bounding_sphere_center = get_bound_center_from_bounds(bbmin, bbmax)
-    drawable_xml.bounding_sphere_radius = get_sphere_radius(bbmin, bbmax)
-    drawable_xml.bounding_box_min = bbmin
-    drawable_xml.bounding_box_max = bbmax
-
-
-def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
-    drawable_xml.bounds = None
-    bound_objs = [
-        child for child in drawable_obj.children
-        if child.sollum_type == SollumType.BOUND_COMPOSITE or child.sollum_type in BOUND_TYPES
-    ]
-    if not bound_objs:
-        return
-
-    bound_obj = bound_objs[0]
-    if len(bound_objs) > 1:
-        other_bound_objs = bound_objs[1:]
-        other_bound_objs_names = [f"'{o.name}'" for o in other_bound_objs]
-        other_bound_objs_names = ", ".join(other_bound_objs_names)
-        logger.warning(
-            f"Drawable '{drawable_obj.name}' has multiple root embedded bounds! "
-            f"Only a single root bound is supported. Use a Bound Composite if you need multiple bounds.\n"
-            f"Only '{bound_obj.name}' will be exported. The following bounds will be ignored: {other_bound_objs_names}."
-        )
-
-    bound_xml = None
-    if bound_obj.sollum_type == SollumType.BOUND_COMPOSITE:
-        bound_xml = create_composite_xml(bound_obj)
-    elif bound_obj.sollum_type in BOUND_TYPES:
-        bound_xml = create_bound_xml(bound_obj, is_root=True)
-
-        if not bound_xml.composite_transform.is_identity:
-            logger.warning(
-                f"Embedded bound '{bound_obj.name}' has transforms (rotation, scale) but is not parented to a Bound "
-                f"Composite. Parent the collision to a Bound Composite in order for the transforms to work in-game."
-            )
-
-    drawable_xml.bounds = bound_xml
-
-
-def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
-    drawable_xml.lod_dist_high = drawable_obj.drawable_properties.lod_dist_high
-    drawable_xml.lod_dist_med = drawable_obj.drawable_properties.lod_dist_med
-    drawable_xml.lod_dist_low = drawable_obj.drawable_properties.lod_dist_low
-    drawable_xml.lod_dist_vlow = drawable_obj.drawable_properties.lod_dist_vlow
-
-
-def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
-    materials = get_sollumz_materials(drawable_obj)
-    directory = os.path.dirname(filepath)
-    filename = get_filename(filepath)
-
-    for node in get_embedded_texture_nodes(materials):
-        folder_path = os.path.join(directory, filename)
-        texture_path = bpy.path.abspath(node.image.filepath)
-
-        if os.path.isfile(texture_path):
-            if not os.path.isdir(folder_path):
-                os.mkdir(folder_path)
-            dstpath = os.path.join(folder_path, os.path.basename(texture_path))
-            # check if paths are the same because if they are, no need to copy (and would throw an error otherwise)
-            if not os.path.exists(dstpath) or not os.path.samefile(texture_path, dstpath):
-                shutil.copyfile(texture_path, dstpath)
-        elif texture_path:
-            logger.warning(f"Texture path '{texture_path}' for {node.name} not found! Skipping texture...")
+            is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
+            if is_vector:
+                x = node.get(0)
+                y = node.get(1) if node.num_cols > 1 else 0.0
+                z = node.get(2) if node.num_cols > 2 else 0.0
+                w = node.get(3) if node.num_cols > 3 else 0.0
+                param_value = Vector((x, y, z, w))
+            else:
+                param_value = []
+                for row in range(node.num_rows):
+                    i = row * node.num_cols
+                    x = node.get(i)
+                    y = node.get(i + 1) if node.num_cols > 1 else 0.0
+                    z = node.get(i + 2) if node.num_cols > 2 else 0.0
+                    w = node.get(i + 3) if node.num_cols > 3 else 0.0
+
+                    param_value.append(Vector((x, y, z, w)))
+
+            param = ShaderParameter(name=param_def.name, value=param_value)
+
+        if param is not None:
+            parameter_index = next((i for i, x in enumerate(parameters) if x.name == param.name), None)
+
+            if parameter_index is None:
+                parameters.append(param)
+            else:
+                parameters[parameter_index] = param
+
+    return ShaderInst(
+        name=material.shader_properties.name,
+        preset_filename=material.shader_properties.filename,
+        render_bucket=RenderBucket[material.shader_properties.renderbucket],
+        parameters=parameters,
+    )
 
 
 def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> list[ShaderParameter]:
@@ -1023,84 +746,230 @@ def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> l
     for param_def in shader_def.parameters:
         match param_def.type:
             case ShaderParameterType.TEXTURE:
-                param = TextureShaderParameter()
+                param_value = None
             case (ShaderParameterType.FLOAT |
                   ShaderParameterType.FLOAT2 |
                   ShaderParameterType.FLOAT3 |
                   ShaderParameterType.FLOAT4):
                 if param_def.is_array:
-                    param = ArrayShaderParameter()
-                    param.values = [Vector() for _ in range(param_def.count)]
+                    param_value = [Vector((0.0, 0.0, 0.0, 0.0)) for _ in range(param_def.count)]
                 else:
-                    param = VectorShaderParameter()
+                    param_value = Vector((0.0, 0.0, 0.0, 0.0))
             case ShaderParameterType.FLOAT4X4:
-                param = ArrayShaderParameter()
-                param.values = [Vector(), Vector(), Vector(), Vector()]
+                param_value = [Vector((0.0, 0.0, 0.0, 0.0)) for _ in range(4)]
             case _:
-                raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+                raise Exception(f"Unknown shader parameter! {param_def.type=} {param_def.name=}")
 
-        param.name = param_def.name
-        parameters.append(param)
+        parameters.append(ShaderParameter(
+            name=param_def.name,
+            value=param_value,
+        ))
 
     return parameters
 
 
-def get_shaders_from_blender(materials):
-    shaders = []
+def get_embedded_textures_from_materials(
+    materials: list[Material],
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
+) -> dict[str, EmbeddedTexture]:
+    """Builds the embedded texture dictionary for `materials`.
 
-    for material in materials:
-        shader = Shader()
-        shader.name = material.shader_properties.name
-        shader.filename = material.shader_properties.filename
-        shader.render_bucket = RenderBucket[material.shader_properties.renderbucket].value
-        shader_def = ShaderManager.find_shader(shader.filename)
-        shader.parameters = create_shader_parameters_list_template(shader_def)
+    When `out_hd_textures` is given, textures flagged as HD are split: the returned dictionary
+    gets a copy with the first mip level dropped and the full-resolution texture is added to `out_hd_textures`,
+    to be exported in a separate '+hi' texture dictionary. When `None`, textures keep their full resolution.
+    """
+    from ..ytd.ytdexport import extract_texture_dds_data_source, split_embedded_texture
+    textures = {}
 
-        for node in material.node_tree.nodes:
-            param = None
+    for node in get_embedded_texture_nodes_from_materials(materials):
+        texture_name = node.sollumz_texture_name
 
-            if isinstance(node, bpy.types.ShaderNodeTexImage):
-                param_def = shader_def.parameter_map.get(node.name, None)
-                if not param_def:
-                    continue
+        if texture_name in textures or not texture_name:
+            continue
 
-                param = TextureShaderParameter()
-                param.texture_name = node.sollumz_texture_name
-            elif isinstance(node, SzShaderNodeParameter):
-                param_def = shader_def.parameter_map.get(node.name, None)
-                if not param_def:
-                    continue
+        img = node.image
+        if out_hd_textures is None:
+            texture_data = extract_texture_dds_data_source(img, texture_name)
+            w, h = img.size
+            textures[texture_name] = EmbeddedTexture(texture_name, w, h, texture_data)
+        else:
+            texture, hd_texture = split_embedded_texture(img, texture_name)
+            textures[texture_name] = texture
+            if hd_texture is not None and texture_name not in out_hd_textures:
+                out_hd_textures[texture_name] = hd_texture
 
-                is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
-                if is_vector:
-                    param = VectorShaderParameter()
-                    param.x = node.get(0)
-                    param.y = node.get(1) if node.num_cols > 1 else 0.0
-                    param.z = node.get(2) if node.num_cols > 2 else 0.0
-                    param.w = node.get(3) if node.num_cols > 3 else 0.0
-                else:
-                    param = ArrayShaderParameter()
-                    array_values = []
-                    for row in range(node.num_rows):
-                        i = row * node.num_cols
-                        x = node.get(i)
-                        y = node.get(i + 1) if node.num_cols > 1 else 0.0
-                        z = node.get(i + 2) if node.num_cols > 2 else 0.0
-                        w = node.get(i + 3) if node.num_cols > 3 else 0.0
+    return textures
 
-                        array_values.append(Vector((x, y, z, w)))
 
-                    param.values = array_values
+def get_embedded_texture_nodes_from_materials(materials: list[Material]) -> list[ShaderNodeTexImage]:
+    nodes: list[ShaderNodeTexImage] = []
 
-            if param is not None:
-                param.name = node.name
-                parameter_index = next((i for i, x in enumerate(shader.parameters) if x.name == param.name), None)
+    for mat in materials:
+        for node in mat.node_tree.nodes:
+            if not isinstance(node, ShaderNodeTexImage) or not node.texture_properties.embedded:
+                continue
 
-                if parameter_index is None:
-                    shader.parameters.append(param)
-                else:
-                    shader.parameters[parameter_index] = param
+            if not node.image:
+                continue
 
-        shaders.append(shader)
+            nodes.append(node)
 
-    return shaders
+    return nodes
+
+
+def create_skeleton(armature_obj: bpy.types.Object, apply_transforms: bool = False) -> Skeleton:
+    assert armature_obj.type == "ARMATURE" and armature_obj.pose.bones
+
+    bones = armature_obj.pose.bones
+
+    if apply_transforms:
+        matrix = armature_obj.matrix_world.copy()
+        matrix.translation = Vector()
+    else:
+        matrix = Matrix()
+
+    skel_bones = []
+    for bone_index, pose_bone in enumerate(bones):
+        skel_bone = create_bone(pose_bone, armature_obj.data, matrix)
+        skel_bones.append(skel_bone)
+
+    return Skeleton(skel_bones)
+
+
+def create_bone(pose_bone: PoseBone, armature: Armature, armature_matrix: Matrix) -> SkelBone:
+    bone = pose_bone.bone
+
+    parent_index = get_bone_parent_index(bone, armature)
+
+    flags = get_bone_flags(pose_bone)
+    pos, rot, scale = get_bone_transforms(bone, armature_matrix)
+
+    return SkelBone(
+        name=bone.name,
+        tag=bone.bone_properties.tag,
+        flags=flags,
+        position=pos,
+        rotation=rot,
+        scale=scale,
+        parent_index=parent_index,
+        translation_limit=get_bone_translation_limit(pose_bone),
+        rotation_limit=get_bone_rotation_limit(pose_bone),
+    )
+
+
+def get_bone_parent_index(bone: Bone, armature: Armature) -> int:
+    if bone.parent is None:
+        return -1
+
+    return get_bone_index(armature, bone.parent)
+
+
+def get_bone_flags(pose_bone: PoseBone) -> SkelBoneFlags:
+    bone = pose_bone.bone
+
+    flags = SkelBoneFlags(0)
+    for flag in bone.bone_properties.flags:
+        if not flag.name:
+            continue
+
+        # flags still use the CW names for backwards compatibility
+        from szio.gta5.cwxml.adapters.drawable import CW_BONE_FLAGS_MAP
+        flags |= CW_BONE_FLAGS_MAP[flag.name]
+
+    if find_bone_constraint_rotation_limit(pose_bone):
+        flags |= SkelBoneFlags.HAS_ROTATE_LIMITS
+
+    if find_bone_constraint_translation_limit(pose_bone):
+        flags |= SkelBoneFlags.HAS_TRANSLATE_LIMITS
+
+    if bone.children:
+        flags |= SkelBoneFlags.HAS_CHILD
+
+    return flags
+
+
+def get_bone_transforms(bone: Bone, armature_matrix: Matrix) -> tuple[Vector, Quaternion, Vector]:
+    pos = armature_matrix @ bone.matrix_local.translation
+
+    if bone.parent is not None:
+        pos = armature_matrix @ bone.parent.matrix_local.inverted() @ bone.matrix_local.translation
+
+    rotation = bone.matrix.to_quaternion()
+    scale = bone.matrix.to_scale()
+    return pos, rotation, scale
+
+
+def get_bone_index(armature: Armature, bone: Bone) -> Optional[int]:
+    """Get bone index on armature. Returns None if not found."""
+    index = armature.bones.find(bone.name)
+
+    if index == -1:
+        return None
+
+    return index
+
+
+def find_bone_constraint_translation_limit(pose_bone: PoseBone) -> Optional[LimitLocationConstraint]:
+    for constraint in pose_bone.constraints:
+        if constraint.type == "LIMIT_LOCATION":
+            return constraint
+
+    return None
+
+
+def find_bone_constraint_rotation_limit(pose_bone: PoseBone) -> Optional[LimitRotationConstraint]:
+    for constraint in pose_bone.constraints:
+        if constraint.type == "LIMIT_ROTATION":
+            return constraint
+
+    return None
+
+
+def get_bone_translation_limit(pose_bone: PoseBone) -> Optional[SkelBoneTranslationLimit]:
+    constraint = find_bone_constraint_translation_limit(pose_bone)
+    return SkelBoneTranslationLimit(
+        Vector((constraint.min_x, constraint.min_y, constraint.min_z)),
+        Vector((constraint.max_x, constraint.max_y, constraint.max_z)),
+    ) if constraint is not None else None
+
+
+def get_bone_rotation_limit(pose_bone: PoseBone) -> Optional[SkelBoneRotationLimit]:
+    constraint = find_bone_constraint_rotation_limit(pose_bone)
+    return SkelBoneRotationLimit(
+        Vector((constraint.min_x, constraint.min_y, constraint.min_z)),
+        Vector((constraint.max_x, constraint.max_y, constraint.max_z)),
+    ) if constraint is not None else None
+
+
+def create_embedded_bounds_asset(drawable_obj: Object) -> Optional[AssetBound]:
+    bound_objs = [
+        child for child in drawable_obj.children
+        if child.sollum_type == SollumType.BOUND_COMPOSITE or child.sollum_type in BOUND_TYPES
+    ]
+    if not bound_objs:
+        return None
+
+    bound_obj = bound_objs[0]
+    if len(bound_objs) > 1:
+        other_bound_objs = bound_objs[1:]
+        other_bound_objs_names = [f"'{o.name}'" for o in other_bound_objs]
+        other_bound_objs_names = ", ".join(other_bound_objs_names)
+        logger.warning(
+            f"Drawable '{drawable_obj.name}' has multiple root embedded bounds! "
+            f"Only a single root bound is supported. Use a Bound Composite if you need multiple bounds.\n"
+            f"Only '{bound_obj.name}' will be exported. The following bounds will be ignored: {other_bound_objs_names}."
+        )
+
+    bound = None
+    if bound_obj.sollum_type == SollumType.BOUND_COMPOSITE:
+        bound = create_bound_composite_asset(bound_obj)
+    elif bound_obj.sollum_type in BOUND_TYPES:
+        bound = create_bound_asset(bound_obj, is_root=True)
+
+        if not bound.composite_transform.is_identity:
+            logger.warning(
+                f"Embedded bound '{bound_obj.name}' has transforms (rotation, scale) but is not parented to a Bound "
+                f"Composite. Parent the collision to a Bound Composite in order for the transforms to work in-game."
+            )
+
+    return bound

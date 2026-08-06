@@ -485,7 +485,7 @@ class SOLLUMZ_OT_vehicle_preview_generated_windows(bpy.types.Operator):
         from gpu_extras.batch import batch_for_shader
         from ..tools.utils import multiply_homogeneous
         from ..iecontext import export_context_scope, ExportContext, ExportSettings
-        from .yftexport_io import export_yft
+        from .yftexport import export_yft
         with export_context_scope(ExportContext(frag_obj.name, ExportSettings((AssetTarget(AssetFormat.NATIVE, AssetVersion.GEN8),)))):
             frag_bundle = export_yft(frag_obj)
 

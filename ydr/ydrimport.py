@@ -1,115 +1,180 @@
 import os
 import traceback
 import bpy
+from bpy.types import (
+    Object,
+    Material,
+    Armature,
+    PoseBone,
+    Bone,
+    LimitLocationConstraint,
+    LimitRotationConstraint,
+    ShaderNodeTexImage,
+)
 from typing import Optional
-from mathutils import Matrix
+from mathutils import Matrix, Vector, Quaternion
 from pathlib import Path
-from ..tools.drawablehelper import get_model_xmls_by_lod
-from .shader_materials import create_shader, get_detail_extra_sampler, create_tinted_shader_graph
+from .shader_materials import (
+    create_shader,
+    get_detail_extra_sampler,
+    create_tinted_shader_graph,
+    update_vehicle_material_paint_name,
+)
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
-from ..sollumz_preferences import get_addon_preferences, get_import_settings
-from szio.gta5.cwxml import (
-    YDR,
-    BoneLimit,
-    Joints,
-    Shader,
-    ShaderGroup,
-    Drawable,
-    Bone,
+from ..sollumz_preferences import get_addon_preferences
+from szio.gta5 import (
+    AssetBound,
+    BoundType,
+    AssetDrawable,
+    AssetFormat,
+    AssetWithDependencies,
     Skeleton,
-    RotationLimit,
-    DrawableModel,
-    Bound,
+    SkelBone,
+    SkelBoneTranslationLimit,
+    SkelBoneRotationLimit,
+    SkelBoneFlags,
+    ShaderGroup,
+    ShaderInst,
+    LodLevel as IOLodLevel,
+    Model,
+    ShaderManager,
+    AssetTextureDictionary,
 )
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_empty_object, create_blender_object, join_objects, add_armature_modifier, parent_objs
-from ..tools.utils import get_filename
 from ..shared.shader_nodes import SzShaderNodeParameter
 from .model_data import ModelData, get_model_data, get_model_data_split_by_group
 from .mesh_builder import MeshBuilder
 from .cable_mesh_builder import CableMeshBuilder
 from .cable import CABLE_SHADER_NAME
-from ..lods import LODLevels
-from .lights import create_light_objs
+from ..lods import LODLevels, LODLevel
+from .lights import create_light_objs, serialize_lights_to_asset
 from .properties import DrawableModelProperties
-from .render_bucket import RenderBucket
+from ..iecontext import import_context, ImportTexturesMode
 from .. import logger
 
 
-def import_ydr(filepath: str):
-    import_settings = get_import_settings()
-
-    name = get_filename(filepath)
-    ydr_xml = YDR.from_xml_file(filepath)
-
-    if import_settings.import_as_asset:
-        return create_drawable_as_asset(ydr_xml, name, filepath)
-
-    return create_drawable_obj(ydr_xml, filepath, name)
+def find_ydr_external_dependencies(asset: AssetDrawable, name: str) -> AssetWithDependencies:
+    from ..ytd.ytdimport import try_load_hd_txd
+    prefers_xml = import_context().asset_target.format == AssetFormat.CWXML
+    hd_txd = try_load_hd_txd(name, prefers_xml, "+hidr")
+    return AssetWithDependencies(name, asset, {"hd_txd": hd_txd} if hd_txd else {})
 
 
-def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[str] = None, split_by_group: bool = False, external_armature: Optional[bpy.types.Object] = None, external_bones: Optional[list[Bone]] = None, materials: Optional[list[bpy.types.Material]] = None):
-    """Create a drawable object. ``split_by_group`` will split each Drawable Model by vertex group. ``external_armature`` allows for bones to be rigged to an armature object that is not the parent drawable."""
-    name = name or drawable_xml.name
-    materials = materials or shadergroup_to_materials(drawable_xml.shader_group, filepath)
+def import_ydr(asset: AssetWithDependencies, name: str) -> Object:
+    drw = asset.main_asset
+    hd_txd = asset.dependencies.get("hd_txd", None)
+    extract_embedded_textures_from_hd_txd(hd_txd, "+hidr")
 
-    has_skeleton = len(drawable_xml.skeleton.bones) > 0
+    if import_context().settings.import_as_asset:
+        return create_drawable_as_asset(drw, name, hd_txd=hd_txd, hd_txd_suffix="+hidr")
 
-    if external_bones:
-        drawable_xml.skeleton.bones = external_bones
+    return create_drawable(drw, name=name, hd_txd=hd_txd, hd_txd_suffix="+hidr")
+
+
+def create_drawable(
+    drawable: AssetDrawable,
+    hi_drawable: Optional[AssetDrawable] = None,
+    name: Optional[str] = None,
+    materials: list[Material] = None,
+    hi_materials: list[Material] = None,
+    external_armature: Optional[Object] = None,
+    external_skeleton: Optional[Skeleton] = None,
+    skip_models: bool = False,
+    hd_txd: AssetTextureDictionary | None = None,
+    hd_txd_suffix: str | None = None,
+) -> Object:
+    """Create a drawable object. . ``external_armature`` allows for bones to be rigged to an armature object that is not the parent drawable."""
+    name = name or drawable.name
+
+    extract_embedded_textures_from_shader_group(drawable.shader_group)
+
+    materials = materials or shader_group_to_materials(drawable.shader_group, hd_txd, hd_txd_suffix)
+    hi_materials = hi_materials or []
+
+    skeleton = drawable.skeleton
+    has_skeleton = skeleton and len(skeleton.bones) > 0
+
+    if external_skeleton:
+        drawable.skeleton = external_skeleton
 
     if has_skeleton and external_armature is None:
-        drawable_obj = create_drawable_armature(drawable_xml, name)
+        drawable_obj = create_drawable_root_armature(drawable, name)
     else:
-        drawable_obj = create_drawable_empty(name, drawable_xml)
+        drawable_obj = create_drawable_root_empty(drawable, name)
 
-    if drawable_xml.bounds is not None:
-        create_embedded_collisions(drawable_xml.bounds, drawable_obj)
+    bounds = drawable.bounds
+    if bounds is not None:
+        create_embedded_collisions(bounds, drawable_obj)
 
     armature_obj = drawable_obj if drawable_obj.type == "ARMATURE" else external_armature
-    if armature_obj is None:
-        model_objs = create_drawable_models(
-            drawable_xml, materials, model_names=f"{name}.model")
-    else:
-        model_objs = create_rigged_drawable_models(
-            drawable_xml, materials, drawable_obj, armature_obj, split_by_group)
 
-    parent_objs(model_objs, drawable_obj)
+    if not skip_models:
+        if armature_obj is None:
+            model_objs = create_drawable_models(
+                drawable, hi_drawable, materials, hi_materials, model_names=f"{name}.model"
+            )
+        else:
+            model_objs = create_rigged_drawable_models(
+                drawable, hi_drawable, materials, hi_materials, drawable_obj, armature_obj
+            )
 
-    if drawable_xml.lights:
-        create_drawable_lights(drawable_xml, drawable_obj, armature_obj)
+        parent_objs(model_objs, drawable_obj)
+
+    if (lights := drawable.lights):
+        lights_obj = create_light_objs(lights, armature_obj, f"{drawable_obj.name}.lights")
+        lights_obj.parent = drawable_obj
 
     return drawable_obj
 
 
-def create_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], model_names: Optional[str] = None, return_model_data = False):
-    model_datas = get_model_data(drawable_xml)
+def create_drawable_models(
+    drawable: AssetDrawable,
+    hi_drawable: Optional[AssetDrawable],
+    materials: list[Material],
+    hi_materials: list[Material],
+    model_names: Optional[str] = None
+) -> list[Object]:
+    model_datas = get_model_data(drawable, hi_drawable)
     model_names = model_names or SOLLUMZ_UI_NAMES[SollumType.DRAWABLE_MODEL]
-    model_objs = [create_model_obj(model_data, materials, name=model_names) for model_data in model_datas]
-    return (model_objs, model_datas) if return_model_data else model_objs
+
+    return [create_model_obj(model_data, materials, hi_materials, name=model_names) for model_data in model_datas]
 
 
-def create_rigged_drawable_models(drawable_xml: Drawable, materials: list[bpy.types.Material], drawable_obj: bpy.types.Object, armature_obj: bpy.types.Object, split_by_group: bool = False):
-    model_datas = get_model_data(drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
+def create_rigged_drawable_models(
+    drawable: AssetDrawable,
+    hi_drawable: Optional[AssetDrawable],
+    materials: list[Material],
+    hi_materials: list[Material],
+    drawable_obj: Object,
+    armature_obj: Object
+) -> list[Object]:
+    if armature_obj.sollum_type == SollumType.FRAGMENT:
+        # This setting is really only intended for fragments
+        split_by_group = import_context().settings.split_by_group
+    else:
+        split_by_group = False
+    model_datas = get_model_data_split_by_group(
+        drawable, hi_drawable) if split_by_group else get_model_data(drawable, hi_drawable)
 
-    set_skinned_model_properties(drawable_obj, drawable_xml)
+    set_skinned_model_properties(drawable_obj, drawable)
 
-    return [create_rigged_model_obj(model_data, materials, armature_obj) for model_data in model_datas]
+    return [create_rigged_model_obj(model_data, materials, hi_materials, armature_obj) for model_data in model_datas]
 
 
-def create_model_obj(model_data: ModelData, materials: list[bpy.types.Material], name: str, bones: Optional[list[bpy.types.Bone]] = None):
+def create_model_obj(model_data: ModelData, materials: list[Material], hi_materials: list[Material], name: str, bones: Optional[list[Bone]] = None) -> Object:
     model_obj = create_blender_object(SollumType.DRAWABLE_MODEL, name)
-    create_lod_meshes(model_data, model_obj, materials, bones)
+    create_lod_meshes(model_data, model_obj, materials, hi_materials, bones)
     create_tinted_shader_graph(model_obj)
 
     return model_obj
 
 
-def create_rigged_model_obj(model_data: ModelData, materials: list[bpy.types.Material], armature_obj: bpy.types.Object):
+def create_rigged_model_obj(model_data: ModelData, materials: list[Material], hi_materials: list[Material], armature_obj: Object) -> Object:
     bones = armature_obj.data.bones
     bone_name = bones[model_data.bone_index].name
 
-    model_obj = create_model_obj(model_data, materials, bone_name, bones)
+    model_obj = create_model_obj(model_data, materials, hi_materials, bone_name, bones)
 
     if not model_obj.vertex_groups:
         # Non-skinned models use armature constraints to link with bones
@@ -120,12 +185,13 @@ def create_rigged_model_obj(model_data: ModelData, materials: list[bpy.types.Mat
     return model_obj
 
 
-def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None):
+def create_lod_meshes(model_data: ModelData, model_obj: Object, materials: list[Material], hi_materials: list[Material], bones: Optional[list[Bone]] = None):
     lods: LODLevels = model_obj.sz_lods
     original_mesh = model_obj.data
 
     for lod_level, mesh_data in model_data.mesh_data_lods.items():
         mesh_name = f"{model_obj.name}_{SOLLUMZ_UI_NAMES[lod_level].lower().replace(' ', '_')}"
+        lod_materials = hi_materials if lod_level == LODLevel.VERYHIGH else materials
 
         try:
             if all(m.shader_properties.filename == CABLE_SHADER_NAME for m in materials):
@@ -134,7 +200,7 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
                     mesh_data.vert_arr,
                     mesh_data.ind_arr,
                     mesh_data.mat_inds,
-                    materials
+                    lod_materials
                 )
             else:
                 mesh_builder = MeshBuilder(
@@ -142,19 +208,19 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
                     mesh_data.vert_arr,
                     mesh_data.ind_arr,
                     mesh_data.mat_inds,
-                    materials
+                    lod_materials
                 )
 
             lod_mesh = mesh_builder.build()
         except:
             logger.error(
-                f"Error occured during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
+                f"Error occurred during creation of mesh '{mesh_name}'! Is the mesh data valid?\n{traceback.format_exc()}")
             continue
 
         lods.get_lod(lod_level).mesh = lod_mesh
         lods.active_lod_level = lod_level
 
-        set_drawable_model_properties(lod_mesh.drawable_model_properties, model_data.xml_lods[lod_level])
+        set_drawable_model_properties(lod_mesh.drawable_model_properties, model_data.lods[lod_level])
 
         is_skinned = "BlendWeights" in mesh_data.vert_arr.dtype.names
 
@@ -168,201 +234,200 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
         bpy.data.meshes.remove(original_mesh)
 
 
-def set_skinned_model_properties(drawable_obj: bpy.types.Object, drawable_xml: Drawable):
+def set_skinned_model_properties(drawable_obj: Object, drawable: AssetDrawable):
     """Set drawable model properties for the skinned ``DrawableModel`` (only ever 1 skinned model per ``Drawable``)."""
-    for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
-        for model_xml in models:
-            if model_xml.has_skin == 0:
+    for lod_level, models in drawable.models.items():
+        lod_level = LODLevel.from_io(lod_level)
+        for model in models:
+            if not model.has_skin:
                 continue
 
-            skinned_model_props = drawable_obj.skinned_model_properties.get_lod(
-                lod_level)
+            skinned_model_props = drawable_obj.skinned_model_properties.get_lod(lod_level)
 
-            set_drawable_model_properties(skinned_model_props, model_xml)
-
-
-def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: Drawable):
-    """Set drawable model properties for each LOD mesh in ``model_objs``."""
-    for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
-        for i, model_xml in enumerate(models):
-            obj = model_objs[i]
-            obj_lods: LODLevels = obj.sz_lods
-            lod = obj_lods.get_lod(lod_level)
-            lod_mesh = lod.mesh
-            if lod_mesh is None:
-                continue
-
-            set_drawable_model_properties(lod_mesh.drawable_model_properties, model_xml[lod.level])
+            set_drawable_model_properties(skinned_model_props, model)
 
 
-def set_drawable_model_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
-    model_props.render_mask = model_xml.render_mask
+def set_drawable_model_properties(model_props: DrawableModelProperties, model: Model):
+    model_props.render_mask = model.render_bucket_mask
 
 
-def create_drawable_armature(drawable_xml: Drawable, name: str):
-    drawable_obj = create_armature_obj_from_skel(
-        drawable_xml.skeleton, name, SollumType.DRAWABLE)
-    create_joint_constraints(drawable_obj, drawable_xml.joints)
-
-    set_drawable_properties(drawable_obj, drawable_xml)
+def create_drawable_root_armature(drawable: AssetDrawable, name: str) -> Object:
+    drawable_obj = create_armature_obj_from_skel(drawable.skeleton, name, SollumType.DRAWABLE)
+    set_drawable_properties(drawable_obj, drawable)
 
     return drawable_obj
 
 
-def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType):
+def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType) -> Object:
     armature = bpy.data.armatures.new(f"{name}.skel")
     obj = create_blender_object(sollum_type, name, armature)
 
-    create_drawable_skel(skeleton, obj)
+    create_drawable_skel(obj, skeleton)
 
     return obj
 
 
-def create_joint_constraints(armature_obj: bpy.types.Object, joints: Joints):
-    if joints.rotation_limits:
-        apply_rotation_limits(joints.rotation_limits, armature_obj)
-
-    if joints.translation_limits:
-        apply_translation_limits(joints.translation_limits, armature_obj)
-
-
-def create_drawable_empty(name: str, drawable_xml: Drawable):
+def create_drawable_root_empty(drawable: AssetDrawable, name: str) -> Object:
     drawable_obj = create_empty_object(SollumType.DRAWABLE, name)
-    set_drawable_properties(drawable_obj, drawable_xml)
+    set_drawable_properties(drawable_obj, drawable)
 
     return drawable_obj
 
 
-def shadergroup_to_materials(shader_group: ShaderGroup, filepath: str):
-    materials = []
+def extract_embedded_textures_from_shader_group(shader_group: ShaderGroup | None):
+    if not shader_group or not shader_group.embedded_textures:
+        return
 
-    for i, shader in enumerate(shader_group.shaders):
-        material = shader_item_to_material(shader, shader_group, filepath)
-        material.shader_properties.index = i
-        materials.append(material)
-
-    return materials
+    from ..ytd.ytdimport import extract_embedded_textures
+    extract_embedded_textures(shader_group.embedded_textures)
 
 
-def lookup_texture_file(texture_name: str, model_textures_directory: Optional[Path]) -> Optional[Path]:
-    """Searches for a DDS file with the given ``texture_name``.
-    The search order is as follows:
-      1. Check if file exists in ``model_textures_directory``.
-      2. Check the shared textures directories defined by the user in the add-on preferences.
-        2.1. These are searched in the priority order set by the user.
-        2.2. The user can also set whether the search is recursive or not.
-      3. If not found, returns ``None``.
-    """
-    texture_filename = f"{texture_name}.dds"
+def extract_embedded_textures_from_hd_txd(hd_txd: AssetTextureDictionary | None, suffix: str):
+    if not hd_txd or not hd_txd.textures:
+        return
 
-    def _lookup_in_directory(directory: Path, recursive: bool) -> Optional[Path]:
-        if not directory.is_dir():
-            return None
-
-        if recursive:
-            # NOTE: rglob returns files in arbitrary order. We are just taking whatever is the first one it returns.
-            #       Maybe we should enforce some kind of sort (i.e. alphabetical), but really only makes sense to have
-            #       a single texture with this the name in the directory tree.
-            texture_path = next(directory.rglob(texture_filename), None)
-        else:
-            texture_path = directory.joinpath(texture_filename)
-
-        return texture_path if texture_path is not None and texture_path.is_file() else None
-
-    # First, check the textures directory next to the model we imported
-    found_texture_path = model_textures_directory and _lookup_in_directory(model_textures_directory, False)
-    if found_texture_path is not None:
-        return found_texture_path
-
-    # Texture not found, search the shared textures directories listed in preferences
-    prefs = get_addon_preferences(bpy.context)
-    for d in prefs.shared_textures_directories:
-        found_texture_path = _lookup_in_directory(Path(d.path), d.recursive)
-        if found_texture_path is not None:
-            return found_texture_path
-
-    # Texture still not found
-    return None
+    from ..ytd.ytdimport import extract_embedded_textures
+    extract_embedded_textures(hd_txd.textures, dir_suffix=suffix)
 
 
-def is_non_color_texture(shader_filename: str, param_name: str):
-    # TODO: we could specify non-color textures in shaders.xml
-    # assign non-color...
-    return (
-        "Bump" in param_name or  # ...to normal maps
-        param_name == "distanceMapSampler" or  # ...to distance maps
-        (shader_filename in {"decal_dirt.sps", "decal_amb_only.sps"} and param_name == "DiffuseSampler") # ...to shadow maps
-    )
+def shader_group_to_materials(
+    shader_group: ShaderGroup,
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> list[Material]:
+    return shader_group_to_materials_with_hi(shader_group, None, hd_txd, hd_txd_suffix)[0]
 
 
-def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath: str):
-    texture_folder = Path(os.path.dirname(filepath) + "\\" + os.path.basename(filepath)[:-8])
+def shader_group_to_materials_with_hi(
+    shader_group: ShaderGroup,
+    hi_shader_group: Optional[ShaderGroup],
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> tuple[list[Material], list[Material]]:
 
-    filename = shader.filename
+    materials_cache: dict[ShaderInst, Material] = {}
 
+    def _build_materials(sg: ShaderGroup) -> list[Material]:
+        result = []
+        for shader in sg.shaders:
+            material = materials_cache.get(shader, None)
+            if material is None:
+                material = shader_to_material(shader, sg, hd_txd, hd_txd_suffix)
+                material.shader_properties.index = len(materials_cache)
+                materials_cache[shader] = material
+            result.append(material)
+        return result
+
+    materials = _build_materials(shader_group)
+    hi_materials = _build_materials(hi_shader_group) if hi_shader_group is not None else []
+
+    return materials, hi_materials
+
+
+def shader_to_material(
+    shader: ShaderInst,
+    shader_group: ShaderGroup,
+    hd_txd: AssetTextureDictionary | None,
+    hd_txd_suffix: str | None,
+) -> Material:
+    ctx = import_context()
+    textures_dir = ctx.textures_extract_directory or ctx.textures_import_directory
+    hd_textures_dir = textures_dir.with_name(textures_dir.name + (hd_txd_suffix or ""))
+    hd_textures = hd_txd.textures if hd_txd and hd_txd.textures else {}
+
+    filename = shader.preset_filename or ShaderManager.find_shader_preset_name(shader.name, shader.render_bucket.value)
     if not filename:
         filename = f"{shader.name}.sps"
 
     # Fix for importing gen9 assets using ped_decal_exp shader. Gen9 doesn't have preset files so CW just appends
     # .sps to the shader name, which most of the time is correct, but for ped_decal_exp the preset file was
     # ped_decal_expensive.sps and that's what we have in our shader definitions. Normalize the naming here.
-    if filename == "hash_1A87324E" or filename == "ped_decal_exp.sps":
+    if filename.lower() in {"hash_1a87324e", "ped_decal_exp.sps"}:
         filename = "ped_decal_expensive.sps"
 
     material = create_shader(filename)
-    material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
+    material.shader_properties.renderbucket = shader.render_bucket.name
 
+    nodes = {
+        n.name.lower(): n
+        for n in material.node_tree.nodes
+        if isinstance(n, (ShaderNodeTexImage, SzShaderNodeParameter))
+    }
     for param in shader.parameters:
-        for n in material.node_tree.nodes:
-            if isinstance(n, bpy.types.ShaderNodeTexImage):
-                if param.name == n.name:
-                    texture_path = lookup_texture_file(param.texture_name, texture_folder)
-                    if texture_path is not None:
-                        img = bpy.data.images.load(str(texture_path), check_existing=True)
-                        n.image = img
+        param_name = param.name.lower()
+        n = nodes.get(param_name, None)
+        if n is None:
+            continue
 
-                    if not n.image:
-                        # for texture shader parameters with no name
-                        if not param.texture_name:
-                            continue
-                        # Check for existing texture
-                        existing_texture = None
-                        for image in bpy.data.images:
-                            if image.name == param.texture_name:
-                                existing_texture = image
-                        texture = bpy.data.images.new(
-                            name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
-                        n.image = texture
+        if isinstance(n, ShaderNodeTexImage):
+            tex_name = param.value
+            if not tex_name:
+                # Skip unassigned texture shader parameters
+                continue
 
-                    if is_non_color_texture(filename, param.name):
-                        n.image.colorspace_settings.is_data = True
+            tex_name = tex_name.lower()
+            tex_name_dds = f"{tex_name}.dds"
+            pack = ctx.settings.textures_mode == ImportTexturesMode.PACK
+            img = None
 
-                    preferences = get_addon_preferences(bpy.context)
-                    text_name = preferences.use_text_name_as_mat_name
-                    if text_name:
-                        if param.texture_name and param.name == "DiffuseSampler":
-                            material.name = param.texture_name
+            # Only import the HD texture if available, export rebuilds the low-resolution copy.
+            is_hd = tex_name in hd_textures and tex_name in shader_group.embedded_textures
+            etex = hd_textures[tex_name] if is_hd else shader_group.embedded_textures.get(tex_name, None)
 
-                    # Assign embedded texture dictionary properties
-                    if shader_group.texture_dictionary is not None:
-                        for texture in shader_group.texture_dictionary:
-                            if texture.name == param.texture_name:
-                                n.texture_properties.embedded = True
+            if pack and etex and etex.data:
+                # If pack mode and we have embedded texture data, load it into a packed image directly
+                with etex.data.open() as src:
+                    etex_dds = src.read()
 
-                    if not n.texture_properties.embedded and not n.image.filepath:
-                        # Set external texture name for non-embedded textures
-                        n.image.source = "FILE"
-                        n.image.filepath = "//" + param.texture_name + ".dds"
+                img = bpy.data.images.new(name=tex_name_dds, width=1, height=1)
+                img.source = "FILE"
+                img.filepath = f"//{tex_name_dds}"
+                img.pack(data=etex_dds, data_len=len(etex_dds))
 
-            elif isinstance(n, SzShaderNodeParameter):
-                if param.name == n.name and n.num_rows == 1:
-                    n.set("X", param.x)
-                    if n.num_cols > 1:
-                        n.set("Y", param.y)
-                    if n.num_cols > 2:
-                        n.set("Z", param.z)
-                    if n.num_cols > 3:
-                        n.set("W", param.w)
+            if not img:
+                # Try to load texture from file
+                if texture_path := lookup_texture_file(tex_name, hd_textures_dir if is_hd else textures_dir):
+                    img = bpy.data.images.load(str(texture_path), check_existing=True)
+                    if pack:
+                        img.pack()
+
+            if not img:
+                # Check for existing texture image
+                img = bpy.data.images.get(tex_name, None) or bpy.data.images.get(tex_name_dds, None)
+
+            if not img:
+                # Create placeholder image if still not found
+                img = bpy.data.images.new(name=tex_name, width=512, height=512)
+
+            if is_hd:
+                img.sz_is_hd = True
+
+            if is_non_color_texture(filename, param_name):
+                img.colorspace_settings.is_data = True
+
+            preferences = get_addon_preferences(bpy.context)
+            if preferences.use_text_name_as_mat_name and param_name == "diffusesampler":
+                material.name = tex_name
+
+            if tex_name in shader_group.embedded_textures:
+                n.texture_properties.embedded = True
+
+            if not n.texture_properties.embedded and not img.filepath:
+                # Set external texture name for non-embedded textures
+                img.source = "FILE"
+                img.filepath = f"//{tex_name_dds}"
+
+            n.image = img
+
+        elif isinstance(n, SzShaderNodeParameter):
+            if n.num_rows == 1:
+                n.set("X", param.value.x)
+                if n.num_cols > 1:
+                    n.set("Y", param.value.y)
+                if n.num_cols > 2:
+                    n.set("Z", param.value.z)
+                if n.num_cols > 3:
+                    n.set("W", param.value.w)
 
     # assign extra detail node image for viewing
     dtl_ext = get_detail_extra_sampler(material)
@@ -370,37 +435,59 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         dtl = material.node_tree.nodes["DetailSampler"]
         dtl_ext.image = dtl.image
 
+    # For vehicle shaders, append [PAINT_LAYER] extension at the end of the material names
+    if "matdiffusecolor" in nodes:
+        update_vehicle_material_paint_name(material)
+
     return material
 
 
-def create_drawable_skel(skeleton_xml: Skeleton, armature_obj: bpy.types.Object):
+def lookup_texture_file(texture_name: str, model_textures_directory: Optional[Path]) -> Optional[Path]:
+    from ..ytd.ytdimport import lookup_texture_file as _lookup_texture_file_impl
+    return _lookup_texture_file_impl(texture_name, model_textures_directory, use_shared_textures_directories=True)
+
+
+def is_non_color_texture(shader_filename: str, param_name: str) -> bool:
+    """Check if this texture parameter contains non-color data."""
+    # TODO: we could specify non-color textures in shaders.xml
+    # assign non-color...
+    param_name = param_name.lower()
+    return (
+        "bump" in param_name or  # ...to normal maps
+        param_name == "distancemapsampler" or  # ...to distance maps
+        (shader_filename in {"decal_dirt.sps", "decal_amb_only.sps"}
+         and param_name == "diffusesampler")  # ...to shadow maps
+    )
+
+
+def create_drawable_skel(armature_obj: Object, skeleton: Skeleton):
     bpy.context.view_layer.objects.active = armature_obj
-    bones = skeleton_xml.bones
+    bones = skeleton.bones
 
     # Need to go into edit mode to modify edit bones
     bpy.ops.object.mode_set(mode="EDIT")
 
-    for bone_xml in bones:
-        create_bpy_bone(bone_xml, armature_obj.data)
+    for b in bones:
+        add_bone(armature_obj.data, b)
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    for bone_xml in bones:
-        set_bone_properties(bone_xml, armature_obj.data)
+    for b in bones:
+        set_bone_properties(armature_obj.data, b)
+        add_bone_constraints(armature_obj, b)
 
     return armature_obj
 
 
-def create_bpy_bone(bone_xml: Bone, armature: bpy.types.Armature):
-    # bpy.context.view_layer.objects.active = armature
-    edit_bone = armature.edit_bones.new(bone_xml.name)
-    if bone_xml.parent_index != -1:
-        edit_bone.parent = armature.edit_bones[bone_xml.parent_index]
+def add_bone(armature: Armature, bone: SkelBone):
+    edit_bone = armature.edit_bones.new(bone.name)
+    if bone.parent_index != -1:
+        edit_bone.parent = armature.edit_bones[bone.parent_index]
 
     # https://github.com/LendoK/Blender_GTA_V_model_importer/blob/master/importer.py
-    mat_rot = bone_xml.rotation.to_matrix().to_4x4()
-    mat_loc = Matrix.Translation(bone_xml.translation)
-    mat_sca = Matrix.Scale(1, 4, bone_xml.scale)
+    mat_rot = bone.rotation.to_matrix().to_4x4()
+    mat_loc = Matrix.Translation(bone.position)
+    mat_sca = Matrix.Scale(1, 4, bone.scale)
 
     edit_bone.head = (0, 0, 0)
     edit_bone.tail = (0, 0.05, 0)
@@ -409,74 +496,48 @@ def create_bpy_bone(bone_xml: Bone, armature: bpy.types.Armature):
     if edit_bone.parent is not None:
         edit_bone.matrix = edit_bone.parent.matrix @ edit_bone.matrix
 
-    return bone_xml.name
 
+def set_bone_properties(armature: Armature, bone: SkelBone):
+    bl_bone = armature.bones[bone.name]
+    bl_bone.bone_properties.tag = bone.tag
 
-def set_bone_properties(bone_xml: Bone, armature: bpy.types.Armature):
-    bl_bone = armature.bones[bone_xml.name]
-    bl_bone.bone_properties.tag = bone_xml.tag
-
-    # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
-    flags_restricted = set(["LimitRotation", "Unk0"])
-    for _flag in bone_xml.flags:
-        if _flag in flags_restricted:
+    for _flag in bone.flags:
+        # LimitRotation and Unk0 have their special meanings, can be deduced if needed when exporting
+        if _flag & (SkelBoneFlags.HAS_ROTATE_LIMITS | SkelBoneFlags.HAS_CHILD):
             continue
 
+        # flags still use the CW names for backwards compatibility
+        from szio.gta5.cwxml.adapters.drawable import CW_BONE_FLAGS_INVERSE_MAP
         flag = bl_bone.bone_properties.flags.add()
-        flag.name = _flag
+        flag.name = CW_BONE_FLAGS_INVERSE_MAP[_flag]
 
 
-def apply_rotation_limits(rotation_limits: list[RotationLimit], armature_obj: bpy.types.Object):
-    bone_by_tag: dict[str, bpy.types.PoseBone] = get_bone_by_tag(armature_obj)
+def add_bone_constraints(armature_obj: Object, bone: SkelBone):
+    pose_bone = armature_obj.pose.bones[bone.name]
 
-    for rot_limit in rotation_limits:
-        if rot_limit.bone_id not in bone_by_tag:
-            logger.warning(
-                f"{armature_obj.name} contains a rotation limit with an invalid bone id '{rot_limit.bone_id}'! Skipping...")
-            continue
+    if bone.translation_limit:
+        add_bone_constraint_translation_limit(pose_bone, bone.translation_limit)
 
-        bone = bone_by_tag[rot_limit.bone_id]
-        create_limit_rot_bone_constraint(rot_limit, bone)
+    if bone.rotation_limit:
+        add_bone_constraint_rotation_limit(pose_bone, bone.rotation_limit)
 
 
-def apply_translation_limits(translation_limits: list[BoneLimit], armature_obj: bpy.types.Object):
-    bone_by_tag: dict[str, bpy.types.PoseBone] = get_bone_by_tag(armature_obj)
-
-    for trans_limit in translation_limits:
-        if trans_limit.bone_id not in bone_by_tag:
-            logger.warning(
-                f"{armature_obj.name} contains a translation limit with an invalid bone id '{trans_limit.bone_id}'! Skipping...")
-            continue
-
-        bone = bone_by_tag[trans_limit.bone_id]
-        create_limit_pos_bone_constraint(trans_limit, bone)
-
-
-def get_bone_by_tag(armature_obj: bpy.types.Object):
-    bone_by_tag: dict[str, bpy.types.PoseBone] = {}
-
-    for pose_bone in armature_obj.pose.bones:
-        bone_tag = pose_bone.bone.bone_properties.tag
-        bone_by_tag[bone_tag] = pose_bone
-
-    return bone_by_tag
-
-
-def create_limit_rot_bone_constraint(rot_limit: RotationLimit, pose_bone: bpy.types.PoseBone):
+def add_bone_constraint_rotation_limit(pose_bone: PoseBone, limit: SkelBoneRotationLimit) -> LimitRotationConstraint:
     constraint = pose_bone.constraints.new("LIMIT_ROTATION")
     constraint.owner_space = "LOCAL"
     constraint.use_limit_x = True
     constraint.use_limit_y = True
     constraint.use_limit_z = True
-    constraint.max_x = rot_limit.max.x
-    constraint.max_y = rot_limit.max.y
-    constraint.max_z = rot_limit.max.z
-    constraint.min_x = rot_limit.min.x
-    constraint.min_y = rot_limit.min.y
-    constraint.min_z = rot_limit.min.z
+    constraint.max_x = limit.max.x
+    constraint.max_y = limit.max.y
+    constraint.max_z = limit.max.z
+    constraint.min_x = limit.min.x
+    constraint.min_y = limit.min.y
+    constraint.min_z = limit.min.z
+    return constraint
 
 
-def create_limit_pos_bone_constraint(trans_limit: BoneLimit, pose_bone: bpy.types.PoseBone):
+def add_bone_constraint_translation_limit(pose_bone: PoseBone, limit: SkelBoneTranslationLimit) -> LimitLocationConstraint:
     constraint = pose_bone.constraints.new("LIMIT_LOCATION")
     constraint.owner_space = "LOCAL"
     constraint.use_min_x = True
@@ -485,50 +546,105 @@ def create_limit_pos_bone_constraint(trans_limit: BoneLimit, pose_bone: bpy.type
     constraint.use_max_x = True
     constraint.use_max_y = True
     constraint.use_max_z = True
-    constraint.max_x = trans_limit.max.x
-    constraint.max_y = trans_limit.max.y
-    constraint.max_z = trans_limit.max.z
-    constraint.min_x = trans_limit.min.x
-    constraint.min_y = trans_limit.min.y
-    constraint.min_z = trans_limit.min.z
+    constraint.max_x = limit.max.x
+    constraint.max_y = limit.max.y
+    constraint.max_z = limit.max.z
+    constraint.min_x = limit.min.x
+    constraint.min_y = limit.min.y
+    constraint.min_z = limit.min.z
+    return constraint
 
 
-def create_embedded_collisions(bounds_xml: Bound, drawable_obj: bpy.types.Object):
-    if bounds_xml.type == "Composite":
-        bound_obj = create_bound_composite(bounds_xml)
-        bound_obj.name = f"{drawable_obj.name}.col"
+def create_embedded_collisions(bounds: AssetBound, drawable_obj: bpy.types.Object):
+    if bounds.bound_type == BoundType.COMPOSITE:
+        bound_obj = create_bound_composite(bounds, name=f"{drawable_obj.name}.col")
     else:
-        bound_obj = create_bound_object(bounds_xml)
+        bound_obj = create_bound_object(bounds)
 
     bound_obj.parent = drawable_obj
 
 
-def create_drawable_lights(drawable_xml: Drawable, drawable_obj: bpy.types.Object, armature_obj: Optional[bpy.types.Object] = None):
-    lights = create_light_objs(drawable_xml.lights, armature_obj)
-    lights.parent = drawable_obj
+def set_drawable_properties(obj: Object, drawable: AssetDrawable):
+    lod_dists = drawable.lod_thresholds
+    obj.drawable_properties.lod_dist_high = lod_dists[IOLodLevel.HIGH]
+    obj.drawable_properties.lod_dist_med = lod_dists[IOLodLevel.MEDIUM]
+    obj.drawable_properties.lod_dist_low = lod_dists[IOLodLevel.LOW]
+    obj.drawable_properties.lod_dist_vlow = lod_dists[IOLodLevel.VERYLOW]
 
 
-def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):
-    obj.drawable_properties.lod_dist_high = drawable_xml.lod_dist_high
-    obj.drawable_properties.lod_dist_med = drawable_xml.lod_dist_med
-    obj.drawable_properties.lod_dist_low = drawable_xml.lod_dist_low
-    obj.drawable_properties.lod_dist_vlow = drawable_xml.lod_dist_vlow
-
-
-def create_drawable_as_asset(drawable_xml: Drawable, name: str, filepath: str):
+def create_drawable_as_asset(
+    drawable: AssetDrawable,
+    name: str,
+    hd_txd: AssetTextureDictionary | None = None,
+    hd_txd_suffix: str | None = None,
+) -> Object:
     """Create drawable as an asset with all the high LODs joined together."""
-    drawable_xml.drawable_models_low = []
-    drawable_xml.drawable_models_med = []
-    drawable_xml.drawable_models_vlow = []
 
-    drawable_xml.bounds = None
-    drawable_xml.lights = None
+    skel = drawable.skeleton
+    lights = drawable.lights
+    bounds = drawable.bounds
+    models = drawable.models
+    models.pop(IOLodLevel.MEDIUM, None)
+    models.pop(IOLodLevel.LOW, None)
+    models.pop(IOLodLevel.VERYLOW, None)
+    drawable.models = models
+    drawable.bounds = None
+    drawable.lights = []
+    drawable_obj = create_drawable(drawable, hd_txd=hd_txd, hd_txd_suffix=hd_txd_suffix)
+    asset_obj = convert_object_to_asset(name, drawable_obj)
+    serialize_lights_to_asset(asset_obj, lights)
+    if bounds:
+        import json
 
-    drawable_obj = create_drawable_obj(drawable_xml, filepath)
-    convert_object_to_asset(name, drawable_obj)
+        COLS_KEY = "sz_asset_collisions"
+
+        cols_serialized = {
+            "bb_min": tuple(bounds.bb_min),
+            "bb_max": tuple(bounds.bb_max),
+        }
+        cols_serialized_str = json.dumps(
+            cols_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[COLS_KEY] = cols_serialized_str
+        if data := asset_obj.data:
+                data[COLS_KEY] = cols_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[COLS_KEY] = cols_serialized_str
+
+    if skel:
+        import json
+        from dataclasses import asdict
+        SKEL_KEY = "sz_asset_skeleton"
+
+        skel_serialized = asdict(skel)
+        for bone in skel_serialized["bones"]:
+            bone.pop("translation_limit")
+            bone.pop("rotation_limit")
+            for k, v in bone.items():
+                match v:
+                    case Vector() | Quaternion():
+                        bone[k] = tuple(v)
+
+        skel_serialized_str = json.dumps(
+            skel_serialized,
+            separators=(",", ":"),
+            indent=None,
+        )
+
+        asset_obj[SKEL_KEY] = skel_serialized_str
+        if data := asset_obj.data:
+                data[SKEL_KEY] = skel_serialized_str
+        if asset_data := asset_obj.asset_data:
+                asset_data[SKEL_KEY] = skel_serialized_str
 
 
-def convert_object_to_asset(name: str, obj: bpy.types.Object) -> bpy.types.Object:
+    return asset_obj
+
+
+def convert_object_to_asset(name: str, obj: Object) -> Object:
     root_transform = obj.matrix_world.copy()
 
     model_objs = []

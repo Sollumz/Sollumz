@@ -1,373 +1,300 @@
-from typing import Iterable
-import bpy
-from mathutils import Euler, Vector, Quaternion, Matrix
-
-from szio.gta5.cwxml import (
-    ytyp as ytypxml,
-    ymap as ymapxml,
+from typing import Optional, Iterable
+from bpy.types import (
+    Scene,
 )
-from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
-from ..tools import jenkhash
-from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
-from .properties.ytyp import ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
-from .properties.extensions import ExtensionProperties, ExtensionType
-from szio.gta5 import LightFlashiness
+from mathutils import Vector, Quaternion, Matrix, Euler
+from szio.gta5 import (
+    AssetMapTypes,
+    Archetype,
+    ArchetypeType,
+    ArchetypeAssetType,
+    EntityLodLevel,
+    EntityPriorityLevel,
+    EntityFlags,
+    MloEntity,
+    MloRoom,
+    MloPortal,
+    MloEntitySet,
+    MloTimeCycleModifier,
+    Extension,
+    LightFlashiness,
+)
+from ..tools.meshhelper import (
+    get_combined_bound_box,
+    get_bound_center_from_bounds,
+    get_sphere_radius,
+)
+from ..iecontext import export_context, ExportBundle
+from .. import sollumz_properties as sz_props
+from .properties.ytyp import (
+    CMapTypesProperties,
+    ArchetypeProperties,
+    SpecialAttribute,
+    MloEntityProperties,
+    RoomProperties,
+    PortalProperties,
+    EntitySetProperties,
+    TimecycleModifierProperties,
+)
+from .properties.extensions import ExtensionType, ExtensionProperties, EXTENSION_TYPE_TO_DEF_CLASS
 
 
-def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
-    """Set attached objects of room from the mlo archetype entities collection provided."""
-    for i, entity in enumerate(entities):
-        if entity.room_index == room_index:
-            room_xml.attached_objects.append(i)
+def export_ytyp(scene: Scene, ytyp_index: int) -> ExportBundle:
+    if 0 <= ytyp_index < len(scene.ytyps):
+        ytyp = scene.ytyps[ytyp_index]
+        map_types = create_map_types_asset(ytyp)
+    else:
+        map_types = None
+    return export_context().make_bundle(map_types)
 
 
-def set_portal_attached_objects(portal_xml: ytypxml.Portal, portal_index: int, entities: Iterable[MloEntityProperties]):
-    """Set attached objects of portal from the mlo archetype entities collection provided."""
-    for i, entity in enumerate(entities):
-        if entity.portal_index == portal_index:
-            portal_xml.attached_objects.append(i)
+def create_map_types_asset(
+    map_types: CMapTypesProperties,
+) -> AssetMapTypes | None:
+    return AssetMapTypes(
+        name=map_types.name,
+        archetypes=[create_archetype(a) for a in map_types.archetypes],
+    )
 
 
-def get_portal_count(room: RoomProperties, portals: Iterable[PortalProperties]) -> int:
-    """Get number of portals in room."""
+def create_archetype(archetype: ArchetypeProperties) -> Archetype:
+    """Create archetype asset from an archetype data block"""
+    match archetype.type:
+        case sz_props.ArchetypeType.TIME:
+            arch_type = ArchetypeType.TIME
+            extra_kwargs = {
+                "time_flags": int(archetype.time_flags.total),
+            }
+        case sz_props.ArchetypeType.MLO:
+            arch_type = ArchetypeType.MLO
+            extra_kwargs = {
+                "mlo_flags": int(archetype.mlo_flags.total),
+                "entities": [create_mlo_entity(e, archetype) for e in archetype.non_entity_set_entities],
+                "rooms": [create_mlo_room(r, archetype) for r in archetype.rooms],
+                "portals": [create_mlo_portal(p, archetype) for p in archetype.portals],
+                "entity_sets": [create_mlo_entity_set(s, archetype) for s in archetype.entity_sets],
+                "timecycle_modifiers": [create_mlo_tcm(m) for m in archetype.timecycle_modifiers],
+            }
+        case _:
+            arch_type = ArchetypeType.BASE
+            extra_kwargs = {}
 
-    count = 0
-    for portal in portals:
-        if portal.room_from_id == str(room.id) or portal.room_to_id == str(room.id):
-            count += 1
+    bb_min, bb_max, bs_center, bs_radius = calc_archetype_bounds(archetype, export_context().settings.apply_transforms)
 
-    return count
+    return Archetype(
+        name=archetype.name.lower(),
+        type=arch_type,
+        flags=int(archetype.flags.total),
+        special_attribute=SpecialAttribute[archetype.special_attribute].value,
+        lod_dist=archetype.lod_dist,
+        hd_texture_dist=archetype.hd_texture_dist,
+        texture_dictionary=archetype.texture_dictionary.lower(),
+        clip_dictionary=archetype.clip_dictionary.lower(),
+        drawable_dictionary=archetype.drawable_dictionary.lower(),
+        physics_dictionary=archetype.physics_dictionary.lower(),
+        asset_name=archetype.asset_name.lower(),
+        asset_type=ArchetypeAssetType[sz_props.AssetType(archetype.asset_type).name],
+        bb_min=bb_min,
+        bb_max=bb_max,
+        bs_center=bs_center,
+        bs_radius=bs_radius,
+        extensions=[create_extension(e) for e in archetype.extensions],
+        **extra_kwargs,
+    )
 
 
-def set_entity_xml_transforms_from_object(entity_obj: bpy.types.Object, entity_xml: ymapxml.Entity, archetype: ArchetypeProperties):
-    """Set the transforms of an entity xml based on a Blender mesh object."""
+def calc_archetype_bounds_from_asset(archetype: ArchetypeProperties, apply_transforms: bool = False) -> tuple[Vector, Vector, Vector, float]:
+    """Calculate bounds from the archetype asset."""
 
-    transform: Matrix = entity_obj.matrix_world
+    if apply_transforms:
+        # Unapply only translation
+        matrix = Matrix.Translation(archetype.asset.matrix_world.translation).inverted()
+    else:
+        # Unapply all transforms
+        matrix = archetype.asset.matrix_world.inverted()
+
+    bb_min, bb_max = get_combined_bound_box(archetype.asset, use_world=True, matrix=matrix)
+    bs_center = get_bound_center_from_bounds(bb_min, bb_max)
+    bs_radius = get_sphere_radius(bb_min, bb_max)
+    return bb_min, bb_max, bs_center, bs_radius
+
+
+def calc_archetype_bounds(archetype: ArchetypeProperties, apply_transforms: bool = False) -> tuple[Vector, Vector, Vector, float]:
+    if archetype.type == sz_props.ArchetypeType.MLO:
+        return Vector(), Vector(), Vector(), 0.0
+
+    if archetype.asset:
+        return calc_archetype_bounds_from_asset(archetype, apply_transforms)
+
+    return Vector(archetype.bb_min), Vector(archetype.bb_max), Vector(archetype.bs_center), archetype.bs_radius
+
+
+def create_mlo_entity(entity: MloEntityProperties, archetype: ArchetypeProperties) -> MloEntity:
+    """Create MLO entity definition from an entity data-block."""
+    pos, rot, scale_xy, scale_z = calc_mlo_entity_transforms(entity, archetype)
+    return MloEntity(
+        archetype_name=entity.archetype_name,
+        position=pos,
+        rotation=rot,
+        scale_xy=scale_xy,
+        scale_z=scale_z,
+        flags=EntityFlags(int(entity.flags.total)),
+        guid=0,
+        parent_index=-1,
+        child_lod_dist=0.0,
+        lod_level=EntityLodLevel.ORPHANHD,
+        num_children=0,
+        lod_dist=entity.lod_dist,
+        priority_level=EntityPriorityLevel[entity.priority_level[len("sollumz_pri_"):].upper()],
+        ambient_occlusion_multiplier=entity.ambient_occlusion_multiplier,
+        artificial_ambient_occlusion=entity.artificial_ambient_occlusion,
+        tint_value=entity.tint_value,
+        extensions=[create_extension(e) for e in entity.extensions],
+    )
+
+
+def calc_mlo_entity_transforms_from_object(entity: MloEntityProperties, archetype: ArchetypeProperties) -> tuple[Vector, Quaternion, float, float]:
+    """Get the transforms of an entity based on its linked Blender object."""
+    transform: Matrix = entity.linked_object.matrix_world
     if archetype.asset is not None:
         # Get transform relative to MLO collisions object
         parent_transform_inv = archetype.asset.matrix_world.inverted()
         transform = parent_transform_inv @ transform
     location, rotation, scale = transform.decompose()
 
-    entity_xml.position = location
-    entity_xml.rotation = rotation.inverted()
-    entity_xml.scale_xy = scale.x
-    entity_xml.scale_z = scale.z
+    return location, rotation.inverted(), scale.x, scale.z
 
 
-def set_entity_xml_transforms(entity: MloEntityProperties, entity_xml: ymapxml.Entity):
-    """Set the transforms of an entity xml based on the provided entity data-block."""
+def calc_mlo_entity_transforms(entity: MloEntityProperties, archetype: ArchetypeProperties) -> tuple[Vector, Quaternion, float, float]:
+    if entity.linked_object is not None:
+        return calc_mlo_entity_transforms_from_object(entity, archetype)
 
-    entity_xml.position = Vector(entity.position)
-    entity_xml.rotation = Quaternion(entity.rotation.inverted())
-    entity_xml.scale_xy = entity.scale_xy
-    entity_xml.scale_z = entity.scale_z
+    return Vector(entity.position), Quaternion(entity.rotation.inverted()), entity.scale_xy, entity.scale_z
 
 
-def set_portal_xml_corners(portal: PortalProperties, portal_xml: ytypxml.Portal):
-    """Set all 4 corners of portal xml based on portal data-block."""
+def create_mlo_room(room: RoomProperties, archetype: ArchetypeProperties) -> MloRoom:
+    """Create MLO room definition from a room data-block."""
+    return MloRoom(
+        name=room.name,
+        bb_min=room.bb_min,
+        bb_max=room.bb_max,
+        blend=room.blend,
+        timecycle=room.timecycle,
+        secondary_timecycle=room.secondary_timecycle,
+        flags=int(room.flags.total),
+        portal_count=calc_mlo_room_portal_count(room, archetype.portals),
+        floor_id=room.floor_id,
+        exterior_visibility_depth=room.exterior_visibility_depth,
+        attached_objects=find_mlo_room_attached_objects(room, archetype.non_entity_set_entities),
+    )
 
-    for i in range(4):
-        corner = getattr(portal, f"corner{i + 1}")
-        corner_xml = ytypxml.Corner()
-        corner_xml.value = corner
-        portal_xml.corners.append(corner_xml)
+
+def calc_mlo_room_portal_count(room: RoomProperties, portals: Iterable[PortalProperties]) -> int:
+    """Get number of portals in room."""
+    room_id = str(room.id)
+    return sum(1 for p in portals if p.room_from_id == room_id or p.room_to_id == room_id)
 
 
-def create_entity_set_xml(entityset: EntitySetProperties, archetype: ArchetypeProperties) -> ytypxml.EntitySet:
-    """Create xml mlo entity sets from an entityset data-block"""
-    entity_set = ytypxml.EntitySet()
-    entity_set.name = entityset.name
+def find_mlo_room_attached_objects(room: RoomProperties, entities: Iterable[MloEntityProperties]) -> list[int]:
+    """Gets indices of MLO entities attached to the room."""
+    room_id = str(room.id)
+    return [i for i, entity in enumerate(entities) if entity.attached_room_id == room_id]
 
+
+def create_mlo_portal(portal: PortalProperties, archetype: ArchetypeProperties) -> MloPortal:
+    """Create MLO portal definition from a portal data-block."""
+    return MloPortal(
+        room_from=portal.room_from_index,
+        room_to=portal.room_to_index,
+        flags=int(portal.flags.total),
+        mirror_priority=portal.mirror_priority,
+        opacity=portal.opacity,
+        audio_occlusion=int(portal.audio_occlusion),
+        corners=(portal.corner1, portal.corner2, portal.corner3, portal.corner4),
+        attached_objects=find_mlo_portal_attached_objects(portal, archetype.non_entity_set_entities),
+    )
+
+
+def find_mlo_portal_attached_objects(portal: PortalProperties, entities: Iterable[MloEntityProperties]) -> list[int]:
+    """Gets indices of MLO entities attached to the portal."""
+    portal_id = str(portal.id)
+    return [i for i, entity in enumerate(entities) if entity.attached_portal_id == portal_id]
+
+
+def create_mlo_entity_set(entity_set: EntitySetProperties, archetype: ArchetypeProperties) -> MloEntitySet:
+    """Create MLO entity set definition from an entity set data-block"""
+    entities = []
+    locations = []
+    entity_set_id = str(entity_set.id)
     for entity in archetype.entities:
-        if entity.attached_entity_set_id != str(entityset.id):
+        if entity.attached_entity_set_id != entity_set_id:
             continue
 
-        entity_set.entities.append(create_entity_xml(entity, archetype))
+        entities.append(create_mlo_entity(entity, archetype))
 
         location = entity.room_index
         if location == -1:
             # If not attached to a room, it should be attached to a portal. Set MSB to indicate this is a portal index
             location = entity.portal_index | (1 << 31)
 
-        entity_set.locations.append(location)
+        locations.append(location)
 
-    return entity_set
-
-
-def create_entity_xml(entity: MloEntityProperties, archetype: ArchetypeProperties) -> ymapxml.Entity:
-    """Create xml mlo entity from an entity data-block."""
-
-    entity_xml = ymapxml.Entity()
-    entity_obj = entity.linked_object
-    if entity_obj:
-        set_entity_xml_transforms_from_object(entity_obj, entity_xml, archetype)
-    else:
-        set_entity_xml_transforms(entity, entity_xml)
-
-    entity_xml.archetype_name = entity.archetype_name
-    entity_xml.flags = entity.flags.total
-    entity_xml.parent_index = entity.parent_index
-    entity_xml.lod_dist = entity.lod_dist
-    entity_xml.child_lod_dist = entity.child_lod_dist
-    entity_xml.ambient_occlusion_multiplier = entity.ambient_occlusion_multiplier
-    entity_xml.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
-    entity_xml.tint_value = entity.tint_value
-
-    lod_level = next(name for name, value in vars(
-        EntityLodLevel).items() if value == (entity.lod_level))
-    priority_level = next(name for name, value in vars(
-        EntityPriorityLevel).items() if value == (entity.priority_level))
-    entity_xml.lod_level = lod_level
-    entity_xml.priority_level = priority_level
-
-    for extension in entity.extensions:
-        extension_xml = create_extension_xml(extension)
-        if extension_xml is not None:
-            entity_xml.extensions.append(extension_xml)
-
-    return entity_xml
+    return MloEntitySet(
+        name=entity_set.name,
+        locations=locations,
+        entities=entities,
+    )
 
 
-def create_room_xml(room: RoomProperties, room_index: int, archetype: ArchetypeProperties) -> ytypxml.Room:
-    """Create xml room from a room data-block."""
-
-    room_xml = ytypxml.Room()
-    room_xml.name = room.name
-    room_xml.bb_min = room.bb_min
-    room_xml.bb_max = room.bb_max
-    room_xml.blend = room.blend
-    room_xml.timecycle_name = room.timecycle
-    room_xml.secondary_timecycle_name = room.secondary_timecycle
-    room_xml.flags = room.flags.total
-    room_xml.floor_id = room.floor_id
-    room_xml.exterior_visibility_depth = room.exterior_visibility_depth
-    room_xml.portal_count = get_portal_count(
-        room, archetype.portals)
-
-    set_room_attached_objects(room_xml, room_index,
-                              archetype.non_entity_set_entities)
-
-    return room_xml
+def create_mlo_tcm(tcm: TimecycleModifierProperties) -> MloTimeCycleModifier:
+    """Create a MLO timecycle modifier definition from a timecycle modifier data-block."""
+    return MloTimeCycleModifier(
+        name=tcm.name,
+        sphere_center=Vector((tcm.sphere.x, tcm.sphere.y, tcm.sphere.z)),
+        sphere_radius=tcm.sphere.w,
+        percentage=tcm.percentage,
+        range=tcm.range,
+        start_hour=tcm.start_hour,
+        end_hour=tcm.end_hour,
+    )
 
 
-def create_portal_xml(portal: PortalProperties, portal_index: int, archetype: ArchetypeProperties) -> ytypxml.Portal:
-    """Create xml portal from a portal data-block."""
-
-    portal_xml = ytypxml.Portal()
-
-    set_portal_xml_corners(portal, portal_xml)
-
-    portal_xml.room_from = portal.room_from_index
-    portal_xml.room_to = portal.room_to_index
-    portal_xml.flags = portal.flags.total
-    portal_xml.mirror_priority = portal.mirror_priority
-    portal_xml.opacity = portal.opacity
-    portal_xml.audio_occlusion = int(
-        portal.audio_occlusion)
-
-    set_portal_attached_objects(
-        portal_xml, portal_index, archetype.non_entity_set_entities)
-
-    return portal_xml
+def create_extension(extension: ExtensionProperties) -> Extension:
+    """Create an extension definition from the given extension data-block."""
+    extension_type = extension.extension_type
+    extension_def_cls = EXTENSION_TYPE_TO_DEF_CLASS[extension_type]
+    return extension_def_cls(**get_extension_props(extension, extension_def_cls))
 
 
-def create_tcm_xml(tcm: TimecycleModifierProperties) -> ytypxml.TimeCycleModifier:
-    """Create a xml timecycle modifier from a timecycle modifier data-block."""
-
-    tcm_xml = ytypxml.TimeCycleModifier()
-    tcm_xml.name = tcm.name
-    tcm_xml.sphere = tcm.sphere
-    tcm_xml.percentage = tcm.percentage
-    tcm_xml.range = tcm.range
-    tcm_xml.start_hour = tcm.start_hour
-    tcm_xml.end_hour = tcm.end_hour
-
-    return tcm_xml
-
-
-def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapxml.Extension):
-    """Automatically set extension xml properties based on BaseExtensionProperties data-block."""
-    extension_xml.name = extension.name
+def get_extension_props(extension: ExtensionProperties, extension_def_cls: type) -> dict:
+    """Automatically get extension properties based on ExtensionProperties data-block."""
+    extension_type = extension.extension_type
     extension_properties = extension.get_properties()
 
-    extension_xml.offset_position = Vector(extension_properties.offset_position)
+    props = {
+        "name": extension.name,
+        "offset_position": Vector(extension_properties.offset_position)
+    }
 
-    ignored_props = getattr(extension_properties.__class__, "ignored_in_import_export", None) # see LightShaftExtensionProperties
+    if extension_type == ExtensionType.LIGHT_EFFECT:
+        if extension_properties.linked_lights_object is not None:
+            # Get the light objects and add them to the extension
+            lights_obj = extension.get_properties().linked_lights_object
 
-    for prop_name in extension_properties.__class__.__annotations__:
-        if ignored_props is not None and prop_name in ignored_props:
-            continue
-
-        # TODO: this check doesn't work as intended, `hasattr` with XML classes always returns true for some reason
-        if not hasattr(extension_xml, prop_name):
-            # Unknown prop name. Need warning
-            print(
-                f"Unknown {extension.extension_type} prop name '{prop_name}'.")
-            continue
-
-        prop_value = getattr(extension_properties, prop_name)
-
-        if isinstance(prop_value, Euler):
-            prop_value = prop_value.to_quaternion()
-
-        elif prop_name == "effect_hash":
-            # `effectHash` needs a hash as decimal value
-            prop_value = prop_value.strip()
-            if prop_value == "":
-                # Default to 0 for empty strings
-                prop_value = "0"
-            else:
-                # Otherwise, get a hash from the string
-                prop_value_hash = jenkhash.name_to_hash(prop_value)
-                prop_value = str(prop_value_hash)
-
-        elif prop_name == "flashiness":
-            # convert enum back to int
-            prop_value = LightFlashiness[prop_value].value
-
-        setattr(extension_xml, prop_name, prop_value)
-
-
-def create_extension_xml(extension: ExtensionProperties):
-    """Create an entity extension from the given extension xml."""
-
-    extension_type = extension.extension_type
-    extension_xml_class = ymapxml.ExtensionsList.get_extension_xml_class_from_type(extension_type)
-
-    if extension_xml_class is None:
-        # Warning needed here. Unknown extension type
-        print(f"Unknown extension type {extension_type}")
-        return None
-
-    extension_xml = extension_xml_class()
-
-    set_extension_xml_props(extension, extension_xml)
-
-    if extension_type == ExtensionType.LIGHT_EFFECT and extension.get_properties().linked_lights_object is not None:
-        # Get the light objects and add them to the extension
-        lights_obj = extension.get_properties().linked_lights_object
-
-        from ..ydr.lights import create_xml_light_instances
-        extension_xml.instances = create_xml_light_instances(lights_obj)
-
-    return extension_xml
-
-
-def set_archetype_xml_bounds_from_asset(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype, apply_transforms: bool = False):
-    """Calculate bounds from the archetype asset."""
-
-    if apply_transforms:
-        # Unapply only translation
-        matrix = Matrix.Translation(
-            archetype.asset.matrix_world.translation).inverted()
+            from ..ydr.lights import export_lights
+            props["instances"] = export_lights(lights_obj)
     else:
-        # Unapply all transforms
-        matrix = archetype.asset.matrix_world.inverted()
+        # Assumes extension definition and extension Blender properties classes have the same attribute names
+        for prop_name in extension_def_cls.__annotations__:
+            prop_value = getattr(extension_properties, prop_name)
 
-    bbmin, bbmax = get_combined_bound_box(
-        archetype.asset, use_world=True, matrix=matrix)
-    archetype_xml.bb_min = bbmin
-    archetype_xml.bb_max = bbmax
-    archetype_xml.bs_center = get_bound_center_from_bounds(bbmin, bbmax)
-    archetype_xml.bs_radius = get_sphere_radius(bbmin, bbmax)
+            if isinstance(prop_value, Euler):
+                prop_value = prop_value.to_quaternion()
 
+            elif prop_name == "flashiness":
+                # convert enum string back to enum
+                prop_value = LightFlashiness[prop_value]
 
-def set_archetype_xml_bounds(archetype: ArchetypeProperties, archetype_xml: ytypxml.BaseArchetype, apply_transforms: bool = False):
-    """Set archetype xml bounds from archetype data-block bounds."""
+            props[prop_name] = prop_value
 
-    if archetype.asset:
-        set_archetype_xml_bounds_from_asset(
-            archetype, archetype_xml, apply_transforms)
-        return
-
-    archetype_xml.bb_min = Vector(archetype.bb_min)
-    archetype_xml.bb_max = Vector(archetype.bb_max)
-    archetype_xml.bs_center = Vector(archetype.bs_center)
-    archetype_xml.bs_radius = archetype.bs_radius
-
-
-def get_xml_asset_type(asset_type: AssetType) -> str:
-    """Get xml asset type string from AssetType enum."""
-
-    if asset_type == AssetType.UNINITIALIZED:
-        return "ASSET_TYPE_UNINITIALIZED"
-    elif asset_type == AssetType.FRAGMENT:
-        return "ASSET_TYPE_FRAGMENT"
-    elif asset_type == AssetType.DRAWABLE:
-        return "ASSET_TYPE_DRAWABLE"
-    elif asset_type == AssetType.DRAWABLE_DICTIONARY:
-        return "ASSET_TYPE_DRAWABLEDICTIONARY"
-    elif asset_type == AssetType.ASSETLESS:
-        return "ASSET_TYPE_ASSETLESS"
-
-
-def create_mlo_archetype_children_xml(archetype: ArchetypeProperties, archetype_xml: ytypxml.MloArchetype):
-    """Create all mlo children from an archetype data-block for the provided archetype xml."""
-    for entity in archetype.entities:
-        if entity.attached_entity_set_id != "-1":
-            continue
-        archetype_xml.entities.append(create_entity_xml(entity, archetype))
-
-    for room_index, room in enumerate(archetype.rooms):
-        archetype_xml.rooms.append(create_room_xml(room, room_index, archetype))
-
-    for portal_index, portal in enumerate(archetype.portals):
-        archetype_xml.portals.append(create_portal_xml(portal, portal_index, archetype))
-
-    for tcm in archetype.timecycle_modifiers:
-        archetype_xml.timecycle_modifiers.append(create_tcm_xml(tcm))
-
-    for entityset in archetype.entity_sets:
-        archetype_xml.entity_sets.append(create_entity_set_xml(entityset, archetype))
-
-
-def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool = False) -> ytypxml.BaseArchetype:
-    """Create archetype xml from an archetype data block"""
-
-    archetype_xml = None
-
-    if archetype.type == ArchetypeType.MLO:
-        archetype_xml = ytypxml.MloArchetype()
-        archetype_xml.mlo_flags = archetype.mlo_flags.total
-        create_mlo_archetype_children_xml(archetype, archetype_xml)
-    else:
-        if archetype.type == ArchetypeType.TIME:
-            archetype_xml = ytypxml.TimeArchetype()
-            archetype_xml.time_flags = archetype.time_flags.total
-        else:
-            archetype_xml = ytypxml.BaseArchetype()
-        set_archetype_xml_bounds(archetype, archetype_xml, apply_transforms)
-
-    archetype_xml.lod_dist = archetype.lod_dist
-    archetype_xml.flags = archetype.flags.total
-    archetype_xml.special_attribute = SpecialAttribute[archetype.special_attribute].value
-    archetype_xml.hd_texture_dist = archetype.hd_texture_dist
-    archetype_xml.name = archetype.name.lower()
-    archetype_xml.texture_dictionary = archetype.texture_dictionary.lower()
-    archetype_xml.clip_dictionary = archetype.clip_dictionary
-    archetype_xml.drawable_dictionary = archetype.drawable_dictionary.lower()
-    archetype_xml.physics_dictionary = archetype.physics_dictionary.lower()
-    archetype_xml.asset_name = archetype.asset_name.lower()
-    archetype_xml.asset_type = get_xml_asset_type(archetype.asset_type)
-
-    for extension in archetype.extensions:
-        extension_xml = create_extension_xml(extension)
-        if extension_xml is not None:
-            archetype_xml.extensions.append(extension_xml)
-
-    return archetype_xml
-
-
-def selected_ytyp_to_xml(apply_transforms: bool = False) -> ytypxml.CMapTypes:
-    """Create a ytyp xml from the selected ytyp data-block."""
-
-    selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
-    ytyp = ytypxml.CMapTypes()
-    ytyp.name = selected_ytyp.name
-
-    for archetype in selected_ytyp.archetypes:
-        archetype_xml = create_archetype_xml(archetype, apply_transforms)
-        ytyp.archetypes.append(archetype_xml)
-
-    return ytyp
+    return props

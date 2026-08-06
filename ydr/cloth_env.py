@@ -3,16 +3,22 @@ from bpy.types import (
     Object,
     Material,
 )
-from typing import Optional
 from mathutils import (
     Vector,
     Matrix,
 )
-from szio.gta5 import ShaderManager
-from szio.gta5.cwxml import (
-    Drawable,
-    EnvironmentCloth,
+from szio.gta5 import (
+    AssetFragDrawable,
+    EnvCloth,
+    EnvClothTuning,
+    VerletCloth,
     VerletClothEdge,
+    ClothController,
+    ClothBridgeSimGfx,
+    LodLevel as IOLodLevel,
+    Model,
+    VertexDataType,
+    ShaderManager,
 )
 from ..tools.blenderhelper import (
     get_evaluated_obj,
@@ -25,22 +31,19 @@ from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     LODLevel,
 )
-from ..ybn.ybnexport import (
-    create_composite_xml,
-    get_scale_to_apply_to_bound,
-)
+from ..ybn.ybnexport import create_bound_composite_asset, calc_scale_to_apply_to_bound
 from .vertex_buffer_builder_domain import VBBuilderDomain
 from .ydrexport import (
     get_bone_index,
-    create_model_xml,
-    append_model_xml,
-    set_drawable_xml_extents,
+    create_model,
+    create_shader_group,
 )
 from .cloth_diagnostics import (
     ClothDiagMeshBindingError,
     cloth_export_context,
     cloth_enter_export_context,
 )
+from ..iecontext import export_context
 from .. import logger
 
 CLOTH_ENV_MAX_VERTICES = 1000
@@ -126,18 +129,19 @@ def _cloth_sort_verlet_edges(edges: list[VerletClothEdge]) -> list[VerletClothEd
                 new_edges.append(bucket[i])
             else:
                 # insert dummy edge
-                verlet_edge = VerletClothEdge()
-                verlet_edge.vertex0 = 0
-                verlet_edge.vertex1 = 0
-                verlet_edge.length_sqr = 1e8
-                verlet_edge.weight0 = 0.0
-                verlet_edge.compression_weight = 0.0
+                verlet_edge = VerletClothEdge(
+                    vertex0=0,
+                    vertex1=0,
+                    length_sqr=1e8,
+                    weight0=0.0,
+                    compression_weight=0.0,
+                )
                 new_edges.append(verlet_edge)
 
     return new_edges
 
 
-def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[Material]) -> Optional[EnvironmentCloth]:
+def cloth_env_export(frag_obj: Object, drawable: AssetFragDrawable, materials: list[Material]) -> EnvCloth | None:
     cloth_objs = cloth_env_find_mesh_objects(frag_obj)
     if not cloth_objs:
         return None
@@ -157,10 +161,10 @@ def cloth_env_export(frag_obj: Object, drawable_xml: Drawable, materials: list[M
         with export_context.enter_drawable_context(cloth_obj) as diagnostics:
             diagnostics.drawable_model_obj_name = cloth_obj.name
             diagnostics.cloth_obj_name = cloth_obj.name
-            return _cloth_env_export(frag_obj, cloth_obj, drawable_xml, materials)
+            return _cloth_env_export(frag_obj, cloth_obj, drawable, materials)
 
 
-def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawable, materials: list[Material]) -> Optional[EnvironmentCloth]:
+def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable: AssetFragDrawable, materials: list[Material]) -> EnvCloth | None:
     cloth_bone = get_child_of_bone(cloth_obj)
     if cloth_bone is None:
         logger.error(
@@ -171,8 +175,6 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
 
     from .cloth import mesh_get_cloth_attribute_values, mesh_has_cloth_attribute, ClothAttr
 
-    env_cloth = EnvironmentCloth()
-    env_cloth.flags = 0
     cloth_obj_eval = get_evaluated_obj(cloth_obj)
     cloth_mesh = cloth_obj_eval.to_mesh()
     cloth_mesh.calc_loop_triangles()
@@ -185,6 +187,7 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
             f"{num_vertices} vertices.\n"
             f"Cloth won't be exported!"
         )
+        cloth_obj_eval.to_mesh_clear()
         return None
 
     pinned = np.array(mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PINNED)) != 0
@@ -218,45 +221,18 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
 
             cloth_pin_index += 1
 
-    triangles = cloth_mesh.loop_triangles
-
-    controller = env_cloth.controller
-    controller.name = remove_number_suffix(frag_obj.name) + "_cloth"
-    controller.morph_controller.map_data_high.poly_count = len(triangles)
-    controller.flags = 3  # owns morph controller + owns bridge
-    bridge = controller.bridge
-    bridge.vertex_count_high = num_vertices
-    if mesh_has_cloth_attribute(cloth_mesh, ClothAttr.PIN_RADIUS):
-        pin_radius = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PIN_RADIUS)
-        bridge.pin_radius_high = [
-            pin_radius[mi][0]  # env cloth only ever has 1 pin radius set
-            for mi in cloth_to_mesh_vertex_map
-        ]
-    else:
-        bridge.pin_radius_high = None
-    vertex_weights = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.VERTEX_WEIGHT)
-    inflation_scale = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.INFLATION_SCALE)
-    bridge.vertex_weights_high = [vertex_weights[mi] for mi in cloth_to_mesh_vertex_map]
-    bridge.inflation_scale_high = [inflation_scale[mi] for mi in cloth_to_mesh_vertex_map]
-    bridge.display_map_high = mesh_to_cloth_vertex_map
-    # just need to allocate space for the pinnable list, unused
-    bridge.pinnable_list = [0] * int(np.ceil(num_vertices / 32))
-
-    force_transform = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.FORCE_TRANSFORM)
-    if (force_transform != 0).any():
-        env_cloth.user_data = " ".join(str(force_transform[mi]) for mi in cloth_to_mesh_vertex_map)
-    else:
-        env_cloth.user_data = None
-
     def _create_verlet_edge(mesh_v0: int, mesh_v1: int) -> VerletClothEdge:
-        verlet_edge = VerletClothEdge()
-        verlet_edge.vertex0 = mesh_to_cloth_vertex_map[mesh_v0]
-        verlet_edge.vertex1 = mesh_to_cloth_vertex_map[mesh_v1]
-        verlet_edge.length_sqr = Vector(vertices[verlet_edge.vertex0] -
-                                        vertices[verlet_edge.vertex1]).length_squared
-        verlet_edge.weight0 = 0.0 if pinned[mesh_v0] else 1.0 if pinned[mesh_v1] else 0.5
-        verlet_edge.compression_weight = 0.25  # TODO(cloth): compression_weight
-        return verlet_edge
+        vertex0 = mesh_to_cloth_vertex_map[mesh_v0]
+        vertex1 = mesh_to_cloth_vertex_map[mesh_v1]
+        return VerletClothEdge(
+            vertex0=vertex0,
+            vertex1=vertex1,
+            length_sqr=Vector(vertices[vertex0] - vertices[vertex1]).length_squared,
+            weight0=0.0 if pinned[mesh_v0] else 1.0 if pinned[mesh_v1] else 0.5,
+            compression_weight=0.25,
+        )
+
+    triangles = cloth_mesh.loop_triangles
 
     edges = []
     edges_added = set()
@@ -296,111 +272,108 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
 
     cloth_props = frag_obj.fragment_properties.cloth
 
-    verlet = controller.cloth_high  # TODO(cloth): other lods
-    verlet.vertex_positions = vertices
-    verlet.vertex_normals = None  # env cloth never has vertex normals
-    verlet.bb_min = Vector(np.min(vertices, axis=0))
-    verlet.bb_max = Vector(np.max(vertices, axis=0))
-    verlet.switch_distance_up = 500.0  # TODO(cloth): switch distance? think it is only needed with multiple lods
-    verlet.switch_distance_down = 0.0
-    verlet.flags = 0  # TODO(cloth): flags
-    verlet.dynamic_pin_list_size = (num_vertices + 31) // 32
-    verlet.cloth_weight = cloth_props.weight
-    verlet.edges = edges
-    verlet.pinned_vertices_count = num_pinned
-    verlet.custom_edges = custom_edges
+    if cloth_props.world_bounds:
+        world_bounds = create_bound_composite_asset(cloth_props.world_bounds, allow_planes=True)
 
-    # Remove elements for other LODs for now
-    controller.cloth_med = None
-    controller.cloth_low = None
-    controller.cloth_vlow = None
-    controller.morph_controller.map_data_high.morph_map_high_weights = None
-    controller.morph_controller.map_data_high.morph_map_high_vertex_index = None
-    controller.morph_controller.map_data_high.morph_map_high_index0 = None
-    controller.morph_controller.map_data_high.morph_map_high_index1 = None
-    controller.morph_controller.map_data_high.morph_map_high_index2 = None
-    controller.morph_controller.map_data_high.morph_map_med_weights = None
-    controller.morph_controller.map_data_high.morph_map_med_vertex_index = None
-    controller.morph_controller.map_data_high.morph_map_med_index0 = None
-    controller.morph_controller.map_data_high.morph_map_med_index1 = None
-    controller.morph_controller.map_data_high.morph_map_med_index2 = None
-    controller.morph_controller.map_data_high.morph_map_low_weights = None
-    controller.morph_controller.map_data_high.morph_map_low_vertex_index = None
-    controller.morph_controller.map_data_high.morph_map_low_index0 = None
-    controller.morph_controller.map_data_high.morph_map_low_index1 = None
-    controller.morph_controller.map_data_high.morph_map_low_index2 = None
-    controller.morph_controller.map_data_high.morph_map_vlow_weights = None
-    controller.morph_controller.map_data_high.morph_map_vlow_vertex_index = None
-    controller.morph_controller.map_data_high.morph_map_vlow_index0 = None
-    controller.morph_controller.map_data_high.morph_map_vlow_index1 = None
-    controller.morph_controller.map_data_high.morph_map_vlow_index2 = None
-    controller.morph_controller.map_data_high.index_map_high = None
-    controller.morph_controller.map_data_high.index_map_med = None
-    controller.morph_controller.map_data_high.index_map_low = None
-    controller.morph_controller.map_data_high.index_map_vlow = None
-    controller.morph_controller.map_data_med = None
-    controller.morph_controller.map_data_low = None
-    controller.morph_controller.map_data_vlow = None
-    # bridge.vertex_count_med = None
-    # bridge.vertex_count_low = None
-    # bridge.vertex_count_vlow = None
-    bridge.pin_radius_med = None
-    bridge.pin_radius_low = None
-    bridge.pin_radius_vlow = None
-    bridge.vertex_weights_med = None
-    bridge.vertex_weights_low = None
-    bridge.vertex_weights_vlow = None
-    bridge.inflation_scale_med = None
-    bridge.inflation_scale_low = None
-    bridge.inflation_scale_vlow = None
-    bridge.display_map_med = None
-    bridge.display_map_low = None
-    bridge.display_map_vlow = None
+        invalid_bounds = [
+            c for c in cloth_props.world_bounds.children
+            if c.sollum_type not in {SollumType.BOUND_PLANE, SollumType.BOUND_CAPSULE}
+        ]
+        if invalid_bounds:
+            invalid_bounds_names = [f"'{o.name}'" for o in invalid_bounds]
+            invalid_bounds_names = ", ".join(invalid_bounds_names)
+            logger.warning(
+                f"Fragment '{frag_obj.name}' has cloth world bounds with unsupported types! "
+                f"Only {SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE]} and {SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE]} "
+                f"types are supported.\n"
+                f"The following bounds are unsupported: {invalid_bounds_names}."
+            )
+    else:
+        world_bounds = None
 
-    cloth_drawable_xml = env_cloth.drawable
-    cloth_drawable_xml.name = "skel"
-    cloth_drawable_xml.shader_group = drawable_xml.shader_group
-    cloth_drawable_xml.skeleton = drawable_xml.skeleton
-    cloth_drawable_xml.joints = drawable_xml.joints
+    verlet = VerletCloth(
+        vertex_positions=vertices,
+        vertex_normals=[],  # env cloth never has vertex normals
+        bb_min=Vector(np.min(vertices, axis=0)),
+        bb_max=Vector(np.max(vertices, axis=0)),
+        switch_distance_up=500.0,  # TODO(cloth): switch distance? think it is only needed with multiple lods
+        switch_distance_down=0.0,
+        cloth_weight=cloth_props.weight,
+        edges=edges,
+        custom_edges=custom_edges,
+        pinned_vertices_count=num_pinned,
+        bounds=world_bounds,
+        flags=2 if world_bounds else 0,
+    )
 
-    scale = get_scale_to_apply_to_bound(cloth_obj)
+    if mesh_has_cloth_attribute(cloth_mesh, ClothAttr.PIN_RADIUS):
+        pin_radius = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PIN_RADIUS)
+        pin_radius = [
+            pin_radius[mi][0]  # env cloth only ever has 1 pin radius set
+            for mi in cloth_to_mesh_vertex_map
+        ]
+    else:
+        pin_radius = []
+    vertex_weights = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.VERTEX_WEIGHT)
+    vertex_weights = [vertex_weights[mi] for mi in cloth_to_mesh_vertex_map]
+    inflation_scale = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.INFLATION_SCALE)
+    inflation_scale = [inflation_scale[mi] for mi in cloth_to_mesh_vertex_map]
+
+    force_transform = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.FORCE_TRANSFORM)
+    if (force_transform != 0).any():
+        user_data = [force_transform[mi] for mi in cloth_to_mesh_vertex_map]
+    else:
+        user_data = []
+
+    bridge = ClothBridgeSimGfx(
+        vertex_count_high=num_vertices,
+        pin_radius_high=pin_radius,
+        vertex_weights_high=vertex_weights,
+        inflation_scale_high=inflation_scale,
+        display_map_high=mesh_to_cloth_vertex_map,
+    )
+
+    controller = ClothController(
+        name=remove_number_suffix(frag_obj.name) + "_cloth",
+        flags=3,   # owns morph controller + owns bridge
+        bridge=bridge,
+        cloth_high=verlet,
+        morph_high_poly_count=len(triangles),
+    )
+
+    cloth_drawable = AssetFragDrawable()
+    cloth_drawable.name = "skel"
+    cloth_drawable.shader_group = create_shader_group(materials)
+    cloth_drawable.skeleton = drawable.skeleton
+    cloth_drawable.lod_thresholds = drawable.lod_thresholds
+
+    scale = calc_scale_to_apply_to_bound(cloth_obj)
     transforms_to_apply = Matrix.Diagonal(scale).to_4x4()
 
     # TODO(cloth): lods
-    model_xml = create_model_xml(
+    model: Model = create_model(
         cloth_obj, LODLevel.HIGH, materials,
         transforms_to_apply=transforms_to_apply,
         # Force vertex domain because we don't want to possibly export a vertex per face corner since cloth mesh and
         # drawable mesh need to have the same number of vertices, otherwise the display map binding below may fail
         mesh_domain_override=VBBuilderDomain.VERTEX,
     )
-    model_xml.bone_index = get_bone_index(frag_obj.data, cloth_bone)
+    model.bone_index = get_bone_index(frag_obj.data, cloth_bone)
 
     # Given we are limited to CLOTH_MAX_VERTICES, it should always only generate a single geometry
-    assert len(model_xml.geometries) == 1, "Only a single geometry should be exported"
-    geom = model_xml.geometries[0]
-
-    append_model_xml(cloth_drawable_xml, model_xml, LODLevel.HIGH)
-
-    set_drawable_xml_extents(cloth_drawable_xml)
-
-    # Cloth require a different FVF than the default one
-    geom.vertex_buffer.get_element("layout").type = (
-        "GTAV2"
+    assert len(model.geometries) == 1, "Only a single geometry should be exported"
+    geom = model.geometries[0]
+    geom.vertex_data_type = (
+        VertexDataType.ENV_CLOTH
         if get_tangent_required(cloth_obj_eval.data.materials[0])
-        else "GTAV3"
+        else VertexDataType.ENV_CLOTH_NO_TANGENT
     )
 
-    from ..ydr.ydrexport import set_drawable_xml_flags, set_drawable_xml_properties
-    set_drawable_xml_flags(cloth_drawable_xml)
-    assert cloth_obj.parent.sollum_type == SollumType.DRAWABLE
-    set_drawable_xml_properties(cloth_obj.parent, cloth_drawable_xml)
-
     # Sort the geometry vertices to match the display map
-    geom_to_mesh_map = [-1] * len(geom.vertex_buffer.data)
-    mesh_to_geom_map = [-1] * len(geom.vertex_buffer.data)
+    geom_to_mesh_map = [-1] * len(geom.vertex_buffer)
+    mesh_to_geom_map = [-1] * len(geom.vertex_buffer)
     num_extra_matches_per_cloth_vertex = [0] * len(verlet.vertex_positions)
-    for geom_vertex_index, geom_vertex in enumerate(geom.vertex_buffer.data["Position"]):
+    for geom_vertex_index, geom_vertex in enumerate(geom.vertex_buffer["Position"]):
         matching_cloth_vertex_index = None
         for cloth_vertex_index, cloth_vertex in enumerate(verlet.vertex_positions):
             if np.allclose(geom_vertex, cloth_vertex, atol=1e-5):
@@ -435,54 +408,50 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable_xml: Drawabl
     geom_to_mesh_map = np.array(geom_to_mesh_map)
     mesh_to_geom_map = np.array(mesh_to_geom_map)
 
-    geom.vertex_buffer.data = geom.vertex_buffer.data[mesh_to_geom_map]
-    geom.index_buffer.data = geom_to_mesh_map[geom.index_buffer.data]
+    geom.vertex_buffer = geom.vertex_buffer[mesh_to_geom_map]
+    geom.index_buffer = geom_to_mesh_map[geom.index_buffer]
 
     del geom_to_mesh_map
     del mesh_to_geom_map
 
+    cloth_drawable.models = {IOLodLevel.HIGH: [model]}
+
     cloth_obj_eval.to_mesh_clear()
 
+    env_cloth_flags = 0
     # Apply tuning
     if cloth_props.enable_tuning:
-        env_cloth.flags |= 16  # 'owns instance tuning' flag
+        env_cloth_flags |= 16  # 'owns instance tuning' flag
         if cloth_props.tuning_flags.is_in_interior:
-            env_cloth.flags |= 32  # 'is in interior' flag
-        t = env_cloth.tuning
-        t.rotation_rate = cloth_props.rotation_rate
-        t.angle_threshold = cloth_props.angle_threshold
-        t.extra_force = cloth_props.extra_force
-        t.flags = int(cloth_props.tuning_flags.total)
-        t.weight = cloth_props.weight_override
-        t.distance_threshold = cloth_props.distance_threshold
+            env_cloth_flags |= 32  # 'is in interior' flag
+
         if cloth_props.tuning_flags.wind_feedback:
-            t.pin_vert = mesh_to_cloth_vertex_map[cloth_props.pin_vert]
-            t.non_pin_vert0 = mesh_to_cloth_vertex_map[cloth_props.non_pin_vert0]
-            t.non_pin_vert1 = mesh_to_cloth_vertex_map[cloth_props.non_pin_vert1]
+            pin_vert = mesh_to_cloth_vertex_map[cloth_props.pin_vert]
+            non_pin_vert0 = mesh_to_cloth_vertex_map[cloth_props.non_pin_vert0]
+            non_pin_vert1 = mesh_to_cloth_vertex_map[cloth_props.non_pin_vert1]
         else:
-            t.pin_vert = 0
-            t.non_pin_vert0 = 0
-            t.non_pin_vert1 = 0
+            pin_vert = 0
+            non_pin_vert0 = 0
+            non_pin_vert1 = 0
+
+        tuning = EnvClothTuning(
+            rotation_rate=cloth_props.rotation_rate,
+            angle_threshold=cloth_props.angle_threshold,
+            extra_force=Vector(cloth_props.extra_force),
+            flags=int(cloth_props.tuning_flags.total),
+            weight=cloth_props.weight_override,
+            distance_threshold=cloth_props.distance_threshold,
+            pin_vert=pin_vert,
+            non_pin_vert0=non_pin_vert0,
+            non_pin_vert1=non_pin_vert1,
+        )
     else:
-        env_cloth.tuning = None
+        tuning = None
 
-    if cloth_props.world_bounds:
-        verlet.bounds = create_composite_xml(cloth_props.world_bounds, allow_planes=True)
-
-        invalid_bounds = [
-            c for c in cloth_props.world_bounds.children
-            if c.sollum_type not in {SollumType.BOUND_PLANE, SollumType.BOUND_CAPSULE}
-        ]
-        if invalid_bounds:
-            invalid_bounds_names = [f"'{o.name}'" for o in invalid_bounds]
-            invalid_bounds_names = ", ".join(invalid_bounds_names)
-            logger.warning(
-                f"Fragment '{frag_obj.name}' has cloth world bounds with unsupported types! "
-                f"Only {SOLLUMZ_UI_NAMES[SollumType.BOUND_CAPSULE]} and {SOLLUMZ_UI_NAMES[SollumType.BOUND_PLANE]} "
-                f"types are supported.\n"
-                f"The following bounds are unsupported: {invalid_bounds_names}."
-            )
-    else:
-        verlet.bounds = None
-
-    return env_cloth
+    return EnvCloth(
+        drawable=cloth_drawable,
+        controller=controller,
+        user_data=user_data,
+        tuning=tuning,
+        flags=env_cloth_flags,
+    )

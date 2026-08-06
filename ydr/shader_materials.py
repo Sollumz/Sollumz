@@ -11,7 +11,7 @@ from szio.gta5.shader import (
     ShaderParameterFloat4Def,
     ShaderParameterFloat4x4Def,
 )
-from ..sollumz_properties import MaterialType, MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID
+from ..sollumz_properties import MaterialType, SollumType, MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID
 from ..tools.blenderhelper import find_bsdf_and_material_output, remove_number_suffix
 from ..tools.animationhelper import add_global_anim_uv_nodes
 from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
@@ -203,26 +203,66 @@ def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
     return None
 
 
+def find_tint_modifiers(obj: bpy.types.Object) -> list[bpy.types.NodesModifier]:
+    modifiers = []
+    for mod in obj.modifiers:
+        if (
+            mod.type == "NODES" and
+            (ng := mod.node_group) and
+            (i := ng.interface) and
+            (t := i.items_tree) and
+            t.get("Color Attribute") and
+            t.get("Palette (Preview)") and
+            t.get("Palette Texture") and
+            t.get("Tint Color")
+        ):
+            modifiers.append(mod)
+
+    return modifiers
+
+
+def apply_tint_preview_index(obj: bpy.types.Object, tint_value: int):
+    if obj.sollum_type in {SollumType.DRAWABLE, SollumType.FRAGMENT}:
+        objs = (
+            child for child in obj.children_recursive
+            if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL
+        )
+    elif obj.type == "MESH":
+        objs = [obj]
+    else:
+        return
+
+    for obj in objs:
+        mods = find_tint_modifiers(obj)
+        if not mods:
+            continue
+
+        for mod in mods:
+            preview_id = mod.node_group.interface.items_tree.get("Palette (Preview)")
+            if not preview_id:
+                continue
+
+            if bpy.app.version >= (5, 2, 0):
+                getattr(mod.properties.inputs, preview_id.identifier).value = tint_value
+            else:
+                mod[preview_id.identifier] = tint_value
+
+        obj.update_tag()
+
+
 def create_tinted_shader_graph(obj: bpy.types.Object):
     attribute_to_remove = []
-    modifiers_to_remove = []
+    modifiers_to_remove = find_tint_modifiers(obj)
 
-    for mod in obj.modifiers:
-        if mod.type == "NODES":
-            for mat in obj.data.materials:
-                tint_node = get_tint_sampler_node(mat)
-                if tint_node is not None:
-                    output_id = mod.node_group.interface.items_tree.get("Tint Color")
-                    if output_id:
-                        if bpy.app.version >= (5, 2, 0):
-                            attr_name = getattr(mod.properties.outputs, output_id.identifier).attribute_name
-                        else:
-                            attr_name = mod[output_id.identifier + "_attribute_name"]
-                        if attr_name and attr_name in obj.data.attributes:
-                            attribute_to_remove.append(attr_name)
-
-                    modifiers_to_remove.append(mod)
-                    break
+    for mod in modifiers_to_remove:
+        output_id = mod.node_group.interface.items_tree.get("Tint Color")
+        if output_id:
+            if bpy.app.version >= (5, 2, 0):
+                attr_name = getattr(mod.properties.outputs, output_id.identifier).attribute_name
+            else:
+                attr_name = mod[output_id.identifier + "_attribute_name"]
+            if attr_name and attr_name in obj.data.attributes and attr_name not in attribute_to_remove:
+                attribute_to_remove.append(attr_name)
 
     for attr_name in attribute_to_remove:
         obj.data.attributes.remove(obj.data.attributes[attr_name])

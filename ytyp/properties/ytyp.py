@@ -2,11 +2,13 @@ import bpy
 from bpy.types import (
     Object,
     PropertyGroup,
+    Collection,
 )
 from bpy.props import (
     BoolProperty,
 )
 from enum import IntEnum
+from collections.abc import Iterator
 from typing import Union, Optional, Sequence
 from uuid import uuid4
 
@@ -220,20 +222,13 @@ class MloEntityFlagsSelectionAccess(MultiSelectNestedAccess):
 
 
 class MloEntitySelectionAccess(MultiSelectAccess):
-    # from EntityProperties
     archetype_name: MultiSelectProperty()
-    guid: MultiSelectProperty()
-    parent_index: MultiSelectProperty()
     lod_dist: MultiSelectProperty()
-    child_lod_dist: MultiSelectProperty()
-    lod_level: MultiSelectProperty()
-    num_children: MultiSelectProperty()
     priority_level: MultiSelectProperty()
     ambient_occlusion_multiplier: MultiSelectProperty()
     artificial_ambient_occlusion: MultiSelectProperty()
     tint_value: MultiSelectProperty()
 
-    # from MloEntityProperties
     attached_portal_id: MultiSelectProperty()
     attached_room_id: MultiSelectProperty()
     attached_entity_set_id: MultiSelectProperty()
@@ -449,18 +444,24 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         if context.scene.show_mlo_tcm_gizmo:
             tag_redraw(context, space_type="VIEW_3D", region_type="WINDOW")
 
+    def _on_texture_dictionary_search(self, context, _edit_text: str) -> Iterator[str]:
+        yield from (txd.name for txd in context.scene.sz_txds.texture_dictionaries)
+
     bb_min: bpy.props.FloatVectorProperty(name="Bound Min")
     bb_max: bpy.props.FloatVectorProperty(name="Bound Max")
     bs_center: bpy.props.FloatVectorProperty(name="Bound Center")
     bs_radius: bpy.props.FloatProperty(name="Bound Radius")
     type: bpy.props.EnumProperty(items=items_from_enums(ArchetypeType), name="Type")
-    lod_dist: bpy.props.FloatProperty(name="Lod Distance", default=200, min=-1)
+    lod_dist: bpy.props.FloatProperty(name="LOD Distance", default=200, min=-1)
     flags: bpy.props.PointerProperty(type=ArchetypeFlags, name="Flags")
     special_attribute: bpy.props.EnumProperty(
         name="Special Attribute", items=SpecialAttributeEnumItems, default=SpecialAttribute.NOTHING_SPECIAL.name)
     hd_texture_dist: bpy.props.FloatProperty(name="HD Texture Distance", default=100, min=0)
     name: bpy.props.StringProperty(name="Name")
-    texture_dictionary: bpy.props.StringProperty(name="Texture Dictionary")
+    texture_dictionary: bpy.props.StringProperty(
+        name="Texture Dictionary",
+        search=_on_texture_dictionary_search, search_options={"SUGGESTION"},
+    )
     clip_dictionary: bpy.props.StringProperty(name="Clip Dictionary")
     drawable_dictionary: bpy.props.StringProperty(name="Drawable Dictionary")
     physics_dictionary: bpy.props.StringProperty(name="Physics Dictionary")
@@ -476,6 +477,8 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
     entities: MultiSelectCollection[MloEntityProperties, MloEntitySelectionAccess]
     timecycle_modifiers: MultiSelectCollection[TimecycleModifierProperties, TimecycleModifierSelectionAccess]
     entity_sets: MultiSelectCollection[EntitySetProperties, EntitySetSelectionAccess]
+
+    mlo_collection_for_instancing: bpy.props.PointerProperty(type=Collection, name="Collection for Instancing")
 
     id: bpy.props.IntProperty(default=-1)
     uuid: bpy.props.StringProperty(name="UUID", maxlen=36)  # unique within the whole .blend
@@ -572,7 +575,12 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         num_exit_portals = 0
         for p in self.portals:
             link_interiors = p.flags.flag2
-            if (not link_interiors and (p.room_to_index == 0 or p.room_from_index == 0)):
+            # Note, cannot use `room_to/from_index/id` properties here because their getters depend on having the
+            # correct context such that this archetype is the currently selected one, which may not be the case when
+            # this function is called (e.g. it is used from maps UI, so archetypes UI may be in whatever random state
+            # with something else selected).
+            # The name properties store the names themselves and should be in sync with the other properties
+            if (not link_interiors and (p.room_to_name == "limbo" or p.room_from_name == "limbo")):
                 num_exit_portals += 1
 
         return num_exit_portals

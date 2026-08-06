@@ -121,12 +121,19 @@ def batch_instance_map_entities(
     entities_to_instance: InstancingBatch,
     userpref_instance_entities: bool = True,
 ):
+    from ..ydr.shader_materials import apply_tint_preview_index
+
     # Cache entities collection into a list for O(1) lookups. Collection properties are
     # a linked-list internally so each index lookup is O(N).
     entities_list = list(map_group.entities)
 
     def _link_obj(obj, entity_idx: int):
-        entities_list[entity_idx].linked_object = obj
+        e = entities_list[entity_idx]
+        e.linked_object = obj
+
+        tint_value = e.tint_value
+        if tint_value != 0:
+            apply_tint_preview_index(obj, tint_value)
 
     num_instanced_from_blend, _ = entities_to_instance.instance_from_current_blend(
         _link_obj, userpref_instance_entities

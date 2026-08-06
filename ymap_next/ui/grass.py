@@ -5,6 +5,7 @@ from bpy.types import (
 )
 
 from ...icons import icon
+from ...meta import DEV_MODE
 from ...shared.multiselection import (
     MultiSelectUIListMixin,
     multiselect_ui_draw_list,
@@ -90,7 +91,8 @@ class SOLLUMZ_PT_map_grass_batches(MapChildTabPanel, Panel):
             subrow.prop(active, "modifier_ng", text="")
             subrow.operator(map_grass_ops.SOLLUMZ_OT_map_grass_create_geonodes.bl_idname, icon="FILE_REFRESH", text="")
 
-        layout.prop(active, "uuid_str")
+        if DEV_MODE:
+            layout.prop(active, "uuid_str")
         row = layout.row()
         row.enabled = not has_multiple_selection
         row.prop(active, "map_data_name", icon_value=icon("map_container"))

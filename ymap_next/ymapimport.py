@@ -7,6 +7,7 @@ import bpy
 import numpy as np
 from bpy.types import (
     Material,
+    Object,
 )
 from mathutils import Euler, Quaternion, Vector
 from szio.gta5 import (
@@ -49,6 +50,7 @@ from .properties.map import (
     MapGrassBatch,
     MapGroup,
     MapOccluder,
+    MapOccluderExportMode,
     MapTimecycleModifier,
     get_maps,
 )
@@ -205,11 +207,6 @@ class LodHierarchy:
                     self.root_maps.append(map_key)
                     continue
 
-                map_name = self.get_map_name(map_key)
-                logger.warning(
-                    f"Map '{map_name}' is missing its parent map '{parent_map_name}' in LOD "
-                    f"hierarchy. Have you imported all related .ymap files?"
-                )
                 # Keep the map: promote it to a root so it is still imported (instead of being
                 # silently dropped), and mark it incomplete so its LOD hierarchy values are
                 # preserved as-is on export.
@@ -234,11 +231,6 @@ class LodHierarchy:
             if EntityFlags.LOD_IN_PARENT_MAP in entity.flags:
                 parent_map_key = self.parent_map_by_map[entity_key.map_key.map_index]
                 if parent_map_key is None:
-                    map_name = self.get_map_name(entity_key.map_key)
-                    logger.warning(
-                        f"Map '{map_name}', entity #{entity_key.entity_index} ({entity.archetype_name}) is missing its parent in LOD "
-                        f"hierarchy. Have you imported all related .ymap files?"
-                    )
                     self.incomplete_maps.add(entity_key.map_key)
                     success = False
                     continue
@@ -252,11 +244,6 @@ class LodHierarchy:
                 self.children_entities_by_entity[parent_entity_key].append(entity_key)
                 self.parent_entity_by_entity[entity_key] = parent_entity_key
             else:
-                map_name = self.get_map_name(entity_key.map_key)
-                logger.warning(
-                    f"Map '{map_name}', entity #{entity_key.entity_index} ({entity.archetype_name}) is missing its parent in LOD "
-                    f"hierarchy. Have you imported all related .ymap files?"
-                )
                 self.incomplete_maps.add(entity_key.map_key)
                 success = False
                 continue
@@ -274,13 +261,6 @@ class LodHierarchy:
                 expected_num_children = entity.num_children
                 found_num_children = len(self.children_entities_by_entity[entity_key])
                 if expected_num_children != found_num_children:
-                    map_name = self.get_map_name(map_key)
-                    # TODO: if there are more than 5 or so entities missing children, show a different error log, this can be too spammy
-                    logger.warning(
-                        f"Map '{map_name}', entity #{entity_idx} ({entity.archetype_name}) is missing children in LOD "
-                        f"hierarchy (found {found_num_children}, expected {expected_num_children}). Have you imported "
-                        f"all related .ymap files?"
-                    )
                     self.incomplete_maps.add(map_key)
                     success = False
 
@@ -523,6 +503,10 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
         map_group.name = occl_map.name
         map_data = map_group.new_map()
         map_data.name = occl_map.name
+        map_data.streaming_extents = occl_map.streaming_extents
+        map_data.entities_extents = occl_map.entities_extents
+        # Keep the original extents on re-export instead of recalculating them
+        map_data.extents_manual = True
         box_occluders = occl_map.box_occluders
         model_occluders = occl_map.model_occluders
         if box_occluders or model_occluders:
@@ -531,11 +515,10 @@ def import_ymap_group(maps: Sequence[tuple[AssetMapData, str]]):
         map_group.refresh_ui()
 
     if lod_hierarchy.incomplete_maps:
-        logger.warning(
-            "Imported an incomplete LOD hierarchy: some related YMAP files (parent or child maps) "
-            "were not imported. The affected map container(s) have been locked: their LOD hierarchy "
-            "values (parent index, number of children, parent map) are preserved as-is on export "
-            "and editing them is limited. Other containers in the group remain editable."
+        names = ", ".join(sorted(lod_hierarchy.get_map_name(k) for k in lod_hierarchy.incomplete_maps))
+        logger.info(
+            f"LOD hierarchy of {names} is preserved and will export unchanged. Full hierarchy editing "
+            "becomes available when all related YMAP files are imported together."
         )
 
     from .map_index import MAP_INDEX
@@ -573,7 +556,7 @@ def _create_map_entity(map_group: MapGroup, map_data: MapData, entity: Entity, i
         e.mlo_cap_entities_alpha = EntityMloInstanceFlags.CAP_ENTITIES_ALPHA in entity.mlo_inst_flags
         e.mlo_short_fade_distance = EntityMloInstanceFlags.SHORT_FADE_DISTANCE in entity.mlo_inst_flags
 
-    from ..ytyp.ytypimport_io import create_extension
+    from ..ytyp.ytypimport import create_extension
 
     for extension in entity.extensions:
         create_extension(extension, e)
@@ -788,16 +771,20 @@ def _get_occluder_material() -> Material:
     return material
 
 
-def _create_map_occluder(
-    map_group: MapGroup,
-    map_data: MapData,
-    box_occluders: list[MapBoxOccluder],
-    model_occluders: list[MapModelOccluder],
-) -> MapOccluder:
+def _new_occluder_object(name: str, vertices, faces, export_mode: MapOccluderExportMode) -> Object:
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+
+    obj = create_blender_object(SollumType.NONE, name, mesh)
+    obj.active_material = _get_occluder_material()
+    obj.show_wire = True
+    obj.sz_occluder_export_mode = export_mode.name
+    return obj
+
+
+def _create_box_occluders_object(map_data: MapData, box_occluders: list[MapBoxOccluder]) -> Object | None:
     all_verts = []
-    all_faces_quads = []
-    all_faces_tris = []
-    num_box_faces = 0
+    all_quads = []
     offset = 0
     dropped_boxes = 0
 
@@ -811,8 +798,7 @@ def _create_map_occluder(
             continue
 
         all_verts.append(verts)
-        all_faces_quads.append(quads + offset)
-        num_box_faces += len(quads)
+        all_quads.append(quads + offset)
         offset += vert_count
 
     if dropped_boxes:
@@ -821,54 +807,66 @@ def _create_map_occluder(
             "(two or more zero dimensions). These occlude nothing and were skipped."
         )
 
-    # Box occluders cannot have flags, always 0
-    box_face_flags = np.zeros(num_box_faces, dtype=np.int32)
+    if not all_verts:
+        return None
 
-    if model_occluders:
-        sizes = [len(m.vertices) for m in model_occluders]
-        model_offsets = np.cumsum([0] + sizes[:-1])
-        verts = np.concatenate([m.vertices for m in model_occluders])
-        tris = np.concatenate([m.indices.astype(np.int32) + off for m, off in zip(model_occluders, model_offsets)])
-        tri_flags = np.repeat(
-            np.array([m.flags.value for m in model_occluders], dtype=np.int32),
-            [len(m.indices) for m in model_occluders],
-        )
-
-        # Dedupe vertices across all models
-        unique_verts, unique_inverse_index = np.unique(verts, axis=0, return_inverse=True)
-        tris = unique_inverse_index[tris]
-
-        # Remove triangles using the same vertex 2+ times, not valid in Blender meshes
-        valid_tris_mask = (tris[:, 0] != tris[:, 1]) & (tris[:, 0] != tris[:, 2]) & (tris[:, 1] != tris[:, 2])
-        tris = tris[valid_tris_mask]
-        tri_flags = tri_flags[valid_tris_mask]
-
-        all_verts.append(unique_verts)
-        all_faces_tris.append(tris + offset)
-        offset += len(unique_verts)
-        model_face_flags = tri_flags
-    else:
-        model_face_flags = np.empty(0, dtype=np.int32)
-
-    vertices = np.concatenate(all_verts) if all_verts else np.empty((0, 3), dtype=np.float32)
-    faces = (np.concatenate(all_faces_quads).tolist() if all_faces_quads else []) + (
-        np.concatenate(all_faces_tris).tolist() if all_faces_tris else []
+    return _new_occluder_object(
+        f"{map_data.name}.boxes",
+        np.concatenate(all_verts),
+        np.concatenate(all_quads).tolist(),
+        MapOccluderExportMode.BOXES_ONLY,
     )
-    face_flags = np.concatenate([box_face_flags, model_face_flags])
 
-    occl_mesh = bpy.data.meshes.new(map_data.name)
-    occl_mesh.from_pydata(vertices, [], faces)
-    mesh_attr = occl_mesh.attributes.new(".occl.flags", "INT", "FACE")
-    mesh_attr.data.foreach_set("value", face_flags)
 
-    occl_obj = create_blender_object(SollumType.NONE, map_data.name, occl_mesh)
-    occl_obj.active_material = _get_occluder_material()
-    occl_obj.show_wire = True
+def _create_model_occluders_object(map_data: MapData, model_occluders: list[MapModelOccluder]) -> Object:
+    sizes = [len(m.vertices) for m in model_occluders]
+    model_offsets = np.cumsum([0] + sizes[:-1])
+    verts = np.concatenate([m.vertices for m in model_occluders])
+    tris = np.concatenate([m.indices.astype(np.int32) + off for m, off in zip(model_occluders, model_offsets)])
+    tri_flags = np.repeat(
+        np.array([m.flags.value for m in model_occluders], dtype=np.int32),
+        [len(m.indices) for m in model_occluders],
+    )
+
+    # Dedupe vertices across all models
+    unique_verts, unique_inverse_index = np.unique(verts, axis=0, return_inverse=True)
+    tris = unique_inverse_index[tris]
+
+    # Remove triangles using the same vertex 2+ times, not valid in Blender meshes
+    valid_tris_mask = (tris[:, 0] != tris[:, 1]) & (tris[:, 0] != tris[:, 2]) & (tris[:, 1] != tris[:, 2])
+    tris = tris[valid_tris_mask]
+    tri_flags = tri_flags[valid_tris_mask]
+
+    obj = _new_occluder_object(
+        f"{map_data.name}.models", unique_verts, tris.tolist(), MapOccluderExportMode.MODELS_ONLY
+    )
+    mesh_attr = obj.data.attributes.new(".occl.flags", "INT", "FACE")
+    mesh_attr.data.foreach_set("value", tri_flags)
+    return obj
+
+
+def _create_map_occluder(
+    map_group: MapGroup,
+    map_data: MapData,
+    box_occluders: list[MapBoxOccluder],
+    model_occluders: list[MapModelOccluder],
+) -> MapOccluder:
+    """Create an occluder with separate Boxes Only and Models Only meshes so both occluder kinds
+    round-trip exactly (a box-shaped model occluder must not turn into a box occluder on export).
+    """
+    objs = []
+    if box_occluders and (boxes_obj := _create_box_occluders_object(map_data, box_occluders)) is not None:
+        objs.append(boxes_obj)
+    if model_occluders:
+        objs.append(_create_model_occluders_object(map_data, model_occluders))
 
     occl = map_group.new_occluder()
     occl.map_data_uuid = map_data.uuid
     occl.name = map_data.name
-    occl.linked_object = occl_obj
+    if objs:
+        occl.linked_object = objs[0]
+        for obj in objs[1:]:
+            occl.add_extra_linked_object(obj)
     return occl
 
 
@@ -986,12 +984,12 @@ def _organize_map_in_collections(map_group: MapGroup):
 
     if map_group.cargens:
         # Link cargen collections to the base collection, inside their own collection
-        vehgens_collection_name = f"{map_group.name}.vehicle_gens"
-        vehgens_collection = bpy.data.collections.new(vehgens_collection_name)
-        base_collection.children.link(vehgens_collection)
+        cargens_collection_name = f"{map_group.name}.cargens"
+        cargens_collection = bpy.data.collections.new(cargens_collection_name)
+        base_collection.children.link(cargens_collection)
         for cargen in map_group.cargens:
             if coll := cargen.linked_collection:
-                vehgens_collection.children.link(coll)
+                cargens_collection.children.link(coll)
 
     if map_group.grass_batches:
         # Link grass instances objects inside their own collection
@@ -1008,7 +1006,7 @@ def _organize_map_in_collections(map_group: MapGroup):
         occluders_collection = bpy.data.collections.new(occluders_collection_name)
         base_collection.children.link(occluders_collection)
         for occluder in map_group.occluders:
-            if obj := occluder.linked_object:
+            for obj in occluder.linked_objects():
                 _link_to_collection_recursive(obj, occluders_collection)
 
     if map_group.lod_lights:

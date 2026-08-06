@@ -1,8 +1,47 @@
-from bpy.types import WorkSpaceTool
+from bpy.types import Panel, WorkSpaceTool
 
 from ...icons import ICON_GEOM_TOOL
+from ...sollumz_preferences import get_theme_settings
 from .lod_hierarchy import LOD_LEVEL_VIS_PROPS
 from .lod_hierarchy_interact import SOLLUMZ_OT_map_lod_overlay_interact, SOLLUMZ_OT_map_lod_overlay_unlink
+
+
+def _draw_display_settings(layout, wm):
+    theme = get_theme_settings()
+    col = layout.column()
+
+    def toggle_with_setting(toggle_prop, text, setting_prop, setting_text):
+        split = col.split(factor=0.4)
+        split.prop(wm, toggle_prop, text=text)
+        sub = split.row()
+        sub.active = getattr(wm, toggle_prop)
+        sub.prop(theme, setting_prop, text=setting_text)
+
+    toggle_with_setting("sz_ui_map_lod_overlay_show_lines", "Lines", "map_lod_overlay_line_alpha", "Alpha")
+    toggle_with_setting("sz_ui_map_lod_overlay_show_outlines", "Outlines", "map_lod_overlay_outline_alpha", "Alpha")
+
+    layout.separator()
+
+    split = layout.split(factor=0.4)
+    col = split.column(align=True)
+    col.alignment = "RIGHT"
+    col.label(text="Markers")
+    col = split.column(align=True)
+    col.prop(theme, "map_lod_overlay_marker_size", text="Size")
+    col.prop(theme, "map_lod_overlay_marker_alpha", text="Alpha")
+
+
+class SOLLUMZ_PT_map_lod_overlay_display(Panel):
+    """Display settings popover for the Map LOD Hierarchy tool header."""
+
+    bl_idname = "SOLLUMZ_PT_map_lod_overlay_display"
+    bl_label = "Display"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "HEADER"
+    bl_ui_units_x = 14
+
+    def draw(self, context):
+        _draw_display_settings(self.layout, context.window_manager)
 
 
 class MapLodHierarchyTool(WorkSpaceTool):
@@ -35,26 +74,23 @@ class MapLodHierarchyTool(WorkSpaceTool):
     def draw_settings(context, layout, tool):
         wm = context.window_manager
 
-        # LOD level visibility toggles
-        row = layout.row(align=True)
-        row.label(text="Show Levels:")
-        for prop_name in LOD_LEVEL_VIS_PROPS.values():
-            row.prop(wm, prop_name, toggle=True)
+        if context.region.type == "TOOL_HEADER":
+            # Compact: level visibility toggles inline, everything else in the popover
+            row = layout.row(align=True)
+            row.label(text="Show Levels:")
+            for prop_name in LOD_LEVEL_VIS_PROPS.values():
+                row.prop(wm, prop_name, toggle=True)
 
-        # Display options
-        row = layout.row(align=True)
+            layout.popover(panel=SOLLUMZ_PT_map_lod_overlay_display.bl_idname, text="Display")
+        else:
+            # Expanded: sidebar Tool tab and Properties editor have vertical room.
+            layout.use_property_split = False
+            col = layout.column(align=True)
+            col.label(text="Show Levels")
+            grid = col.grid_flow(row_major=True, columns=2, even_columns=True, align=True)
+            for prop_name in LOD_LEVEL_VIS_PROPS.values():
+                grid.prop(wm, prop_name, toggle=True)
 
-        def toggle_with_sub(toggle_prop, sub_prop):
-            row.prop(wm, toggle_prop)
-            if getattr(wm, toggle_prop):
-                subrow = row.row()
-                subrow.separator(factor=2.0)
-                subrow.prop(wm, sub_prop)
-
-        toggle_with_sub("sz_ui_map_lod_overlay_show_lines", "sz_ui_map_lod_overlay_line_alpha")
-        toggle_with_sub("sz_ui_map_lod_overlay_show_labels", "sz_ui_map_lod_overlay_label_mode")
-        row.prop(wm, "sz_ui_map_lod_overlay_show_lod_dist")
-        toggle_with_sub("sz_ui_map_lod_overlay_show_outlines", "sz_ui_map_lod_overlay_outline_alpha")
-
-        layout.prop(wm, "sz_ui_map_lod_overlay_marker_size")
-        layout.prop(wm, "sz_ui_map_lod_overlay_marker_alpha")
+            layout.separator()
+            layout.label(text="Display")
+            _draw_display_settings(layout, wm)

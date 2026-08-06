@@ -1,76 +1,82 @@
 import bpy
-from typing import Optional
-from szio.gta5.cwxml import DrawableDictionary, ClothDictionary
-from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
+from bpy.types import (
+    Object
+)
+from szio.gta5 import (
+    EmbeddedTexture,
+    AssetDrawableDictionary,
+    AssetClothDictionary,
+    AssetTextureDictionary,
+)
+from ..ydr.ydrexport import create_drawable_asset
 from ..ydr.cloth_char import cloth_char_export_dictionary
 from ..ydr.cloth_diagnostics import (
-    cloth_enter_export_context,
     cloth_export_context,
+    cloth_enter_export_context,
 )
-from ..tools import jenkhash
+from ..tools.blenderhelper import remove_number_suffix
 from ..sollumz_properties import SollumType
-from ..sollumz_preferences import get_export_settings
+from ..iecontext import export_context, ExportBundle
 
 
-def export_ydd(ydd_obj: bpy.types.Object, filepath: Optional[str]) -> bool:
-    """If filepath is None, a dry run is done and no files are written."""
-    export_settings = get_export_settings()
+def export_ydd(dwd_obj: Object) -> ExportBundle:
+    embedded_tex = []
+    hd_tex: dict[str, EmbeddedTexture] = {}
+    with cloth_enter_export_context(dwd_obj):
+        cld = cloth_char_export_dictionary(dwd_obj)
+        dwd = create_drawable_dictionary_asset(
+            dwd_obj, cld, out_embedded_textures=embedded_tex, out_hd_textures=hd_tex
+        )
 
-    with cloth_enter_export_context(ydd_obj):
-        # Export a cloth dictionary .yld.xml if there is any cloth in the drawable dictionary
-        yld_xml = cloth_char_export_dictionary(ydd_obj)
-
-        ydd_xml = create_ydd_xml(ydd_obj, export_settings.exclude_skeleton, yld_xml)
-
-    if filepath:
-        if yld_xml is not None:
-            yld_xml.sort(key=get_hash)
-            from .yddimport import make_yld_filepath
-            yld_filepath = make_yld_filepath(filepath)
-            yld_xml.write_xml(yld_filepath)
-
-        write_embedded_textures(ydd_obj, filepath)
-
-        ydd_xml.write_xml(filepath)
-    return True
+    hd_txd = AssetTextureDictionary(textures=hd_tex) if hd_tex else None
+    return export_context().make_bundle(
+        dwd, ("", cld), ("+hidd", hd_txd),
+        extra_files=[t.data for t in embedded_tex],
+        secondary_extra_files=[("+hidd", [t.data for t in hd_tex.values()])],
+    )
 
 
-def create_ydd_xml(
-    ydd_obj: bpy.types.Object,
-    exclude_skeleton: bool = False,
-    yld_xml: Optional[ClothDictionary] = None,
-):
-    ydd_xml = DrawableDictionary()
+def create_drawable_dictionary_asset(
+    dwd_obj: Object,
+    cloth_dictionary: AssetClothDictionary | None,
+    out_embedded_textures: list[EmbeddedTexture] | None = None,
+    out_hd_textures: dict[str, EmbeddedTexture] | None = None,
+) -> AssetDrawableDictionary | None:
+    dwd_armature = find_ydd_armature(dwd_obj) if dwd_obj.type != "ARMATURE" else dwd_obj
 
-    ydd_armature = find_ydd_armature(ydd_obj) if ydd_obj.type != "ARMATURE" else ydd_obj
+    exclude_skeleton = export_context().settings.exclude_skeleton
 
-    for child in ydd_obj.children:
+    cloths = cloth_dictionary.cloths if cloth_dictionary else {}
+
+    drawables = {}
+    for child in dwd_obj.children:
         if child.sollum_type != SollumType.DRAWABLE:
             continue
 
         if child.type != "ARMATURE":
-            armature_obj = ydd_armature
+            armature_obj = dwd_armature
         else:
             armature_obj = None
 
-        if yld_xml is not None:
-            from ..tools.blenderhelper import remove_number_suffix
-            drawable_name = remove_number_suffix(child.name)
-            cloth = next((c for c in yld_xml if c.name == drawable_name), None)
-        else:
-            cloth = None
+        cloth = cloths.get(remove_number_suffix(child.name), None) if cloths else None
 
         with cloth_export_context().enter_drawable_context(child):
-            drawable_xml = create_drawable_xml(child, armature_obj=armature_obj, char_cloth_xml=cloth)
+            drawable = create_drawable_asset(
+                child,
+                armature_obj=armature_obj,
+                out_embedded_textures=out_embedded_textures,
+                out_hd_textures=out_hd_textures,
+                char_cloth=cloth,
+            )
 
-        if exclude_skeleton or child.type != "ARMATURE":
-            drawable_xml.skeleton = None
+        if drawable:
+            if exclude_skeleton or child.type != "ARMATURE":
+                drawable.skeleton = None
 
-        ydd_xml.append(drawable_xml)
+            drawables[drawable.name] = drawable
 
-    ydd_xml.sort(key=get_hash)
-
-    return ydd_xml
+    dwd = AssetDrawableDictionary(drawables=drawables)
+    return dwd
 
 
 def find_ydd_armature(ydd_obj: bpy.types.Object):
@@ -78,7 +84,3 @@ def find_ydd_armature(ydd_obj: bpy.types.Object):
     for child in ydd_obj.children:
         if child.type == "ARMATURE":
             return child
-
-
-def get_hash(item):
-    return jenkhash.name_to_hash(item.name.split(".")[0])

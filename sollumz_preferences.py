@@ -228,13 +228,6 @@ class ImportSettingsBase:
     def _on_update(self, context):
         ...
 
-    import_as_asset: BoolProperty(
-        name="Import To Asset Library",
-        description="Imports the selected file as an asset to the current blend file asset library",
-        default=False,
-        update=_on_update_thunk,
-    )
-
     split_by_group: BoolProperty(
         name="Split Mesh by Vertex Group",
         description="Splits the mesh by the vertex groups",
@@ -344,7 +337,7 @@ class ImportSettingsBase:
         update=_on_update_thunk,
     )
 
-    def to_import_context_settings(self) -> "ImportSettings":
+    def to_import_context_settings(self, import_as_asset: bool = False) -> "ImportSettings":
         from .iecontext import ImportSettings, ImportTexturesMode, ImportExternalSkeletonMode
 
         textures_mode = ImportTexturesMode[self.textures_mode]
@@ -365,7 +358,7 @@ class ImportSettingsBase:
         )
 
         return ImportSettings(
-            import_as_asset=self.import_as_asset,
+            import_as_asset=import_as_asset,
             split_by_group=self.split_by_group,
             mlo_instance_entities=self.ytyp_mlo_instance_entities,
             dwd_import_external_skeleton=dwd_import_external_skeleton,
@@ -427,6 +420,52 @@ class SollumzThemeSettings(PropertyGroup):
     cloth_overlay_material_errors: RGBAProperty("Material Errors", (1.0, 0.05, 0.025, 0.45))
     cloth_overlay_binding_errors: RGBAProperty("Binding Errors", (1.0, 0.05, 0.025, 0.75))
     cloth_overlay_binding_errors_size: IntProperty(name="Binding Errors Size", default=12, min=1, max=50)
+
+    map_lod_overlay_orphan_hd: RGBAProperty("Orphan HD", (1.0, 0.0, 0.0, 1.0))
+    map_lod_overlay_hd: RGBAProperty("HD", (0.3, 0.5, 1.0, 1.0))
+    map_lod_overlay_lod: RGBAProperty("LOD", (0.3, 0.8, 0.3, 1.0))
+    map_lod_overlay_slod1: RGBAProperty("SLOD1", (1.0, 0.8, 0.2, 1.0))
+    map_lod_overlay_slod2: RGBAProperty("SLOD2", (1.0, 0.5, 0.1, 1.0))
+    map_lod_overlay_slod3: RGBAProperty("SLOD3", (1.0, 0.2, 0.2, 1.0))
+    map_lod_overlay_slod4: RGBAProperty("SLOD4", (0.7, 0.3, 0.9, 1.0))
+    map_lod_overlay_drag_valid: RGBAProperty("Drag Valid Target", (0.3, 1.0, 0.3, 0.8))
+    map_lod_overlay_drag_invalid: RGBAProperty("Drag Invalid Target", (1.0, 0.3, 0.3, 0.8))
+    map_lod_overlay_drag_no_target: RGBAProperty("Drag No Target", (1.0, 1.0, 1.0, 0.4))
+    map_lod_overlay_line_alpha: FloatProperty(
+        name="Line Alpha",
+        description="Opacity of connection lines",
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+        update=_save_preferences_on_update,
+    )
+    map_lod_overlay_outline_alpha: FloatProperty(
+        name="Outline Alpha",
+        description="Opacity of entity mesh outlines",
+        default=0.25,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+        update=_save_preferences_on_update,
+    )
+    map_lod_overlay_marker_size: FloatProperty(
+        name="Marker Size",
+        description="Base size of entity markers in the viewport",
+        default=7.0,
+        min=1.0,
+        max=16.0,
+        update=_save_preferences_on_update,
+    )
+    map_lod_overlay_marker_alpha: FloatProperty(
+        name="Marker Alpha",
+        description="Opacity of entity markers",
+        default=0.8,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+        update=_save_preferences_on_update,
+    )
 
     def reset(self):
         for prop_name, annotation in SollumzThemeSettings.__annotations__.items():
@@ -1062,17 +1101,6 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_on_custom_procids_path_update,
     )
 
-    legacy_import_export: BoolProperty(
-        name="Legacy Import/Export",
-        description=(
-            "Use the legacy import/export system, which only supports CodeWalker XML format. "
-            "Enable this option only if you experience issues or errors with the new import/export system "
-            "with binary resource formats support"
-        ),
-        default=False,
-        update=_save_preferences_on_update
-    )
-
     popup_shown_install_dependencies: BoolProperty(
         default=False,
         update=_save_preferences_on_update
@@ -1294,8 +1322,9 @@ class SollumzAddonPreferences(AddonPreferences):
             layout.prop(self, "custom_procids_path")
 
     def draw_import_export(self, context, layout: UILayout):
-        def _section_header(layout: UILayout, text: str):
-            _line_separator(layout)
+        def _section_header(layout: UILayout, text: str, first: bool = False):
+            if not first:
+                _line_separator(layout)
             row = layout.row()
             row.alignment = "LEFT"
             row.label(text="", icon="BLANK1")
@@ -1312,9 +1341,8 @@ class SollumzAddonPreferences(AddonPreferences):
         box = sublayout.box()
         box.label(text="Import", icon="IMPORT")
         settings = self.import_settings
-        box.prop(settings, "import_as_asset")
 
-        _section_header(box, text="Textures")
+        _section_header(box, text="Textures", first=True)
         col = box.column(align=True)
         col.prop(settings, "textures_mode", text="Mode")
         if settings.textures_mode == "CUSTOM_DIR":
@@ -1357,31 +1385,30 @@ class SollumzAddonPreferences(AddonPreferences):
         box.label(text="Export", icon="EXPORT")
         settings = self.export_settings
 
-        if not self.legacy_import_export:
-            from szio.gta5 import AssetFormat, is_provider_available
-            row = box.row(align=True)
-            row.use_property_split = False
-            row.use_property_decorate = False
-            split = row.split(factor=0.4, align=True)
-            subrow = split.row(align=False)
-            subrow.alignment = "RIGHT"
-            subrow.label(text="Formats")
-            subrow = split.row(align=True)
-            for f in ("NATIVE", "CWXML"):
-                subsubrow = subrow.row(align=True)
-                subsubrow.enabled = is_provider_available(AssetFormat[f])
-                subsubrow.prop_enum(settings, "target_formats", f)
+        from szio.gta5 import AssetFormat, is_provider_available
+        row = box.row(align=True)
+        row.use_property_split = False
+        row.use_property_decorate = False
+        split = row.split(factor=0.4, align=True)
+        subrow = split.row(align=False)
+        subrow.alignment = "RIGHT"
+        subrow.label(text="Formats")
+        subrow = split.row(align=True)
+        for f in ("NATIVE", "CWXML"):
+            subsubrow = subrow.row(align=True)
+            subsubrow.enabled = is_provider_available(AssetFormat[f])
+            subsubrow.prop_enum(settings, "target_formats", f)
 
-            row = box.row(align=True)
-            row.use_property_split = False
-            row.use_property_decorate = False
-            split = row.split(factor=0.4, align=True)
-            subrow = split.row(align=False)
-            subrow.alignment = "RIGHT"
-            subrow.label(text="Versions")
-            subrow = split.row(align=True)
-            for f in ("GEN8", "GEN9"):
-                subrow.prop_enum(settings, "target_versions", f)
+        row = box.row(align=True)
+        row.use_property_split = False
+        row.use_property_decorate = False
+        split = row.split(factor=0.4, align=True)
+        subrow = split.row(align=False)
+        subrow.alignment = "RIGHT"
+        subrow.label(text="Versions")
+        subrow = split.row(align=True)
+        for f in ("GEN8", "GEN9"):
+            subrow.prop_enum(settings, "target_versions", f)
 
         row = box.row(heading="Limit To")
         row.prop(settings, "limit_to_selected", text="Selected Objects")
@@ -1392,9 +1419,6 @@ class SollumzAddonPreferences(AddonPreferences):
 
         _section_header(box, "Drawable Dictionary")
         box.prop(settings, "exclude_skeleton")
-
-        _line_separator(layout, factor=3.0)
-        layout.prop(self, "legacy_import_export")
 
     def draw_keymap(self, context, layout: UILayout):
         wm = bpy.context.window_manager
@@ -1469,6 +1493,22 @@ class SollumzAddonPreferences(AddonPreferences):
         layout.prop(theme, "cloth_overlay_material_errors")
         layout.prop(theme, "cloth_overlay_binding_errors")
         layout.prop(theme, "cloth_overlay_binding_errors_size")
+
+        _section_header(layout, "Map LOD Hierarchy Overlay", "POINTCLOUD_DATA")
+        layout.prop(theme, "map_lod_overlay_orphan_hd")
+        layout.prop(theme, "map_lod_overlay_hd")
+        layout.prop(theme, "map_lod_overlay_lod")
+        layout.prop(theme, "map_lod_overlay_slod1")
+        layout.prop(theme, "map_lod_overlay_slod2")
+        layout.prop(theme, "map_lod_overlay_slod3")
+        layout.prop(theme, "map_lod_overlay_slod4")
+        layout.prop(theme, "map_lod_overlay_drag_valid")
+        layout.prop(theme, "map_lod_overlay_drag_invalid")
+        layout.prop(theme, "map_lod_overlay_drag_no_target")
+        layout.prop(theme, "map_lod_overlay_line_alpha")
+        layout.prop(theme, "map_lod_overlay_outline_alpha")
+        layout.prop(theme, "map_lod_overlay_marker_size")
+        layout.prop(theme, "map_lod_overlay_marker_alpha")
 
     def draw_about(self, context, layout: UILayout):
         row = layout.row()

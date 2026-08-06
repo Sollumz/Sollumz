@@ -478,7 +478,7 @@ class TimeFlagsMixin(FlagPropertyGroup):
     time_flags_end: bpy.props.EnumProperty(items=time_items, name="Time End")
 
 
-class EntityProperties:
+class ObjectEntityProperties(bpy.types.PropertyGroup):
     archetype_name: bpy.props.StringProperty(name="Archetype Name")
     flags: bpy.props.IntProperty(name="Flags", default=32)
     guid: bpy.props.FloatProperty(name="GUID")
@@ -498,16 +498,11 @@ class EntityProperties:
         default=EntityPriorityLevel.PRI_REQUIRED,
         options={"HIDDEN"}
     )
-    # TODO(ymap-next): make ambient_occlusion_multiplier, artificial_ambient_occlusion, and tint_value integers
     ambient_occlusion_multiplier: bpy.props.FloatProperty(
         name="Ambient Occlusion Multiplier", default=255)
     artificial_ambient_occlusion: bpy.props.FloatProperty(
         name="Artificial Ambient Occlusion", default=255)
     tint_value: bpy.props.FloatProperty(name="Tint Value")
-
-
-class ObjectEntityProperties(bpy.types.PropertyGroup, EntityProperties):
-    pass
 
 
 def register():

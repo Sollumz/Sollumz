@@ -520,6 +520,16 @@ def _box_occluder_keys(path: Path) -> list:
     return [_box_occluder_key(item) for item in _parse_xml(path).findall("./boxOccluders/Item")]
 
 
+def _make_occluder_object(name: str, verts, faces):
+    """Create a mesh object linked to the scene collection from the given mesh data."""
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
 def _make_occluder_group(name: str, verts, faces):
     """Create a map group with a single occluder object built from the given mesh data."""
     maps = get_maps(bpy.context, create_if_missing=True)
@@ -529,11 +539,7 @@ def _make_occluder_group(name: str, verts, faces):
     md.name = name
     md_uuid = md.uuid
 
-    mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-    obj = bpy.data.objects.new(name, mesh)
-    bpy.context.scene.collection.objects.link(obj)
+    obj = _make_occluder_object(name, verts, faces)
 
     occl = group.new_occluder()
     occl.name = name
@@ -635,6 +641,171 @@ def test_ymap_box_shaped_model_stays_model_occluder(tmp_path: Path):
     assert sorted(exported_boxes) == sorted(original_boxes)
 
 
+@assert_logs_no_errors
+def test_ymap_import_occluders_split_boxes_and_models():
+    """Import creates a separate Boxes Only mesh and Models Only mesh per occluder."""
+    _import_ymaps("test_occluders_box_shaped_models.ymap.xml")
+
+    occl = _last_map_group().occluders[0]
+    objs = occl.linked_objects()
+    assert len(objs) == 2, f"Expected a boxes object and a models object, got {len(objs)}"
+    assert occl.linked_object.sz_occluder_export_mode == "BOXES_ONLY"
+    assert ".boxes" in occl.linked_object.name
+    assert objs[1].sz_occluder_export_mode == "MODELS_ONLY"
+    assert ".models" in objs[1].name
+
+
+@assert_logs_no_errors
+def test_ymap_occluder_box_shaped_model_roundtrips_as_model(tmp_path: Path):
+    """A closed box-shaped model occluder must stay a model occluder across import/export cycles
+    (a merged Automatic mesh would convert it to a box occluder on re-export)."""
+    import math
+
+    from ..ymap_next.occluders.box import box_occluder_world_geometry
+
+    cos, sin = math.cos(0.3), math.sin(0.3)
+    verts, quads = box_occluder_world_geometry((10.0, 20.0, 5.0), (4.0, 2.0, 3.0), cos, sin)
+    group = _make_occluder_group("test_box_shaped_model_rt", verts, quads.tolist())
+    group.occluders[0].linked_object.sz_occluder_export_mode = "MODELS_ONLY"
+
+    _export_last_map_group(tmp_path)
+    root = _parse_xml(tmp_path / "test_box_shaped_model_rt.ymap.xml")
+    assert root.findall("./boxOccluders/Item") == []
+    assert len(root.findall("./occludeModels/Item")) == 1
+
+    # Second cycle: the model mesh must come back as Models Only and re-export as a model occluder.
+    bpy.ops.sollumz.import_ymap(
+        directory=str(tmp_path) + "/",
+        files=[{"name": "test_box_shaped_model_rt.ymap.xml"}],
+    )
+    occl = _last_map_group().occluders[0]
+    assert occl.linked_object.sz_occluder_export_mode == "MODELS_ONLY"
+
+    second_export_dir = tmp_path / "second_export"
+    second_export_dir.mkdir()
+    _export_last_map_group(second_export_dir)
+    root2 = _parse_xml(second_export_dir / "test_box_shaped_model_rt.ymap.xml")
+    assert root2.findall("./boxOccluders/Item") == [], "The box-shaped model occluder must not degrade to a box"
+    assert len(root2.findall("./occludeModels/Item")) == 1
+
+
+def _horizontal_plane_verts(center):
+    """4 x 2 axis-aligned horizontal rectangle centered at `center` (a valid height-0 box occluder)."""
+    cx, cy, cz = center
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+    return [(cx + bx, cy + by, cz) for bx, by in base]
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_multiple_linked_objects(tmp_path: Path):
+    """Every linked object (primary + extra slots) contributes its mesh islands; empty and duplicate
+    slots must not add or double geometry."""
+    group = _make_occluder_group(
+        "test_multi_obj_occluder", _horizontal_plane_verts((10.0, 20.0, 5.0)), [(0, 1, 2, 3)]
+    )
+    occl = group.occluders[0]
+    obj2 = _make_occluder_object(
+        "test_multi_obj_occluder_2", _horizontal_plane_verts((40.0, -10.0, 2.0)), [(0, 1, 2, 3)]
+    )
+
+    occl.add_extra_linked_object(obj2)
+    occl.add_extra_linked_object(occl.linked_object)  # duplicate slot, must export only once
+    occl.add_extra_linked_object()  # empty slot, skipped
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_multi_obj_occluder.ymap.xml")
+    boxes = root.findall("./boxOccluders/Item")
+    assert len(boxes) == 2, f"Expected one box occluder per linked object, got {len(boxes)}"
+    assert root.findall("./occludeModels/Item") == [], "Both planes must stay box occluders"
+    centers = sorted((int(_get_value(b, "iCenterX")), int(_get_value(b, "iCenterY"))) for b in boxes)
+    assert centers[0][0] != centers[1][0], "Each linked object must contribute its own box"
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_models_merged_across_linked_objects(tmp_path: Path):
+    """Non-box triangles of all linked objects are merged together (if same flags), exporting fewer model occluders."""
+    import math
+
+    angle = math.radians(30.0)
+    cos, sin = math.cos(angle), math.sin(angle)
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+
+    def _tilted_verts(cx, cy, cz):
+        # Tilted about X -> normal is neither vertical nor horizontal, never a box occluder.
+        return [(cx + bx, cy + by * cos, cz + by * sin) for bx, by in base]
+
+    group = _make_occluder_group("test_multi_obj_model_occluder", _tilted_verts(30.0, 30.0, 10.0), [(0, 1, 2, 3)])
+    occl = group.occluders[0]
+    obj2 = _make_occluder_object("test_multi_obj_model_occluder_2", _tilted_verts(-15.0, 60.0, 4.0), [(0, 1, 2, 3)])
+    occl.add_extra_linked_object(obj2)
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_multi_obj_model_occluder.ymap.xml")
+    assert root.findall("./boxOccluders/Item") == [], "Tilted planes must not become box occluders"
+    models = root.findall("./occludeModels/Item")
+    assert len(models) == 1, f"Both objects' triangles must merge into one model occluder, got {len(models)}"
+
+
+def test_ymap_export_occluder_boxes_only_skips_non_box_islands(tmp_path: Path):
+    """In Boxes Only mode, non-box islands are skipped with a warning instead of becoming model occluders."""
+    import math
+
+    angle = math.radians(30.0)
+    cos, sin = math.cos(angle), math.sin(angle)
+    base = ((-2.0, -1.0), (2.0, -1.0), (2.0, 1.0), (-2.0, 1.0))
+    # Island 1: valid box-shaped horizontal plane. Island 2: tilted plane, never a box.
+    verts = _horizontal_plane_verts((10.0, 20.0, 5.0))
+    verts += [(30.0 + bx, 30.0 + by * cos, 10.0 + by * sin) for bx, by in base]
+    group = _make_occluder_group("test_boxes_only_occluder", verts, [(0, 1, 2, 3), (4, 5, 6, 7)])
+    group.occluders[0].linked_object.sz_occluder_export_mode = "BOXES_ONLY"
+
+    with log_capture() as logs:
+        _export_last_map_group(tmp_path)
+    logs.assert_no_errors()
+    logs.assert_warning(match="not box-shaped")
+
+    root = _parse_xml(tmp_path / "test_boxes_only_occluder.ymap.xml")
+    assert len(root.findall("./boxOccluders/Item")) == 1, "The box-shaped island must still export"
+    assert root.findall("./occludeModels/Item") == [], "The non-box island must be skipped, not exported as a model"
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_models_only_keeps_box_shaped_mesh(tmp_path: Path):
+    """Models Only skips box conversion even for perfectly box-shaped islands."""
+    group = _make_occluder_group(
+        "test_models_only_occluder", _horizontal_plane_verts((10.0, 20.0, 5.0)), [(0, 1, 2, 3)]
+    )
+    group.occluders[0].linked_object.sz_occluder_export_mode = "MODELS_ONLY"
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_models_only_occluder.ymap.xml")
+    assert root.findall("./boxOccluders/Item") == [], "Models Only must not produce box occluders"
+    assert len(root.findall("./occludeModels/Item")) == 1, "The mesh must export as a model occluder"
+
+
+@assert_logs_no_errors
+def test_ymap_export_occluder_mixed_modes_per_object(tmp_path: Path):
+    """Each linked object's export mode applies independently."""
+    group = _make_occluder_group(
+        "test_mixed_modes_occluder", _horizontal_plane_verts((10.0, 20.0, 5.0)), [(0, 1, 2, 3)]
+    )
+    occl = group.occluders[0]
+    obj2 = _make_occluder_object(
+        "test_mixed_modes_occluder_2", _horizontal_plane_verts((40.0, -10.0, 2.0)), [(0, 1, 2, 3)]
+    )
+    obj2.sz_occluder_export_mode = "MODELS_ONLY"
+    occl.add_extra_linked_object(obj2)
+
+    _export_last_map_group(tmp_path)
+
+    root = _parse_xml(tmp_path / "test_mixed_modes_occluder.ymap.xml")
+    assert len(root.findall("./boxOccluders/Item")) == 1, "The Automatic object's plane must export as a box"
+    assert len(root.findall("./occludeModels/Item")) == 1, "The Models Only object's plane must export as a model"
+
+
 # Incomplete LOD hierarchy
 #
 # These tests import a subset of a related .ymap set (missing parent and/or child maps, or an
@@ -663,8 +834,9 @@ def test_ymap_export_incomplete_missing_parent(tmp_path: Path):
     with log_capture() as logs:
         _import_ymaps("test_partition_strm.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     assert group.maps[0].incomplete_lod_hierarchy_lock, "Container with a missing parent map should be locked"
@@ -685,8 +857,9 @@ def test_ymap_export_incomplete_missing_children(tmp_path: Path):
     with log_capture() as logs:
         _import_ymaps("test_partition_lod.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     assert group.maps[0].incomplete_lod_hierarchy_lock, "Container with missing children should be locked"
@@ -706,8 +879,9 @@ def test_ymap_export_incomplete_bad_parent_index(tmp_path: Path):
     with log_capture() as logs:
         _import_ymaps("test_partial_bad_parent_index.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     assert group.maps[0].incomplete_lod_hierarchy_lock, (
@@ -748,8 +922,9 @@ def _import_partial_subtree():
     with log_capture() as logs:
         _import_ymaps("test_partition_lod.ymap.xml", "test_partition_strm.ymap.xml")
 
-    assert logs.warnings, "Expected warnings about the incomplete LOD hierarchy"
-    assert not logs.errors, "Importing an incomplete hierarchy must not log errors"
+    assert not logs.has_warnings_or_errors, "Importing an incomplete hierarchy must not log warnings or errors"
+    assert sum("is preserved and will export unchanged" in i for i in logs.infos) == 1, \
+        "Expected a single info about the incomplete LOD hierarchy"
 
     group = _last_map_group()
     lod_map = _find_group_map(group, "test_partition_lod")
@@ -876,3 +1051,73 @@ def test_ymap_incomplete_unlock_recomputes_but_keeps_missing_children(tmp_path: 
     lod_b = _find_group_entity(group, "test_sector_lod_b")
     group.set_entity_parent(lod_a, lod_b.uuid)
     assert lod_a.parent_uuid == lod_b.uuid
+
+
+def test_ymap_export_warns_unassigned_items(tmp_path: Path):
+    """Items whose container reference is empty or dangling warn at export instead of silently disappearing."""
+    from uuid import uuid4
+
+    from ..ymap_next.properties.map import MapCarGen
+
+    maps = get_maps(bpy.context, create_if_missing=True)
+    group = maps.new_group()
+    group.name = "test_unassigned_warn"
+
+    md = group.new_map()
+    md.name = "test_unassigned_warn"
+    md_uuid = md.uuid
+
+    e_ok = group.new_entity()
+    e_ok.archetype_name = "test_assigned"
+    e_ok.lod_level = "HD"
+    e_ok.position = (1.0, 2.0, 3.0)
+    e_ok.map_data_uuid = md_uuid
+
+    e_lost = group.new_entity()
+    e_lost.archetype_name = "test_unassigned"
+    e_lost.lod_level = "HD"
+    e_lost.position = (4.0, 5.0, 6.0)
+    # map_data_uuid left empty
+
+    cargen = group.new_cargen()
+    cargen.name = "test_unassigned_cargen"
+    cargen.model = "adder"
+    # primary map_data_uuid left empty; its objects resolve to the empty primary
+    coll = bpy.data.collections.new("test_unassigned_warn.cargen")
+    bpy.context.scene.collection.children.link(coll)
+    cargen.linked_collection = coll
+    cargen_obj = bpy.data.objects.new("test_unassigned_warn.cargen.0", MapCarGen.get_cargen_mesh())
+    coll.objects.link(cargen_obj)
+
+    tcm = group.new_tcm()
+    tcm.name = "test_unassigned_tcm"
+
+    batch = group.new_grass_batch()
+    batch.name = "test_unassigned_grass"
+
+    occl = group.new_occluder()
+    occl.name = "test_unassigned_occl"
+    occl.map_data_uuid = uuid4().bytes  # dangling: this container does not exist
+
+    ll = group.new_lod_lights()
+    ll.name = "test_unassigned_ll"
+
+    with log_capture() as logs:
+        _export_last_map_group(tmp_path)
+    logs.assert_no_errors()
+
+    # One warning per item type
+    for pattern in (
+        r"1 entity.*not exported: test_unassigned at \(4\.00, 5\.00, 6\.00\)",
+        r"1 car generator.*not exported: test_unassigned_cargen \(1 object\)",
+        r"1 timecycle modifier.*not exported: test_unassigned_tcm",
+        r"1 grass batch.*not exported: test_unassigned_grass",
+        r"1 occluder.*not exported: test_unassigned_occl",
+        r"1 LOD lights.*not exported: test_unassigned_ll",
+    ):
+        logs.assert_warning(match=pattern, num=6)
+
+    # The assigned entity still exports; the unassigned one is dropped
+    root = _parse_xml(tmp_path / "test_unassigned_warn.ymap.xml")
+    names = [_get_text(e, "archetypeName") for e in root.findall("./entities/Item")]
+    assert names == ["test_assigned"]

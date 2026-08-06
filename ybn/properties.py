@@ -282,10 +282,10 @@ class BoundShapeProps(bpy.types.PropertyGroup):
     """
 
     def box_extents_getter(self) -> Vector:
-        from .ybnexport import get_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
-        bbmin, bbmax = get_bound_extents(obj)
+        bbmin, bbmax = calc_bound_extents(obj)
         return bbmax - bbmin
 
     def box_extents_setter(self, value: Vector):
@@ -304,11 +304,11 @@ class BoundShapeProps(bpy.types.PropertyGroup):
     )
 
     def sphere_radius_getter(self) -> float:
-        from .ybnexport import get_bound_extents
+        from .ybnexport import calc_bound_extents
         from ..tools.meshhelper import get_inner_sphere_radius
 
         obj = self.id_data
-        bbmin, bbmax = get_bound_extents(obj)
+        bbmin, bbmax = calc_bound_extents(obj)
         radius = get_inner_sphere_radius(bbmin, bbmax)
         return radius
 
@@ -335,19 +335,19 @@ class BoundShapeProps(bpy.types.PropertyGroup):
                 return "Y"
 
     def capsule_radius_getter(self) -> float:
-        from .ybnexport import get_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
-        bbmin, bbmax = get_bound_extents(obj)
+        bbmin, bbmax = calc_bound_extents(obj)
         extents = bbmax - bbmin
         radius = extents.x * 0.5
         return radius
 
     def capsule_length_getter(self) -> float:
-        from .ybnexport import get_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
-        bbmin, bbmax = get_bound_extents(obj)
+        bbmin, bbmax = calc_bound_extents(obj)
         extents = bbmax - bbmin
         radius = extents.x * 0.5
         length = extents.z if self.capsule_axis() == "Z" else extents.y
@@ -393,20 +393,20 @@ class BoundShapeProps(bpy.types.PropertyGroup):
                 return "Y"
 
     def cylinder_radius_getter(self) -> float:
-        from .ybnexport import get_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
-        bbmin, bbmax = get_bound_extents(obj)
+        bbmin, bbmax = calc_bound_extents(obj)
         extents = bbmax - bbmin
         diameter = extents.x if self.cylinder_axis() != "X" else extents.y
         radius = diameter * 0.5
         return radius
 
     def cylinder_length_getter(self) -> float:
-        from .ybnexport import get_bound_extents
+        from .ybnexport import calc_bound_extents
 
         obj = self.id_data
-        bbmin, bbmax = get_bound_extents(obj)
+        bbmin, bbmax = calc_bound_extents(obj)
         extents = bbmax - bbmin
         match self.cylinder_axis():
             case "X":

@@ -87,6 +87,10 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
     bl_order = 999
 
+    @classmethod
+    def poll(cls, context):
+        return False
+
     def draw_header(self, context):
         self.layout.label(text="", icon="OBJECT_ORIGIN")
 

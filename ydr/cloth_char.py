@@ -5,21 +5,25 @@ from bpy.types import (
     Object,
     Mesh,
 )
-from typing import Optional, NamedTuple
 from mathutils import (
     Vector,
     Matrix,
 )
-from szio.gta5.cwxml import (
-    CharacterCloth,
-    CharacterClothBinding,
-    ClothDictionary,
+from szio.gta5 import (
+    AssetClothDictionary,
+    VerletCloth,
     VerletClothEdge,
+    ClothBridgeSimGfx,
+    CharacterClothBinding,
+    CharacterClothController,
+    CharacterCloth,
 )
 from ..tools.blenderhelper import (
     get_evaluated_obj,
     remove_number_suffix,
     get_child_of_bone,
+    create_blender_object,
+    add_child_of_bone_constraint,
 )
 from ..shared.geometry import (
     tris_normals,
@@ -31,12 +35,13 @@ from ..sollumz_properties import (
     SollumType,
     SOLLUMZ_UI_NAMES,
 )
-from ..ybn.ybnexport import (
-    create_composite_xml,
-)
+from ..ybn.ybnimport import create_bound_composite
+from ..ybn.ybnexport import create_bound_composite_asset
+from ..iecontext import export_context
 from .cloth import (
     mesh_get_cloth_attribute_values,
     mesh_has_cloth_attribute,
+    mesh_add_cloth_attribute,
     ClothAttr,
 )
 from .cloth_diagnostics import (
@@ -79,7 +84,7 @@ def cloth_char_export(
     dwd_obj: Object,
     drawable_obj: Object,
     controller_name: str,
-) -> Optional[CharacterCloth]:
+) -> CharacterCloth | None:
     cloth_objs = cloth_char_find_mesh_objects(drawable_obj)
     if not cloth_objs:
         return None
@@ -124,17 +129,13 @@ def cloth_char_export(
         )
 
     # Need the bone transforms to calculate the bound transforms
-    from .ydrexport import create_skeleton_xml
+    from .ydrexport import create_skeleton
     armature_obj = drawable_obj if drawable_obj.type == "ARMATURE" else dwd_obj
     assert armature_obj.type == "ARMATURE", "Drawable with cloth or its parent drawable dictionary must have an armature"
-    skeleton = create_skeleton_xml(armature_obj)
+    skeleton = create_skeleton(armature_obj)
 
-    char_cloth = CharacterCloth()
-    char_cloth.name = remove_number_suffix(drawable_obj.name)
     bounds_to_index = {}
-    char_cloth.bounds = create_composite_xml(cloth_bounds_obj, out_child_obj_to_index=bounds_to_index)
-    char_cloth.parent_matrix = Matrix.Identity(4)  # TODO(cloth): char cloth parent matrix
-    # char_cloth.poses = ... # TODO(cloth): char cloth poses
+    bounds = create_bound_composite_asset(cloth_bounds_obj, out_child_obj_to_index=bounds_to_index)
 
     bounds_bone_ids = [None] * len(bounds_to_index)
     for bound_obj, bound_index in bounds_to_index.items():
@@ -152,7 +153,7 @@ def cloth_char_export(
         # TODO(cloth): refactor/optimize this, mostly copied from yftexport
 
         def _get_bone_transforms(bone):
-            return Matrix.LocRotScale(bone.translation, bone.rotation, bone.scale)
+            return Matrix.LocRotScale(bone.position, bone.rotation, bone.scale)
         bone_transforms = {}
         bones = skeleton.bones
         for b in bones:
@@ -166,11 +167,8 @@ def cloth_char_export(
         bone_transform = bone_transforms[bone.bone_properties.tag]
         bone_inv = bone_transform.inverted()
 
-        bound_xml = char_cloth.bounds.children[bound_index]
-        bound_xml.composite_transform = bound_xml.composite_transform @ bone_inv.transposed()
-
-    char_cloth.bounds_bone_ids = bounds_bone_ids
-    char_cloth.bounds_bone_indices = None  # indices are not needed, the game converts the IDs to indices when loading the cloth
+        bound = bounds.children[bound_index]
+        bound.composite_transform = bound.composite_transform @ bone_inv.transposed()
 
     cloth_obj_eval = get_evaluated_obj(cloth_obj)
     cloth_mesh = cloth_obj_eval.to_mesh()
@@ -184,6 +182,7 @@ def cloth_char_export(
             f"{num_vertices} vertices.\n"
             f"Cloth won't be exported!"
         )
+        cloth_obj_eval.to_mesh_clear()
         return None
 
     pinned = np.array(mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PINNED)) != 0
@@ -227,31 +226,19 @@ def cloth_char_export(
 
     char_cloth_props = drawable_obj.drawable_properties.char_cloth
 
-    controller = char_cloth.controller
-    controller.name = controller_name
-    controller.flags = 2  # owns bridge
-    controller.pin_radius_scale = char_cloth_props.pin_radius_scale
-    controller.pin_radius_threshold = char_cloth_props.pin_radius_threshold
-    controller.wind_scale = char_cloth_props.wind_scale
-    controller.vertices = vertices
-    bridge = controller.bridge
-    bridge.vertex_count_high = num_vertices
     if mesh_has_cloth_attribute(cloth_mesh, ClothAttr.PIN_RADIUS):
         pin_radius = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.PIN_RADIUS)
-        bridge.pin_radius_high = [
+        pin_radius = [
             pin_radius[mi][set_idx]
             for set_idx in range(char_cloth_props.num_pin_radius_sets)
             for mi in cloth_to_mesh_vertex_map
         ]
     else:
-        bridge.pin_radius_high = None
+        pin_radius = []
     vertex_weights = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.VERTEX_WEIGHT)
+    vertex_weights = [vertex_weights[mi] for mi in cloth_to_mesh_vertex_map]
     inflation_scale = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.INFLATION_SCALE)
-    bridge.vertex_weights_high = [vertex_weights[mi] for mi in cloth_to_mesh_vertex_map]
-    bridge.inflation_scale_high = [inflation_scale[mi] for mi in cloth_to_mesh_vertex_map]
-    bridge.display_map_high = mesh_to_cloth_vertex_map
-    # just need to allocate space for the pinnable list, unused
-    bridge.pinnable_list = [0] * int(np.ceil(num_vertices / 32))
+    inflation_scale = [inflation_scale[mi] for mi in cloth_to_mesh_vertex_map]
 
     force_transform = mesh_get_cloth_attribute_values(cloth_mesh, ClothAttr.FORCE_TRANSFORM)
     if (force_transform != 0).any():
@@ -261,14 +248,15 @@ def cloth_char_export(
         )
 
     def _create_verlet_edge(mesh_v0: int, mesh_v1: int) -> VerletClothEdge:
-        verlet_edge = VerletClothEdge()
-        verlet_edge.vertex0 = mesh_to_cloth_vertex_map[mesh_v0]
-        verlet_edge.vertex1 = mesh_to_cloth_vertex_map[mesh_v1]
-        verlet_edge.length_sqr = Vector(vertices[verlet_edge.vertex0] -
-                                        vertices[verlet_edge.vertex1]).length_squared
-        verlet_edge.weight0 = 0.0 if pinned[mesh_v0] else 1.0 if pinned[mesh_v1] else 0.5
-        verlet_edge.compression_weight = 0.25  # TODO(cloth): compression_weight
-        return verlet_edge
+        vertex0 = mesh_to_cloth_vertex_map[mesh_v0]
+        vertex1 = mesh_to_cloth_vertex_map[mesh_v1]
+        return VerletClothEdge(
+            vertex0=vertex0,
+            vertex1=vertex1,
+            length_sqr=Vector(vertices[vertex0] - vertices[vertex1]).length_squared,
+            weight0=0.0 if pinned[mesh_v0] else 1.0 if pinned[mesh_v1] else 0.5,
+            compression_weight=0.25,
+        )
 
     indices = [None] * (len(triangles) * 3)
     edges = []
@@ -310,21 +298,20 @@ def cloth_char_export(
     edges = _cloth_sort_verlet_edges(edges)
     custom_edges = _cloth_sort_verlet_edges(custom_edges)
 
-    controller.indices = indices
-    verlet = controller.cloth_high
-    verlet.vertex_positions = vertices
-    verlet.vertex_normals = normals
-    verlet.bb_min = Vector(np.min(vertices, axis=0))
-    verlet.bb_max = Vector(np.max(vertices, axis=0))
-    verlet.switch_distance_up = 9999.0
-    verlet.switch_distance_down = 9999.0
-    verlet.flags = 0
-    verlet.dynamic_pin_list_size = (num_vertices + 31) // 32
-    verlet.cloth_weight = char_cloth_props.weight
-    verlet.edges = edges
-    verlet.pinned_vertices_count = num_pinned
-    verlet.custom_edges = custom_edges
-    verlet.bounds = None  # char cloth doesn't have embedded world bounds
+    verlet = VerletCloth(
+        vertex_positions=vertices,
+        vertex_normals=normals,
+        bb_min=Vector(np.min(vertices, axis=0)),
+        bb_max=Vector(np.max(vertices, axis=0)),
+        switch_distance_up=9999.0,
+        switch_distance_down=9999.0,
+        flags=0,
+        cloth_weight=char_cloth_props.weight,
+        edges=edges,
+        custom_edges=custom_edges,
+        pinned_vertices_count=num_pinned,
+        bounds=None  # char cloth doesn't have embedded world bounds
+    )
 
     # Cloth vertex bindings to bones
     bind_weights, bind_indices, bind_bone_indices = _cloth_char_get_cloth_to_bone_bindings(
@@ -333,39 +320,46 @@ def cloth_char_export(
     bind_bone_ids = [skeleton.bones[i].tag for i in bind_bone_indices]
     bindings = [None] * num_vertices
     for i in range(num_vertices):
-        binding = CharacterClothBinding()
-        binding.weights = Vector(bind_weights[i])
-        binding.indices = tuple(bind_indices[i])
-        bindings[mesh_to_cloth_vertex_map[i]] = binding
-
-    controller.bone_indices = bind_bone_indices
-    controller.bone_ids = bind_bone_ids
-    controller.bindings = bindings
+        bindings[mesh_to_cloth_vertex_map[i]] = CharacterClothBinding(
+            weights=tuple(bind_weights[i]),
+            indices=tuple(bind_indices[i]),
+        )
 
     cloth_obj_eval.to_mesh_clear()
 
-    # Remove elements for other LODs. Char cloth only supports a single LOD
-    controller.cloth_med = None
-    controller.cloth_low = None
-    controller.cloth_vlow = None
-    controller.morph_controller = None
-    # bridge.vertex_count_med = None
-    # bridge.vertex_count_low = None
-    # bridge.vertex_count_vlow = None
-    bridge.pin_radius_med = None
-    bridge.pin_radius_low = None
-    bridge.pin_radius_vlow = None
-    bridge.vertex_weights_med = None
-    bridge.vertex_weights_low = None
-    bridge.vertex_weights_vlow = None
-    bridge.inflation_scale_med = None
-    bridge.inflation_scale_low = None
-    bridge.inflation_scale_vlow = None
-    bridge.display_map_med = None
-    bridge.display_map_low = None
-    bridge.display_map_vlow = None
+    bridge = ClothBridgeSimGfx(
+        vertex_count_high=num_vertices,
+        pin_radius_high=pin_radius,
+        vertex_weights_high=vertex_weights,
+        inflation_scale_high=inflation_scale,
+        display_map_high=mesh_to_cloth_vertex_map,
+    )
 
-    return char_cloth
+    controller = CharacterClothController(
+        name=controller_name,
+        flags=2,  # owns bridge
+        pin_radius_scale=char_cloth_props.pin_radius_scale,
+        pin_radius_threshold=char_cloth_props.pin_radius_threshold,
+        wind_scale=char_cloth_props.wind_scale,
+        vertices=vertices,
+        indices=indices,
+        bone_indices=bind_bone_indices,
+        bone_ids=bind_bone_ids,
+        bindings=bindings,
+        bridge=bridge,
+        cloth_high=verlet,
+        morph_high_poly_count=None,  # this indicates that there is no morph controller
+    )
+
+    return CharacterCloth(
+        name=remove_number_suffix(drawable_obj.name),
+        parent_matrix=Matrix.Identity(4),
+        poses=[],  # TODO(cloth): export char cloth poses
+        bounds_bone_ids=bounds_bone_ids,
+        bounds_bone_indices=[],  # indices are not needed, the game converts the IDs to indices when loading the cloth
+        bounds=bounds,
+        controller=controller,
+    )
 
 
 def _cloth_char_get_cloth_to_bone_bindings(
@@ -417,20 +411,9 @@ def cloth_char_get_mesh_to_cloth_bindings(
     mesh_binded_verts: NDArray[np.float32],
     mesh_binded_verts_normals: NDArray[np.float32],
 ) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
-    return _cloth_char_get_mesh_to_cloth_bindings_impl(
-        cloth.controller.vertices,
-        cloth.controller.indices,
-        mesh_binded_verts,
-        mesh_binded_verts_normals,
-    )
+    cloth_vertices = cloth.controller.vertices
+    cloth_indices = cloth.controller.indices
 
-
-def _cloth_char_get_mesh_to_cloth_bindings_impl(
-    cloth_vertices: list[Vector],
-    cloth_indices: list[int],
-    mesh_binded_verts: NDArray[np.float32],
-    mesh_binded_verts_normals: NDArray[np.float32],
-) -> tuple[NDArray[np.float32], NDArray[np.uint32], list[ClothDiagMeshBindingError]]:
     # Max distance from mesh vertex to cloth triangle to be considered
     MAX_DISTANCE_THRESHOLD = 0.05
 
@@ -534,9 +517,8 @@ def _cloth_char_get_mesh_to_cloth_bindings_impl(
     return weights_arr, ind_arr, errors
 
 
-def cloth_char_export_dictionary(dwd_obj: Object) -> Optional[ClothDictionary]:
-    cloth_dict = None
-
+def cloth_char_export_dictionary(dwd_obj: Object) -> AssetClothDictionary | None:
+    cloths = {}
     for drawable_obj in dwd_obj.children:
         if drawable_obj.sollum_type != SollumType.DRAWABLE:
             continue
@@ -547,9 +529,140 @@ def cloth_char_export_dictionary(dwd_obj: Object) -> Optional[ClothDictionary]:
         if cloth is None:
             continue
 
-        if cloth_dict is None:
-            cloth_dict = ClothDictionary()
+        cloths[cloth.name] = cloth
 
-        cloth_dict.append(cloth)
+    if cloths:
+        cld = AssetClothDictionary(cloths=cloths)
+        return cld
+    else:
+        return None
 
-    return cloth_dict
+
+def cloth_char_import_mesh(cloth: CharacterCloth, drawable_obj: Object, armature_obj: Object) -> Object:
+    controller = cloth.controller
+    vertices = controller.vertices
+    indices = controller.indices
+
+    vertices = np.array(vertices)
+    indices = np.array(indices).reshape((-1, 3))
+
+    mesh = bpy.data.meshes.new(f"{cloth.name}.cloth")
+    mesh.from_pydata(vertices, [], indices)
+    obj = create_blender_object(SollumType.CHARACTER_CLOTH_MESH, f"{cloth.name}.cloth", mesh)
+
+    pin_radius = controller.bridge.pin_radius_high
+    weights = controller.bridge.vertex_weights_high
+    inflation_scale = controller.bridge.inflation_scale_high
+    mesh_to_cloth_map = np.array(controller.bridge.display_map_high)
+    cloth_to_mesh_map = np.empty_like(mesh_to_cloth_map)
+    cloth_to_mesh_map[mesh_to_cloth_map] = np.arange(len(mesh_to_cloth_map))
+    pinned_vertices_count = controller.cloth_high.pinned_vertices_count
+    vertices_count = len(controller.cloth_high.vertex_positions)
+
+    has_pinned = pinned_vertices_count > 0
+    has_pin_radius = len(pin_radius) > 0
+    num_pin_radius_sets = len(pin_radius) // vertices_count
+    has_weights = len(weights) > 0
+    has_inflation_scale = len(inflation_scale) > 0
+
+    char_cloth_props = drawable_obj.drawable_properties.char_cloth
+    char_cloth_props.pin_radius_scale = controller.pin_radius_scale
+    char_cloth_props.pin_radius_threshold = controller.pin_radius_threshold
+    char_cloth_props.wind_scale = controller.wind_scale
+    char_cloth_props.weight = controller.cloth_high.cloth_weight
+
+    if has_pinned:
+        mesh_add_cloth_attribute(mesh, ClothAttr.PINNED)
+    if has_pin_radius:
+        mesh_add_cloth_attribute(mesh, ClothAttr.PIN_RADIUS)
+        if num_pin_radius_sets > 4:
+            logger.warning(f"Found {num_pin_radius_sets} pin radius sets, only up to 4 sets are supported!")
+            num_pin_radius_sets = 4
+        char_cloth_props.num_pin_radius_sets = num_pin_radius_sets
+    if has_weights:
+        mesh_add_cloth_attribute(mesh, ClothAttr.VERTEX_WEIGHT)
+    if has_inflation_scale:
+        mesh_add_cloth_attribute(mesh, ClothAttr.INFLATION_SCALE)
+
+    for mesh_vert_index, cloth_vert_index in enumerate(mesh_to_cloth_map):
+        mesh_vert_index = cloth_vert_index  # NOTE: in character cloths both are the same?
+
+        if has_pinned:
+            pinned = cloth_vert_index < pinned_vertices_count
+            mesh.attributes[ClothAttr.PINNED].data[mesh_vert_index].value = 1 if pinned else 0
+
+        if has_pin_radius:
+            pin_radii = [
+                pin_radius[cloth_vert_index + (set_idx * vertices_count)]
+                if set_idx < num_pin_radius_sets else 0.0
+                for set_idx in range(4)
+            ]
+            mesh.attributes[ClothAttr.PIN_RADIUS].data[mesh_vert_index].color = pin_radii
+
+        if has_weights:
+            mesh.attributes[ClothAttr.VERTEX_WEIGHT].data[mesh_vert_index].value = weights[cloth_vert_index]
+
+        if has_inflation_scale:
+            mesh.attributes[ClothAttr.INFLATION_SCALE].data[mesh_vert_index].value = inflation_scale[cloth_vert_index]
+
+    custom_edges = [e for e in (cloth.controller.cloth_high.custom_edges or []) if e.vertex0 != e.vertex1]
+    if custom_edges:
+        next_edge = len(mesh.edges)
+        mesh.edges.add(len(custom_edges))
+        for custom_edge in custom_edges:
+            v0 = custom_edge.vertex0
+            v1 = custom_edge.vertex1
+            mesh.edges[next_edge].vertices = v0, v1
+            next_edge += 1
+
+    bones = armature_obj.data.bones
+
+    def _create_group(bone_index: int):
+        if bones and bone_index < len(bones):
+            bone_name = bones[bone_index].name
+        else:
+            bone_name = f"UNKNOWN_BONE.{bone_index}"
+
+        return obj.vertex_groups.new(name=bone_name)
+
+    vertex_groups_by_bone_idx = {}
+    for vert_idx, binding in enumerate(controller.bindings):
+        for weight, idx in zip(binding.weights, binding.indices):
+            if weight == 0.0:
+                continue
+
+            bone_idx = controller.bone_indices[idx]
+            if bone_idx not in vertex_groups_by_bone_idx:
+                vertex_groups_by_bone_idx[bone_idx] = _create_group(bone_idx)
+
+            vgroup = vertex_groups_by_bone_idx[bone_idx]
+            vgroup.add((vert_idx,), weight, "ADD")
+
+    if cloth.poses:
+        # TODO(cloth): export poses
+        num_poses = len(cloth.poses) // 2 // vertices_count
+        poses = np.array(cloth.poses)[::2, :3]
+        obj.show_only_shape_key = True
+        obj.shape_key_add(name="Basis")
+        for pose_idx in range(num_poses):
+            sk = obj.shape_key_add(name=f"Pose#{pose_idx+1}")
+            sk.points.foreach_set("co", poses[pose_idx*vertices_count:(pose_idx+1)*vertices_count].ravel())
+        mesh.shape_keys.use_relative = False
+
+    return obj
+
+
+def cloth_char_import_bounds(cloth: CharacterCloth, armature_obj: Object) -> Object:
+    bounds_children_objs = []
+    bounds_obj = create_bound_composite(cloth.bounds, f"{cloth.name}.cloth.bounds", out_children=bounds_children_objs)
+    bones = armature_obj.data.bones
+    for bound_obj, bone_id in zip(bounds_children_objs, cloth.bounds_bone_ids):
+        if bound_obj is None or bone_id is None:
+            continue
+
+        bone_name = next((b.name for b in bones if b.bone_properties.tag == bone_id), None)
+        assert bone_name is not None, "Cloth bound attached to non-existing bone."
+
+        add_child_of_bone_constraint(bound_obj, armature_obj, bone_name)
+
+    return bounds_obj

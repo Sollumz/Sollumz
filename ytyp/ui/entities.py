@@ -1,7 +1,7 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ..properties.ytyp import ArchetypeType, MloEntitySelectionAccess
-from ..properties.mlo import EntityProperties, MloEntityProperties
+from ..properties.mlo import MloEntityProperties
 from ..utils import get_selected_ytyp, get_selected_archetype, get_selected_entity
 from .extensions import ExtensionsListHelper, ExtensionsPanelHelper
 from .mlo import MloChildTabPanel
@@ -220,10 +220,12 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
             col.prop(active, "scale_z")
             layout.separator()
 
-        for prop_name in EntityProperties.__annotations__:
-            if prop_name == "flags":
-                continue
-            layout.prop(selection.owner, getattr(selection.propnames, prop_name))
+        layout.prop(selection.owner, selection.propnames.archetype_name)
+        layout.prop(selection.owner, selection.propnames.lod_dist)
+        layout.prop(selection.owner, selection.propnames.priority_level)
+        layout.prop(selection.owner, selection.propnames.ambient_occlusion_multiplier)
+        layout.prop(selection.owner, selection.propnames.artificial_ambient_occlusion)
+        layout.prop(selection.owner, selection.propnames.tint_value)
 
 
 class SOLLUMZ_UL_ENTITY_EXTENSIONS_LIST(ExtensionsListHelper, bpy.types.UIList):

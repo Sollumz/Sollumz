@@ -4,14 +4,14 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import NamedTuple, Tuple
 
-from ..tools.drawablehelper import get_model_xmls_by_lod
 from ..sollumz_properties import LODLevel
-from szio.gta5.cwxml import (
-    Bone,
-    Drawable,
-    DrawableModel,
+from szio.gta5 import (
+    AssetDrawable,
+    Model,
     Geometry,
-    VertexBuffer,
+    SkelBone,
+    LodLevel as IOLodLevel,
+    STANDARD_VERTEX_ATTR_DTYPES,
 )
 
 
@@ -24,22 +24,21 @@ class MeshData(NamedTuple):
 class ModelData(NamedTuple):
     mesh_data_lods: dict[LODLevel, MeshData]
     # Used for storing drawable model properties
-    xml_lods: dict[LODLevel, DrawableModel]
+    lods: dict[LODLevel, Model]
     bone_index: int
 
 
-def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
+def get_model_data(drawable: AssetDrawable, hi_drawable: AssetDrawable | None) -> list[ModelData]:
     """Get ModelData for each DrawableModel."""
     model_datas: list[ModelData] = []
-    model_xmls = get_lod_model_xmls(drawable_xml)
-
-    for (bone_index, _), model_lods in model_xmls.items():
+    models = get_lod_models(drawable, hi_drawable)
+    for (bone_index, _), model_lods in models.items():
         model_data = ModelData(
             mesh_data_lods={
-                lod_level: mesh_data_from_xml(model_xml) for lod_level, model_xml in model_lods.items()
+                lod_level: mesh_data_from_model(model) for lod_level, model in model_lods.items()
             },
-            xml_lods={
-                lod_level: model_xml for lod_level, model_xml in model_lods.items()
+            lods={
+                lod_level: model for lod_level, model in model_lods.items()
             },
             bone_index=bone_index
         )
@@ -49,13 +48,13 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
     return model_datas
 
 
-def get_model_data_split_by_group(drawable_xml: Drawable) -> list[ModelData]:
-    model_datas = get_model_data(drawable_xml)
+def get_model_data_split_by_group(drawable: AssetDrawable, hi_drawable: AssetDrawable | None) -> list[ModelData]:
+    model_datas = get_model_data(drawable, hi_drawable)
 
-    return [split_data for model_data in model_datas for split_data in split_model_by_group(model_data, drawable_xml.skeleton.bones)]
+    return [split_data for model_data in model_datas for split_data in split_model_by_group(model_data, drawable.skeleton.bones)]
 
 
-def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[ModelData]:
+def split_model_by_group(model_data: ModelData, bones: list[SkelBone]) -> list[ModelData]:
     """Split ModelData by vertex group"""
     model_datas: list[ModelData] = []
     mesh_data_by_bone: dict[int, dict[LODLevel, MeshData]] = defaultdict(dict)
@@ -68,8 +67,7 @@ def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[Model
             continue
 
         for i, face_inds in get_group_face_inds(mesh_data, bones).items():
-            vert_arr, ind_arr = get_faces_subset(
-                mesh_data.vert_arr, mesh_data.ind_arr, face_inds)
+            vert_arr, ind_arr = get_faces_subset(mesh_data.vert_arr, mesh_data.ind_arr, face_inds)
 
             group_mesh_data = MeshData(
                 vert_arr,
@@ -82,18 +80,16 @@ def split_model_by_group(model_data: ModelData, bones: list[Bone]) -> list[Model
     for i, mesh_data_lods in mesh_data_by_bone.items():
         model_datas.append(ModelData(
             mesh_data_lods=mesh_data_lods,
-            xml_lods=model_data.xml_lods,
+            lods=model_data.lods,
             bone_index=i
         ))
 
     return model_datas
 
 
-def get_group_face_inds(mesh_data: MeshData, bones: list[Bone]):
+def get_group_face_inds(mesh_data: MeshData, bones: list[SkelBone]):
     """Get face indices split by vertex group. Overlapping vertex groups are merged
     based on bone parenting."""
-    group_inds: dict[int, set] = defaultdict(list)
-
     blend_inds = mesh_data.vert_arr["BlendIndices"]
     weights = mesh_data.vert_arr["BlendWeights"]
 
@@ -112,21 +108,32 @@ def get_group_face_inds(mesh_data: MeshData, bones: list[Bone]):
     # Maps group indices to the group index of the object they should be parented to
     parent_map = get_group_parent_map(face_blend_inds, bones)
 
-    for i, all_blend_inds in enumerate(face_blend_inds):
-        # Valid BlendIndices are those where either the index or weight is not 0
-        valid_blend_inds = all_blend_inds[blend_inds_mask[i]]
+    if num_tris == 0:
+        return {}
 
-        if valid_blend_inds.size == 0:
-            group_ind = 0
-        else:
-            group_ind = parent_map[valid_blend_inds[0]]
+    # Each face takes the group of its first valid BlendIndex (index or weight non-zero), else group 0.
+    # argmax gives the first True per row; has_valid gates rows where the mask is all False.
+    has_valid = blend_inds_mask.any(axis=1)
+    first_slot = blend_inds_mask.argmax(axis=1)
+    first_blend_inds = face_blend_inds[np.arange(num_tris), first_slot]
 
-        group_inds[group_ind].append(i)
+    # parent_map is keyed by blend index, so a flat array turns the per-face lookup into one gather.
+    lut = np.zeros(int(face_blend_inds.max()) + 1, dtype=np.int64)
+    for blend_ind, parent_ind in parent_map.items():
+        lut[blend_ind] = parent_ind
+    face_groups = np.where(has_valid, lut[first_blend_inds], 0)
 
-    return {i: np.array(face_inds, dtype=np.uint32) for i, face_inds in group_inds.items()}
+    # Bucket faces by group. A stable sort keeps faces in ascending order within each group.
+    order = np.argsort(face_groups, kind="stable")
+    sorted_groups = face_groups[order]
+    bounds = np.flatnonzero(np.diff(sorted_groups)) + 1
+    starts = np.concatenate(([0], bounds))
+    ends = np.concatenate((bounds, [len(order)]))
+
+    return {int(sorted_groups[s]): order[s:e].astype(np.uint32) for s, e in zip(starts, ends)}
 
 
-def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[Bone]) -> dict[int, set]:
+def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[SkelBone]) -> dict[int, set]:
     """Get a mapping of each blend index to the blend index of the object they should be parented to."""
     # Mapping of each blend index to blend indices with overlapping faces
     group_relations: dict[int, set[int]] = defaultdict(set)
@@ -153,9 +160,8 @@ def get_group_parent_map(face_blend_inds: NDArray[np.uint32], bones: list[Bone])
     return parent_map
 
 
-def find_common_bone_parent(bone_inds: list[int], bones: list[Bone]) -> int:
-    bone_parents = [get_all_bone_parents(
-        i, bones) for i in bone_inds if bones[i].parent_index > 0]
+def find_common_bone_parent(bone_inds: list[int], bones: list[SkelBone]) -> int:
+    bone_parents = [get_all_bone_parents(i, bones) for i in bone_inds if bones[i].parent_index > 0]
 
     if not bone_parents:
         return 0
@@ -172,7 +178,7 @@ def find_common_bone_parent(bone_inds: list[int], bones: list[Bone]) -> int:
     return np.min(common_bones)
 
 
-def get_all_bone_parents(bone_ind: int, bones: list[Bone]):
+def get_all_bone_parents(bone_ind: int, bones: list[SkelBone]) -> list[int]:
     parent_inds = []
     current_bone_ind = bone_ind
 
@@ -191,28 +197,19 @@ def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: 
 
     subset_inds = faces[face_inds].flatten()
 
-    # Map old vert inds to new vert inds
-    # TODO: Remap inds using numpy?
-    vert_inds_map: dict[int, int] = {}
-    vert_inds = []
-    new_inds = []
+    unique_verts, first_pos, inverse = np.unique(subset_inds, return_index=True, return_inverse=True)
+    inverse = inverse.reshape(-1)
+    order = np.argsort(first_pos)
+    rank = np.empty(len(order), dtype=np.uint32)
+    rank[order] = np.arange(len(order), dtype=np.uint32)
 
-    for vert_ind in subset_inds:
-        if vert_ind in vert_inds_map:
-            new_inds.append(vert_inds_map[vert_ind])
-        else:
-            new_vert_ind = len(vert_inds_map)
-            new_inds.append(new_vert_ind)
-            vert_inds_map[vert_ind] = new_vert_ind
-            vert_inds.append(vert_ind)
-
-    new_vert_arr = vert_arr[vert_inds]
-    new_ind_arr = np.array(new_inds, dtype=np.uint32)
+    new_vert_arr = vert_arr[unique_verts[order]]
+    new_ind_arr = rank[inverse]
 
     return new_vert_arr, new_ind_arr
 
 
-def get_lod_model_xmls(drawable_xml: Drawable) -> dict[(int, int), dict[LODLevel, DrawableModel]]:
+def get_lod_models(drawable: AssetDrawable, hi_drawable: AssetDrawable | None) -> dict[(int, int), dict[LODLevel, Model]]:
     """Gets mapping of LOD levels for each DrawableModel, keyed by a (bone index, model per-bone ID) tuple."""
     #
     # NOTE: we assumme that models attached to the same bone appear in the same order at different LODs. This doesn't
@@ -243,22 +240,32 @@ def get_lod_model_xmls(drawable_xml: Drawable) -> dict[(int, int), dict[LODLevel
     #   This would only be an issue if the LODs where attached to different bones but ended placed in the same drawable
     #   model when imported, but we handle this case.
     #
-    model_xmls_map: dict[(int, int), dict[LODLevel, DrawableModel]] = defaultdict(dict)
+    models_map: dict[(int, int), dict[LODLevel, Model]] = defaultdict(dict)
 
-    for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
+    def _process_lod(lod_level: LODLevel, models: list[Model]):
         model_count_per_bone = defaultdict(int)
-        for model_xml in models:
-            bone_index = model_xml.bone_index
+        for model in models:
+            bone_index = model.bone_index
             # We use `model_per_bone_id` to differentiate multiple models attached to the same bone
             model_per_bone_id = model_count_per_bone[bone_index]
             model_count_per_bone[bone_index] += 1
-            model_xmls_map[(bone_index, model_per_bone_id)][lod_level] = model_xml
+            models_map[(bone_index, model_per_bone_id)][lod_level] = model
 
-    return model_xmls_map
+    if hi_drawable is not None:
+        hi_models = hi_drawable.models.get(IOLodLevel.HIGH)
+        _process_lod(LODLevel.VERYHIGH, hi_models)
+
+    models_by_lod = drawable.models
+    for lod_level, models in models_by_lod.items():
+        lod_level = LODLevel.from_io(lod_level)
+        _process_lod(lod_level, models)
+
+    return models_map
 
 
-def mesh_data_from_xml(model_xml: DrawableModel) -> MeshData:
-    geoms = get_valid_geoms(model_xml)
+def mesh_data_from_model(model: Model) -> MeshData:
+    # geoms = get_valid_geoms(model_xml)
+    geoms = model.geometries
 
     return MeshData(
         ind_arr=get_model_joined_ind_arr(geoms),
@@ -273,13 +280,15 @@ def get_model_joined_ind_arr(geoms: list[Geometry]) -> NDArray[np.uint32]:
     num_verts = 0
 
     for geom in geoms:
-        ind_arr = geom.index_buffer.data
+        # Make sure indices are at least uint32 (in native format they are stored as uint16, while in CWXML they are
+        # already parsed as uint32) to avoid integer overflows when adding num_verts below.
+        ind_arr = geom.index_buffer.astype(np.uint32)
 
         if num_verts > 0:
-            ind_arr = ind_arr + num_verts
+            ind_arr += num_verts
 
         ind_arrs.append(ind_arr)
-        num_verts += len(geom.vertex_buffer.data)
+        num_verts += len(geom.vertex_buffer)
 
     return np.concatenate(ind_arrs)
 
@@ -289,18 +298,18 @@ def get_model_joined_vert_arr(geoms: list[Geometry]) -> NDArray:
     vert_arrs: list[NDArray] = []
 
     for geom in geoms:
-        vert_arr = geom.vertex_buffer.data
+        vert_arr = geom.vertex_buffer
 
         if vert_arr is None:
             continue
-
-        if geom.bone_ids:
-            apply_bone_ids(vert_arr, np.array(geom.bone_ids))
 
         geom_vert_arr = np.zeros(len(vert_arr), dtype=arr_dtype)
 
         for name in vert_arr.dtype.names:
             geom_vert_arr[name] = vert_arr[name]
+
+        if len(geom.bone_ids) > 0:
+            apply_bone_ids(geom_vert_arr, geom.bone_ids)
 
         vert_arrs.append(geom_vert_arr)
 
@@ -309,11 +318,15 @@ def get_model_joined_vert_arr(geoms: list[Geometry]) -> NDArray:
 
 def get_model_vert_buffer_dtype(geoms: list[Geometry]) -> np.dtype:
     """Get the dtype of the structured array of the joined geometry vertex buffers."""
+
     used_attrs: set[Tuple] = set(
-        name for geom in geoms for name in geom.vertex_buffer.data.dtype.names)
+        name
+        for geom in geoms
+        for name in geom.vertex_buffer.dtype.names
+    )
     arr_dtype = []
 
-    for attr_name, attr_dtype in VertexBuffer.VERT_ATTR_DTYPES.items():
+    for attr_name, attr_dtype in STANDARD_VERTEX_ATTR_DTYPES.items():
         if attr_name not in used_attrs:
             continue
 
@@ -337,14 +350,9 @@ def get_model_poly_mat_inds(geoms: list[Geometry]):
     mat_ind_arrs = []
 
     for geom in geoms:
-        num_tris = round(len(geom.index_buffer.data) / 3)
+        num_tris = round(len(geom.index_buffer) / 3)
         mat_inds = np.full((num_tris,), geom.shader_index)
 
         mat_ind_arrs.append(mat_inds)
 
     return np.concatenate(mat_ind_arrs)
-
-
-def get_valid_geoms(model_xml: DrawableModel) -> list[Geometry]:
-    """Get geometries with mesh data in model_xml."""
-    return [geom for geom in model_xml.geometries if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]

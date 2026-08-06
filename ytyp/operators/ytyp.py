@@ -1,5 +1,3 @@
-import os
-import traceback
 import bpy
 from bpy.props import (
     IntProperty,
@@ -7,15 +5,11 @@ from bpy.props import (
     StringProperty,
     PointerProperty,
 )
-from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
 from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
 from ...sollumz_operators import SelectTimeFlagsRangeMultiSelect, ClearTimeFlagsMultiSelect, ImportAssetsOperatorImpl, ExportAssetsOperatorImpl
-from ...sollumz_preferences import get_export_settings, get_addon_preferences, ExportSettingsBase
 from ...ydr.cloth_env import cloth_env_find_mesh_objects
 from ..utils import get_selected_ytyp, get_selected_archetype
-from ..ytypimport import import_ytyp
-from ..ytypexport import selected_ytyp_to_xml
 from ...shared.multiselection import (
     MultiSelectOneOperator,
     MultiSelectAllOperator,
@@ -413,80 +407,6 @@ class SOLLUMZ_OT_YTYP_TIME_FLAGS_clear(ClearTimeFlagsMultiSelect, bpy.types.Oper
 
     def iter_selection_flags(self, context):
         yield from (arch.time_flags for arch in get_selected_ytyp(context).archetypes.iter_selected_items())
-
-
-class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
-    """Import a ytyp.xml"""
-    bl_idname = "sollumz.importytyp"
-    bl_label = "Import ytyp.xml"
-    bl_action = "Import a YTYP"
-
-    filename_ext = ".ytyp.xml"
-
-    filter_glob: bpy.props.StringProperty(
-        default="*.ytyp.xml",
-        options={"HIDDEN"},
-        maxlen=255,
-    )
-
-    def draw(self, context):
-        pass
-
-    def run(self, context):
-        try:
-            import_ytyp(self.filepath)
-            self.message(f"Successfully imported: {self.filepath}")
-            return True
-        except:
-            self.error(f"Error during import: {traceback.format_exc()}")
-            return False
-
-
-class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
-    """Export the selected YTYP"""
-    bl_idname = "sollumz.exportytyp"
-    bl_label = "Export ytyp.xml"
-    bl_action = "Export a YTYP"
-
-    filter_glob: bpy.props.StringProperty(
-        default="*.ytyp.xml",
-        options={"HIDDEN"},
-        maxlen=255,
-    )
-
-    directory: bpy.props.StringProperty(
-        name="Output directory",
-        description="Select export output directory",
-        subtype="DIR_PATH",
-    )
-
-    def draw(self, context):
-        pass
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
-
-    @classmethod
-    def poll(cls, context):
-        num_ytyps = len(context.scene.ytyps)
-        return num_ytyps > 0 and context.scene.ytyp_index < num_ytyps
-
-    def get_filepath(self, name):
-        return os.path.join(self.directory, name + ".ytyp.xml")
-
-    def run(self, context):
-        try:
-            export_settings = get_export_settings(context)
-
-            ytyp = selected_ytyp_to_xml(export_settings.apply_transforms)
-            filepath = self.get_filepath(ytyp.name)
-            ytyp.write_xml(filepath)
-            self.message(f"Successfully exported: {filepath}")
-            return True
-        except:
-            self.error(f"Error during export: {traceback.format_exc()}")
-            return False
 
 
 class SOLLUMZ_OT_import_ytyp_io(ImportAssetsOperatorImpl, bpy.types.Operator):

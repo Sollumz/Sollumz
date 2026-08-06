@@ -1,21 +1,95 @@
 from pathlib import Path
 
 import bpy
-from szio.gta5 import AssetTextureDictionary, EmbeddedTexture
+from szio.gta5 import (
+    AssetFormat,
+    AssetTextureDictionary,
+    AssetWithDependencies,
+    EmbeddedTexture,
+    try_load_asset,
+)
 
 from ..iecontext import ImportTexturesMode, import_context
 from .properties import TextureDictionary
 
 
-def import_ytd(asset: AssetTextureDictionary, name: str) -> TextureDictionary:
+def find_ytd_external_dependencies(asset: AssetTextureDictionary, name: str) -> AssetWithDependencies:
+    prefers_xml = import_context().asset_target.format == AssetFormat.CWXML
+    if is_hi_txd(name):
+        # User selected a +hi.ytd, look for the base .ytd file
+        non_hi_txd = try_load_non_hi_txd(name, prefers_xml)
+        if non_hi_txd is None:
+            # No base .ytd found, import the +hi.ytd as a regular texture dictionary
+            return AssetWithDependencies(name, asset, {})
+
+        hi_txd = asset
+        name = make_txd_base_name(name)
+    else:
+        # User selected the base .ytd, optionally look for the +hi.ytd
+        non_hi_txd = asset
+        hi_txd = try_load_hi_txd(name, prefers_xml)
+
+    return AssetWithDependencies(name, non_hi_txd, {"hi": hi_txd} if hi_txd else {})
+
+
+def is_hi_txd(name: str) -> bool:
+    """Is this a +hi.ytd file?"""
+    return name.endswith("+hi")
+
+
+def make_txd_base_name(name: str) -> str:
+    if name.endswith("+hi"):
+        name = name[:-3]  # trim '+hi'
+    return name
+
+
+def try_load_non_hi_txd(name: str, prefers_xml: bool) -> AssetTextureDictionary | None:
+    return try_load_hd_txd(make_txd_base_name(name), prefers_xml, "")
+
+
+def try_load_hi_txd(name: str, prefers_xml: bool) -> AssetTextureDictionary | None:
+    return try_load_hd_txd(make_txd_base_name(name), prefers_xml, "+hi")
+
+
+def try_load_hd_txd(name: str, prefers_xml: bool, suffix: str) -> AssetTextureDictionary | None:
+    d = import_context().directory
+    hd_txd = None
+
+    possible_exts = (".ytd", ".ytd.xml")
+    if prefers_xml:
+        possible_exts = possible_exts[::-1]
+
+    for ext in possible_exts:
+        hd_path = d / f"{name}{suffix}{ext}"
+        if hd_path.is_file():
+            hd_txd = try_load_asset(hd_path)
+            if hd_txd:
+                break
+
+    return hd_txd
+
+
+def import_ytd(asset: AssetWithDependencies, name: str) -> TextureDictionary:
     """Create a Texture Dictionary data-block in the Blender scene from a YTD asset."""
+    non_hi_txd = asset.main_asset
+    hi_txd = asset.dependencies.get("hi", None)
+    hi_textures = hi_txd.textures if hi_txd is not None else {}
+
     scene = bpy.context.scene
     txd = scene.sz_txds.new_texture_dictionary(name=name)
 
-    extract_embedded_textures(asset.textures)
+    extract_embedded_textures(non_hi_txd.textures)
+    extract_embedded_textures(hi_textures, dir_suffix="+hi")
 
-    for tex in sorted(asset.textures.values(), key=lambda t: t.name):
-        img = _create_or_get_image(tex)
+    # The base .ytd stores a low-resolution copy of each texture in the +hi.ytd. Only import the
+    # high-resolution version; export rebuilds the low-resolution copy by dropping the first mip.
+    base_textures = {n: t for n, t in non_hi_txd.textures.items() if n not in hi_textures}
+
+    for tex in sorted((base_textures | hi_textures).values(), key=lambda t: t.name):
+        is_hd = tex.name in hi_textures
+        img = _create_or_get_image(tex, dir_suffix="+hi" if is_hd else "")
+        if is_hd:
+            img.sz_is_hd = True
         txd.new_texture(img)
     if txd.textures:
         txd.textures.select(0)
@@ -23,9 +97,13 @@ def import_ytd(asset: AssetTextureDictionary, name: str) -> TextureDictionary:
     return txd
 
 
-def _create_or_get_image(tex: EmbeddedTexture) -> bpy.types.Image:
+def _with_dir_suffix(d: Path | None, suffix: str) -> Path | None:
+    return d.with_name(d.name + suffix) if (d is not None and suffix) else d
+
+
+def _create_or_get_image(tex: EmbeddedTexture, dir_suffix: str = "") -> bpy.types.Image:
     ctx = import_context()
-    textures_dir = ctx.textures_extract_directory or ctx.textures_import_directory
+    textures_dir = _with_dir_suffix(ctx.textures_extract_directory or ctx.textures_import_directory, dir_suffix)
 
     tex_name = tex.name
     tex_name_dds = f"{tex_name}.dds"
@@ -106,7 +184,7 @@ def lookup_texture_file(
     return None
 
 
-def extract_embedded_textures(embedded_textures: dict[str, EmbeddedTexture]):
+def extract_embedded_textures(embedded_textures: dict[str, EmbeddedTexture], dir_suffix: str = ""):
     import shutil
 
     if not embedded_textures:
@@ -120,7 +198,7 @@ def extract_embedded_textures(embedded_textures: dict[str, EmbeddedTexture]):
     if not textures and ctx.settings.textures_mode == ImportTexturesMode.CUSTOM_DIR:
         # If no embedded textures data (e.g. importing CWXML), try to lookup external texture files in import directory
         # so we can copy them to the user custom directory
-        textures_import_dir = ctx.textures_import_directory
+        textures_import_dir = _with_dir_suffix(ctx.textures_import_directory, dir_suffix)
         if textures_import_dir.is_dir():
             from szio.types import DataSource
 
@@ -133,7 +211,7 @@ def extract_embedded_textures(embedded_textures: dict[str, EmbeddedTexture]):
     if not textures:
         return
 
-    textures_extract_dir = ctx.textures_extract_directory
+    textures_extract_dir = _with_dir_suffix(ctx.textures_extract_directory, dir_suffix)
     if textures_extract_dir is None:
         return
 

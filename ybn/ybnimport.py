@@ -1,28 +1,22 @@
-import os
 import bpy
-from typing import Optional
+from bpy.types import (
+    Object,
+    Material,
+    Mesh,
+)
 import numpy as np
-from numpy.typing import NDArray
-from .properties import CollisionMatFlags, set_collision_mat_raw_flags
-from szio.gta5.cwxml import (
-    Bound,
-    BoundFile,
-    BoundComposite,
-    BoundChild,
-    BoundGeometryBVH,
-    BoundGeometry,
-    BoundPlane,
-    PolyBox,
-    PolySphere,
-    PolyCapsule,
-    PolyCylinder,
-    PolyTriangle,
-    YBN,
-    Polygon,
-    ColMaterial,
+from typing import Optional
+from szio.gta5 import (
+    AssetBound,
+    BoundType,
+    CollisionFlags,
+    CollisionMaterial,
+    BoundPrimitive,
+    BoundPrimitiveType,
+    BoundVertex,
 )
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
-from .collision_materials import create_collision_material_from_index
+from .collision_materials import create_collision_material_from_data
 from ..tools.meshhelper import (
     create_box,
     create_sphere,
@@ -32,22 +26,24 @@ from ..tools.meshhelper import (
     create_plane,
     create_color_attr,
 )
-from ..tools.utils import get_direction_of_vectors, get_distance_of_vectors, abs_vector
+from ..tools.utils import get_direction_of_vectors, abs_vector
 from ..tools.blenderhelper import create_blender_object, create_empty_object
 from mathutils import Matrix, Vector
 from math import radians
 
 
-def import_ybn(filepath):
-    ybn_xml: BoundFile = YBN.from_xml_file(filepath)
-    return create_bound_composite(ybn_xml.composite, os.path.basename(filepath.replace(YBN.file_extension, "")))
+def import_ybn(asset: AssetBound, name: str):
+    assert asset.bound_type == BoundType.COMPOSITE, "Only Bound Composite import is supported"
+    return create_bound_composite(asset, name)
 
 
-def create_bound_composite(composite_xml: BoundComposite, name: Optional[str] = None):
+def create_bound_composite(composite: AssetBound, name: Optional[str] = None, out_children: list[Object | None] | None = None) -> Object:
     obj = create_empty_object(SollumType.BOUND_COMPOSITE, name)
 
-    for child in composite_xml.children:
+    for child in composite.children:
         child_obj = create_bound_object(child)
+        if out_children is not None:
+            out_children.append(child_obj)
 
         if child_obj is None:
             continue
@@ -57,205 +53,176 @@ def create_bound_composite(composite_xml: BoundComposite, name: Optional[str] = 
     return obj
 
 
-def create_bound_object(bound_xml: BoundChild | Bound):
+def create_bound_object(bound: AssetBound) -> Object:
     """Create a bound object based on ``bound_xml.type``"""
-    if bound_xml.type == "Box":
-        return create_bound_box(bound_xml)
-
-    if bound_xml.type == "Sphere":
-        return create_bound_sphere(bound_xml)
-
-    if bound_xml.type == "Capsule":
-        return create_bound_capsule(bound_xml)
-
-    if bound_xml.type == "Cylinder":
-        return create_bound_cylinder(bound_xml)
-
-    if bound_xml.type == "Disc":
-        return create_bound_disc(bound_xml)
-
-    if bound_xml.type == "Geometry":
-        return create_bound_geometry(bound_xml)
-
-    if bound_xml.type == "GeometryBVH":
-        return create_bvh_obj(bound_xml)
-
-    if bound_xml.type == BoundPlane.type:
-        return create_bound_plane(bound_xml)
+    match bound.bound_type:
+        case BoundType.BOX:
+            return create_bound_box(bound)
+        case BoundType.SPHERE:
+            return create_bound_sphere(bound)
+        case BoundType.CAPSULE:
+            return create_bound_capsule(bound)
+        case BoundType.CYLINDER:
+            return create_bound_cylinder(bound)
+        case BoundType.DISC:
+            return create_bound_disc(bound)
+        case BoundType.PLANE:
+            return create_bound_plane(bound)
+        case BoundType.GEOMETRY:
+            return create_bound_geometry(bound)
+        case BoundType.BVH:
+            return create_bound_bvh(bound)
+        case _:
+            raise ValueError(f"Unsupported bound type '{bound.bound_type.name}'")
 
 
-def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType, mesh: Optional[bpy.types.Mesh] = None):
+def create_bound_child_mesh(bound: AssetBound, sollum_type: SollumType, mesh: Optional[bpy.types.Mesh] = None) -> Object:
     """Create a bound mesh object with materials and composite properties set."""
     obj = create_blender_object(sollum_type, object_data=mesh)
 
-    mat = create_collision_material_from_index(bound_xml.material_index)
-    set_bound_col_material_properties(bound_xml, mat)
+    mat = create_collision_material_from_data(bound.material)
     obj.data.materials.append(mat)
 
-    set_bound_child_properties(bound_xml, obj)
+    set_composite_flags(bound, obj)
+    obj.matrix_world = bound.composite_transform.transposed()
 
     return obj
 
 
-def set_composite_transforms(transforms: Matrix, bound_obj: bpy.types.Object):
-    bound_obj.matrix_world = transforms.transposed()
+def set_composite_flags(bound: AssetBound, bound_obj: bpy.types.Object):
+    def set_flags(flags: CollisionFlags, flags_propname: str):
+        # properties still use the CW names for backwards compatibility
+        from szio.gta5.cwxml.adapters.bound import CW_COLLISION_FLAGS_INVERSE_MAP
 
-
-def set_composite_flags(bound_xml: BoundChild, bound_obj: bpy.types.Object):
-    def set_flags(flags_propname: str):
-        flags = getattr(bound_xml, flags_propname)
+        flag_props = getattr(bound_obj, flags_propname)
         for flag in flags:
-            flag_props = getattr(bound_obj, flags_propname)
+            flag_propname = CW_COLLISION_FLAGS_INVERSE_MAP[flag].lower()
+            setattr(flag_props, flag_propname, True)
 
-            setattr(flag_props, flag.lower(), True)
-
-    set_flags("composite_flags1")
-    set_flags("composite_flags2")
+    set_flags(bound.composite_collision_type_flags, "composite_flags1")
+    set_flags(bound.composite_collision_include_flags, "composite_flags2")
 
 
-def create_bound_box(bound_xml: BoundChild):
-    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_BOX)
-    bound_dimensions = abs_vector(bound_xml.box_max - bound_xml.box_min)
+def create_bound_box(bound: AssetBound) -> Object:
+    obj = create_bound_child_mesh(bound, SollumType.BOUND_BOX)
+    bound_dimensions = abs_vector(bound.bb_max - bound.bb_min)
     create_box(obj.data, 1, Matrix.Diagonal(bound_dimensions))
-    obj.location += bound_xml.box_center
+    obj.location += bound.centroid
     return obj
 
 
-def create_bound_sphere(bound_xml: BoundChild):
-    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_SPHERE)
-    create_sphere(obj.data, bound_xml.sphere_radius)
-    obj.location += bound_xml.box_center
+def create_bound_sphere(bound: AssetBound) -> Object:
+    obj = create_bound_child_mesh(bound, SollumType.BOUND_SPHERE)
+    create_sphere(obj.data, bound.sphere_radius)
+    obj.location += bound.centroid
     return obj
 
 
-def create_bound_capsule(bound_xml: BoundChild):
-    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CAPSULE)
-    bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-    extent = bbmax - bbmin
-    radius = extent.x * 0.5
-    length = extent.y - (radius * 2.0)
+def create_bound_capsule(bound: AssetBound) -> Object:
+    obj = create_bound_child_mesh(bound, SollumType.BOUND_CAPSULE)
+    radius, length = bound.capsule_radius_length
     create_capsule(obj.data, radius=radius, length=length, axis="Y")
-    obj.location += bound_xml.box_center
+    obj.location += bound.centroid
     return obj
 
 
-def create_bound_cylinder(bound_xml: BoundChild):
-    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_CYLINDER)
-    bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
-    extent = bbmax - bbmin
-    radius = extent.x * 0.5
-    length = extent.y
+def create_bound_cylinder(bound: AssetBound) -> Object:
+    obj = create_bound_child_mesh(bound, SollumType.BOUND_CYLINDER)
+    radius, length = bound.cylinder_radius_length
     create_cylinder(obj.data, radius=radius, length=length, axis="Y")
-    obj.location += bound_xml.box_center
+    obj.location += bound.centroid
     return obj
 
 
-def create_bound_disc(bound_xml: BoundChild):
-    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_DISC)
-    create_disc(obj.data, bound_xml.sphere_radius, bound_xml.margin * 2)
-    obj.location += bound_xml.box_center
+def create_bound_disc(bound: AssetBound):
+    obj = create_bound_child_mesh(bound, SollumType.BOUND_DISC)
+    create_disc(obj.data, bound.disc_radius, bound.margin * 2)
+    obj.location += bound.centroid
     return obj
 
 
-def create_bound_plane(bound_xml: BoundPlane):
-    obj = create_bound_child_mesh(bound_xml, SollumType.BOUND_PLANE)
+def create_bound_plane(bound: AssetBound):
+    obj = create_bound_child_mesh(bound, SollumType.BOUND_PLANE)
     # matrix to rotate plane so it faces towards +Y, by default faces +Z
     create_plane(obj.data, 2.0, matrix=Matrix.Rotation(radians(90.0), 4, "X"))
-    obj.matrix_world = Matrix.LocRotScale(bound_xml.box_center, bound_xml.normal.to_track_quat("Y", "Z"), None)
+    obj.matrix_world = Matrix.LocRotScale(bound.centroid, bound.plane_normal.to_track_quat("Y", "Z"), None)
     return obj
 
 
-def create_bound_geometry(geom_xml: BoundGeometry):
-    materials = create_geometry_materials(geom_xml)
-    triangles = get_poly_triangles(geom_xml.polygons)
+def create_bound_geometry(bound: AssetBound) -> Object:
+    mesh = create_bound_geometry_triangle_mesh(bound.geometry_vertices, bound.geometry_primitives, Vector())
 
-    mesh = create_bound_mesh_data(geom_xml.vertices, triangles, geom_xml.vertex_colors, materials)
-    mesh.transform(Matrix.Translation(geom_xml.geometry_center))
+    obj = create_blender_object(SollumType.BOUND_GEOMETRY, object_data=mesh)
 
-    geom_obj = create_blender_object(SollumType.BOUND_GEOMETRY, object_data=mesh)
-    set_bound_child_properties(geom_xml, geom_obj)
-    return geom_obj
+    set_composite_flags(bound, obj)
+    obj.matrix_world = bound.composite_transform.transposed()
+    # obj.location += bound.geometry_center
+
+    return obj
 
 
-def create_bvh_obj(bvh_xml: BoundGeometryBVH):
-    bvh_obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)
-    set_bound_child_properties(bvh_xml, bvh_obj)
+def create_bound_bvh(bound: AssetBound) -> Object:
+    obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)
 
-    materials = create_geometry_materials(bvh_xml)
+    set_composite_flags(bound, obj)
+    obj.matrix_world = bound.composite_transform.transposed()
 
-    create_bvh_polys(bvh_xml, materials, bvh_obj)
+    create_bound_bvh_primitives(bound, obj)
 
-    triangles = get_poly_triangles(bvh_xml.polygons)
+    return obj
+
+
+def create_bound_bvh_primitives(bound: AssetBound, bvh_obj: Object) -> list[Object]:
+    triangles = []
+    primitive_objects = []
+
+    vertices = bound.geometry_vertices
+    materials_cache = {}
+    for prim in bound.geometry_primitives:
+        if prim.primitive_type == BoundPrimitiveType.TRIANGLE:
+            triangles.append(prim)
+        else:
+            prim_obj = create_bound_primitive(prim, vertices, materials_cache)
+            prim_obj.parent = bvh_obj
+            primitive_objects.append(prim_obj)
 
     if triangles:
-        mesh = create_bound_mesh_data(bvh_xml.vertices, triangles, bvh_xml.vertex_colors, materials)
-        bound_geom_obj = create_blender_object(SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
-        bound_geom_obj.location = bvh_xml.geometry_center
-        bound_geom_obj.parent = bvh_obj
+        center = bound.geometry_center
+        mesh = create_bound_geometry_triangle_mesh(vertices, triangles, center, materials_cache)
+        mesh_obj = create_blender_object(SollumType.BOUND_POLY_TRIANGLE, object_data=mesh)
+        mesh_obj.location = center
+        mesh_obj.parent = bvh_obj
+        primitive_objects.append(mesh_obj)
 
-    return bvh_obj
-
-
-def create_geometry_materials(geometry: BoundGeometryBVH):
-    materials: list[bpy.types.Material] = []
-
-    mat_xml: ColMaterial
-    for mat_xml in geometry.materials:
-        mat = create_collision_material_from_index(mat_xml.type)
-        set_col_material_properties(mat_xml, mat)
-
-        materials.append(mat)
-
-    return materials
+    return primitive_objects
 
 
-def set_col_material_properties(mat_xml: ColMaterial, mat: bpy.types.Material):
-    mat.collision_properties.procedural_id = mat_xml.procedural_id
-    mat.collision_properties.room_id = mat_xml.room_id
-    mat.collision_properties.ped_density = mat_xml.ped_density
-    mat.collision_properties.material_color_index = mat_xml.material_color_index
-    for flag_name in CollisionMatFlags.__annotations__.keys():
-        if f"FLAG_{flag_name.upper()}" not in mat_xml.flags:
-            continue
-
-        setattr(mat.collision_flags, flag_name, True)
+def create_bound_primitive(primitive: BoundPrimitive, vertices: list[BoundVertex], materials_cache: dict[CollisionMaterial, Material]) -> Object:
+    return PRIM_TO_OBJ_MAP[primitive.primitive_type.value](primitive, vertices, materials_cache)
 
 
-def set_bound_col_material_properties(bound_xml: Bound, mat: bpy.types.Material):
-    mat.collision_properties.procedural_id = bound_xml.procedural_id
-    mat.collision_properties.room_id = bound_xml.room_id
-    mat.collision_properties.ped_density = bound_xml.ped_density
-    mat.collision_properties.material_color_index = bound_xml.material_color_index
-    set_collision_mat_raw_flags(mat.collision_flags, bound_xml.unk_flags, bound_xml.poly_flags)
-
-
-def create_bvh_polys(bvh: BoundGeometryBVH, materials: list[bpy.types.Material], bvh_obj: bpy.types.Object):
-    for poly in bvh.polygons:
-        if type(poly) is PolyTriangle:
-            continue
-
-        poly_obj = poly_to_obj(poly, materials, bvh.vertices)
-        poly_obj.location += bvh.geometry_center
-        poly_obj.parent = bvh_obj
-
-
-def init_poly_obj(poly, sollum_type, materials):
-    name = SOLLUMZ_UI_NAMES[sollum_type]
+def create_bound_primitive_object(primitive: BoundPrimitive, sz_type: SollumType, materials_cache: dict[CollisionMaterial, Material]) -> Object:
+    name = SOLLUMZ_UI_NAMES[sz_type]
     mesh = bpy.data.meshes.new(name)
-    if poly.material_index < len(materials):
-        mesh.materials.append(materials[poly.material_index])
 
-    obj = create_blender_object(sollum_type, name, mesh)
+    material = materials_cache.get(primitive.material, None)
+    if material is None:
+        material = create_collision_material_from_data(primitive.material)
+        materials_cache[primitive.material] = material
+    mesh.materials.append(material)
+
+    obj = create_blender_object(sz_type, name, mesh)
     return obj
 
 
-def create_poly_box(poly, materials, vertices):
-    obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
+def create_bound_primitive_box(primitive: BoundPrimitive, vertices: list[BoundVertex], materials_cache: dict[CollisionMaterial, Material]) -> Object:
+    obj = create_bound_primitive_object(primitive, SollumType.BOUND_POLY_BOX, materials_cache)
 
-    v1 = vertices[poly.v1]
-    v2 = vertices[poly.v2]
-    v3 = vertices[poly.v3]
-    v4 = vertices[poly.v4]
+    v1, v2, v3, v4 = primitive.vertices
+    v1 = vertices[v1].co
+    v2 = vertices[v2].co
+    v3 = vertices[v3].co
+    v4 = vertices[v4].co
     center = (v1 + v2 + v3 + v4) * 0.25
 
     # Get edges from the 4 opposing corners of the box
@@ -298,15 +265,15 @@ def create_poly_box(poly, materials, vertices):
     edge3 = b3 * edge3.dot(b3)
 
     # Unswap edges
-    if s3 == True:
+    if s3:
         t1 = edge2
         edge2 = edge3
         edge3 = t1
-    if s2 == True:
+    if s2:
         t1 = edge1
         edge1 = edge3
         edge3 = t1
-    if s1 == True:
+    if s1:
         t1 = edge1
         edge1 = edge2
         edge2 = t1
@@ -322,121 +289,113 @@ def create_poly_box(poly, materials, vertices):
     return obj
 
 
-def create_poly_sphere(poly, materials, vertices):
-    sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
-    create_sphere(sphere.data, poly.radius)
-    sphere.location = vertices[poly.v]
-    return sphere
+def create_bound_primitive_sphere(primitive: BoundPrimitive, vertices: list[BoundVertex], materials_cache: dict[CollisionMaterial, Material]) -> Object:
+    obj = create_bound_primitive_object(primitive, SollumType.BOUND_POLY_SPHERE, materials_cache)
+    create_sphere(obj.data, primitive.radius)
+    obj.location = vertices[primitive.vertices[0]].co
+    return obj
+#
 
 
-def create_poly_capsule(poly, materials, vertices):
-    capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
-    v1 = vertices[poly.v1]
-    v2 = vertices[poly.v2]
+def create_bound_primitive_capsule(primitive: BoundPrimitive, vertices: list[BoundVertex], materials_cache: dict[CollisionMaterial, Material]) -> Object:
+    obj = create_bound_primitive_object(primitive, SollumType.BOUND_POLY_CAPSULE, materials_cache)
+    v1, v2 = primitive.vertices
+    v1 = vertices[v1].co
+    v2 = vertices[v2].co
+
     rot = get_direction_of_vectors(v1, v2)
     length = (v1 - v2).length
-    create_capsule(capsule.data, radius=poly.radius, length=length, axis="Z")
+    create_capsule(obj.data, radius=primitive.radius, length=length, axis="Z")
 
-    capsule.location = (v1 + v2) / 2
-    capsule.rotation_euler = rot
+    obj.location = (v1 + v2) / 2
+    obj.rotation_euler = rot
 
-    return capsule
+    return obj
 
 
-def create_poly_cylinder(poly, materials, vertices):
-    cylinder = init_poly_obj(poly, SollumType.BOUND_POLY_CYLINDER, materials)
-    v1 = vertices[poly.v1]
-    v2 = vertices[poly.v2]
+def create_bound_primitive_cylinder(primitive: BoundPrimitive, vertices: list[BoundVertex], materials_cache: dict[CollisionMaterial, Material]) -> Object:
+    obj = create_bound_primitive_object(primitive, SollumType.BOUND_POLY_CYLINDER, materials_cache)
+    v1, v2 = primitive.vertices
+    v1 = vertices[v1].co
+    v2 = vertices[v2].co
 
     rot = get_direction_of_vectors(v1, v2)
+    length = (v1 - v2).length
+    create_cylinder(obj.data, radius=primitive.radius, length=length, axis="Z")
 
-    radius = poly.radius
-    length = get_distance_of_vectors(v1, v2)
-    create_cylinder(cylinder.data, radius=radius, length=length, axis="Z")
+    obj.matrix_world = Matrix()
 
-    cylinder.matrix_world = Matrix()
+    obj.location = (v1 + v2) / 2
+    obj.rotation_euler = rot
 
-    cylinder.location = (v1 + v2) / 2
-    cylinder.rotation_euler = rot
-
-    return cylinder
+    return obj
 
 
-POLY_TO_OBJ_MAP = {
-    PolyBox: create_poly_box,
-    PolySphere: create_poly_sphere,
-    PolyCapsule: create_poly_capsule,
-    PolyCylinder: create_poly_cylinder,
-}
+PRIM_TO_OBJ_MAP = [None] * len(BoundPrimitiveType)
+PRIM_TO_OBJ_MAP[BoundPrimitiveType.BOX.value] = create_bound_primitive_box
+PRIM_TO_OBJ_MAP[BoundPrimitiveType.SPHERE.value] = create_bound_primitive_sphere
+PRIM_TO_OBJ_MAP[BoundPrimitiveType.CAPSULE.value] = create_bound_primitive_capsule
+PRIM_TO_OBJ_MAP[BoundPrimitiveType.CYLINDER.value] = create_bound_primitive_cylinder
 
 
-def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
-    return POLY_TO_OBJ_MAP[type(poly)](poly, materials, vertices)
-
-
-def get_poly_triangles(polys: list[Polygon]):
-    return [poly for poly in polys if isinstance(poly, PolyTriangle)]
-
-
-def create_bound_mesh_data(
-    vertices: list[Vector],
-    triangles: list[PolyTriangle],
-    vertex_colors: Optional[list[tuple[int, int, int, int]]],
-    materials: list[bpy.types.Material]
-) -> bpy.types.Mesh:
-    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
-
-    verts, faces, colors = get_bound_geom_mesh_data(vertices, triangles, vertex_colors)
-
-    mesh.from_pydata(verts, [], faces)
-
-    if colors is not None:
-        create_color_attr(mesh, 0, initial_values=colors)
-
-    apply_bound_geom_materials(mesh, triangles, materials)
-
-    mesh.validate()
-
-    return mesh
-
-
-def apply_bound_geom_materials(mesh: bpy.types.Mesh, triangles: list[PolyTriangle], materials: list[bpy.types.Material]):
-    for mat in materials:
-        mesh.materials.append(mat)
-
-    for i, poly_xml in enumerate(triangles):
-        mesh.polygons[i].material_index = poly_xml.material_index
-
-
-def get_bound_geom_mesh_data(
-    vertices: list[Vector],
-    triangles: list[PolyTriangle],
-    vertex_colors: Optional[list[tuple[int, int, int, int]]]
-) -> tuple[list, list, Optional[NDArray]]:
+def create_bound_geometry_triangle_mesh(
+    vertices: list[BoundVertex],
+    triangles: list[BoundPrimitive],
+    geometry_center: Vector,
+    materials_cache: Optional[dict[CollisionMaterial, Material]] = None,
+) -> Mesh:
     def _color_to_float(color_int: tuple[int, int, int, int]):
         return (color_int[0] / 255, color_int[1] / 255, color_int[2] / 255, color_int[3] / 255)
 
     verts = []
     verts_dict = {}
     faces = []
-    colors = [] if vertex_colors else None
+    face_material_indices = []
+    colors = [] if vertices[0].color is not None else None
 
-    for poly in triangles:
+    materials: list[Material] = []
+    materials_indices: dict[CollisionMaterial, int] = {}
+    has_materials_cache = materials_cache is not None
+
+    for tri in triangles:
         face = []
-        for v in [vertices[poly.v1], vertices[poly.v2], vertices[poly.v3]]:
-            v_tuple = tuple(v)
+        v1, v2, v3 = tri.vertices
+        for v in [vertices[v1], vertices[v2], vertices[v3]]:
+            v_co = v.co - geometry_center
+            v_tuple = tuple(v_co)
             if v_tuple not in verts_dict:
                 verts_dict[v_tuple] = len(verts)
-                verts.append(v)
+                verts.append(v_co)
             face.append(verts_dict[v_tuple])
+
+            if colors is not None:
+                colors.append(_color_to_float(v.color))
+
         faces.append(face)
 
-        if colors is not None:
-            colors.extend(_color_to_float(vertex_colors[v]) for v in [poly.v1, poly.v2, poly.v3])
+        material_index = materials_indices.get(tri.material, None)
+        if material_index is None:
+            material_index = len(materials)
+            material = materials_cache.get(tri.material, None) if has_materials_cache else None
+            if material is None:
+                material = create_collision_material_from_data(tri.material)
+                if has_materials_cache:
+                    materials_cache[tri.material] = material
+            materials.append(material)
+            materials_indices[tri.material] = material_index
 
-    return verts, faces, np.array(colors, dtype=np.float64) if colors is not None else None
+        face_material_indices.append(material_index)
 
+    mesh = bpy.data.meshes.new(SOLLUMZ_UI_NAMES[SollumType.BOUND_GEOMETRY])
+    mesh.from_pydata(verts, [], faces)
 
-def set_bound_child_properties(bound_xml: BoundChild, bound_obj: bpy.types.Object):
-    set_composite_flags(bound_xml, bound_obj)
-    set_composite_transforms(bound_xml.composite_transform, bound_obj)
+    if colors is not None:
+        create_color_attr(mesh, 0, initial_values=np.array(colors))
+
+    for m in materials:
+        mesh.materials.append(m)
+
+    mesh.polygons.foreach_set("material_index", face_material_indices)
+
+    mesh.validate()
+    return mesh

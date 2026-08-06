@@ -6,8 +6,9 @@ from sys import float_info
 from mathutils import Quaternion, Vector, Euler, Matrix
 from enum import IntFlag, IntEnum
 from ..sollumz_properties import MaterialType, SollumType
+from ..sollumz_helper import get_sollumz_materials
 from ..tools import jenkhash
-from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj
+from .blenderhelper import build_name_bone_map, build_bone_map, get_data_obj, remove_number_suffix
 from .meshhelper import get_uv_map_name
 from typing import Tuple, Callable
 from collections.abc import Iterator
@@ -783,7 +784,7 @@ def update_uv_clip_hash(clip_obj) -> bool:
     animation_obj = clip_obj.clip_properties.animations[0].animation
     target = animation_obj.animation_properties.get_target()
     if not isinstance(target, bpy.types.Material):
-        logger.error(f"Animation target is not a material.")
+        logger.error("Animation target is not a material.")
         return False
 
     meshes = [obj for obj in bpy.data.meshes if obj.user_of_id(target)]
@@ -815,8 +816,9 @@ def update_uv_clip_hash(clip_obj) -> bool:
         else:
             break
 
-    model_name = parent.name
-    material_index = target.shader_properties.index
+    model_name = remove_number_suffix(parent.name).lower()
+    materials = get_sollumz_materials(parent)
+    material_index = materials.index(target)
 
     clip_hash = jenkhash.Generate(model_name) + (material_index + 1)
     clip_hash_str = f"hash_{clip_hash:08X}"

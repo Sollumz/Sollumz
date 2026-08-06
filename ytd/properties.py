@@ -14,6 +14,7 @@ from bpy.props import (
 from bpy.types import (
     Context,
     Image,
+    Object,
     PropertyGroup,
     Scene,
     ShaderNodeTexImage,
@@ -26,12 +27,10 @@ from ..shared.multiselection import (
     define_multiselect_collection,
 )
 
-_TRAILING_BLENDER_SUFFIX_RE = re.compile(r"\.\d{3}$")
-
 
 def get_texture_name(image: Image | None) -> str:
     if image:
-        return os.path.splitext(bpy.path.basename(image.filepath))[0]
+        return os.path.splitext(bpy.path.basename(image.filepath))[0].lower()
     return ""
 
 
@@ -63,17 +62,27 @@ class TextureImageSourceSlotSelectionAccess(MultiSelectAccess):
 class TextureImageSource(PropertyGroup):
     source_type: EnumProperty(
         name="Source Type",
-        items=(("OBJECT", "Object", ""),),
+        items=(
+            ("OBJECT", "Object", "", "OBJECT_DATA", 0),
+            ("COLLECTION", "Collection", "", "OUTLINER_COLLECTION", 1),
+        ),
         default="OBJECT",
     )
     images: MultiSelectCollection[TextureImageSourceSlot, TextureImageSourceSlotSelectionAccess]
 
-    def object_name_search(self, context: Context, edit_text: str) -> Iterator[str]:
+    def object_name_search(self, context: Context, _edit_text: str) -> Iterator[str]:
         for obj in context.scene.objects:
             yield obj.name
 
     object_name: StringProperty(name="Object", search=object_name_search)
     object_include_children: BoolProperty(name="Include Children", default=True)
+
+    def collection_name_search(self, _context: Context, _edit_text: str) -> Iterator[str]:
+        for coll in bpy.data.collections:
+            yield coll.name
+
+    collection_name: StringProperty(name="Collection", search=collection_name_search)
+    collection_include_children: BoolProperty(name="Include Children", default=True)
 
     def refresh(self, context: Context):
         existing_images_use_flags = {s.image: s.use for s in self.images}
@@ -88,6 +97,8 @@ class TextureImageSource(PropertyGroup):
         match self.source_type:
             case "OBJECT":
                 return self._find_images_from_object(context)
+            case "COLLECTION":
+                return self._find_images_from_collection()
 
         return []
 
@@ -96,14 +107,32 @@ class TextureImageSource(PropertyGroup):
         if obj is None:
             return []
 
-        from ..sollumz_helper import get_sollumz_materials
+        found_images = set()
+        images = []
+        self._add_images_from_object(obj, self.object_include_children, found_images, images)
+        return images
+
+    def _find_images_from_collection(self) -> list[tuple[Image, bool]]:
+        coll = bpy.data.collections.get(self.collection_name, None)
+        if coll is None:
+            return []
 
         found_images = set()
         images = []
+        objects = coll.all_objects if self.collection_include_children else coll.objects
+        for obj in objects:
+            self._add_images_from_object(obj, True, found_images, images)
+        return images
+
+    def _add_images_from_object(
+        self, obj: Object, include_children: bool, found_images: set[Image], images: list[tuple[Image, bool]]
+    ):
+        from ..sollumz_helper import get_sollumz_materials
+
         mat_to_model = {}
         mats = get_sollumz_materials(obj, out_material_to_models=mat_to_model, include_root_obj=True)
         for mat in mats:
-            use_mat = self.object_include_children or obj in mat_to_model[mat]
+            use_mat = include_children or obj in mat_to_model[mat]
             if not use_mat:
                 continue
 
@@ -118,13 +147,13 @@ class TextureImageSource(PropertyGroup):
                         images.append((img, default_use))
                         found_images.add(img)
 
-        return images
-
 
 class TextureImageSourceSelectionAccess(MultiSelectAccess):
     source_type: MultiSelectProperty()
     object_name: MultiSelectProperty()
     object_include_children: MultiSelectProperty()
+    collection_name: MultiSelectProperty()
+    collection_include_children: MultiSelectProperty()
 
 
 @define_multiselect_collection("textures", {"name": "Textures"})
@@ -146,8 +175,10 @@ class TextureDictionary(PropertyGroup):
         self.sources.select(len(self.sources) - 1)
         return src
 
-    def refresh_from_sources(self):
-        # TODO(txd): not clear all textures
+    def refresh_from_sources(self, context: Context):
+        for src in self.sources:
+            src.refresh(context)
+
         self._remove_textures_from_sources()
 
         images = set(s.image for src in self.sources for s in src.images if s.use)
@@ -311,8 +342,18 @@ def register():
     Scene.sz_gtxds = CollectionProperty(type=GtxdNode, name="GTXDs")
     Scene.sz_gtxd_index = IntProperty(name="GTXD")
 
+    Image.sz_is_hd = BoolProperty(
+        name="HD",
+        description=(
+            "Export the full-resolution texture to a separate '+hi' texture dictionary. The base texture "
+            "dictionary gets a half-resolution copy with the first mip level dropped"
+        ),
+        default=False,
+    )
+
 
 def unregister():
     del Scene.sz_txds
     del Scene.sz_gtxds
     del Scene.sz_gtxd_index
+    del Image.sz_is_hd

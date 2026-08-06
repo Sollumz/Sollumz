@@ -92,6 +92,7 @@ class MapSessionIndex:
         self._build_progress: int = 0
         self._build_total: int = 0
         self._fingerprint: int = 0
+        self._tick_registered: bool = False
 
     @property
     def is_ready(self) -> bool:
@@ -121,10 +122,12 @@ class MapSessionIndex:
         """Begin building all caches in the background via timer."""
         if self._build_iter is not None:
             return
-        self._build_total = self._count_build_items()
+        self._build_total = 0  # computed by _iter_build on the first tick
         self._build_progress = 0
         self._build_iter = self._iter_build()
-        bpy.app.timers.register(self._build_tick, first_interval=0.0, persistent=True)
+        if not self._tick_registered:
+            self._tick_registered = True
+            bpy.app.timers.register(self._build_tick, first_interval=0.0, persistent=True)
 
     def _count_build_items(self) -> int:
         from .properties.map import get_maps
@@ -136,6 +139,7 @@ class MapSessionIndex:
         for group in maps.groups:
             total += len(group.maps) + len(group.entities) + len(group.grass_batches)
             total += len(group.cargens) + len(group.occluders) + len(group.lod_lights)
+            total += sum(len(occ.extra_linked_objects) for occ in group.occluders)
         return total
 
     def _structural_fingerprint(self) -> int:
@@ -155,6 +159,7 @@ class MapSessionIndex:
                     len(group.cargens),
                     len(group.grass_batches),
                     len(group.occluders),
+                    sum(len(occ.extra_linked_objects) for occ in group.occluders),
                     len(group.lod_lights),
                 )
             )
@@ -180,6 +185,7 @@ class MapSessionIndex:
         """Yield ``(group_uuid, index, item_uuid, session_uid, data_type)`` for every indexed item."""
         from .properties.map import get_maps
 
+        self._build_total = self._count_build_items()
         maps = get_maps()
         if maps is None:
             return
@@ -200,9 +206,9 @@ class MapSessionIndex:
                 uid = _session_uid(linked) if linked is not None else None
                 yield guuid, i, cg.uuid, uid, CacheObjectData.CARGEN
             for i, occ in enumerate(group.occluders):
-                linked = occ.linked_object
-                uid = _session_uid(linked) if linked is not None else None
-                yield guuid, i, occ.uuid, uid, CacheObjectData.OCCLUDER
+                for linked in occ.raw_slot_objects():
+                    uid = _session_uid(linked) if linked is not None else None
+                    yield guuid, i, occ.uuid, uid, CacheObjectData.OCCLUDER
             for i, ll in enumerate(group.lod_lights):
                 linked = ll.linked_object
                 uid = _session_uid(linked) if linked is not None else None
@@ -211,6 +217,7 @@ class MapSessionIndex:
     def _build_tick(self) -> float | None:
         build_iter = self._build_iter
         if build_iter is None:
+            self._tick_registered = False
             return None
 
         deadline = time.monotonic() + _BUILD_TICK_TIME_BUDGET
@@ -222,6 +229,7 @@ class MapSessionIndex:
                 self._build_iter = None
                 self._ready = True
                 self._fingerprint = self._structural_fingerprint()
+                self._tick_registered = False
                 tag_redraw(bpy.context, space_type="PROPERTIES", region_type="WINDOW")
                 return None
             self._apply_build_entry(entry)
