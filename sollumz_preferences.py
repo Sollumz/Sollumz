@@ -30,7 +30,7 @@ from typing import Optional, Any, TYPE_CHECKING
 from configparser import ConfigParser
 from pathlib import Path
 from .known_paths import prefs_file_path, data_directory_path
-from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
+from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG, missing_optional_dependencies
 if TYPE_CHECKING:
     from .iecontext import ImportSettings, ExportSettings
 
@@ -1217,6 +1217,12 @@ class SollumzAddonPreferences(AddonPreferences):
             row.label()  # Needed so col above is centered.
 
     def draw_general(self, context, layout: UILayout):
+        if missing := missing_optional_dependencies():
+            row = layout.row()
+            row.label(text=f"Optional dependencies not installed: {', '.join(d.ui_label for d in missing)}", icon="INFO")
+            row.operator("sollumz.install_dependencies", text="Install")
+            layout.separator()
+
         layout.prop(self, "use_text_name_as_mat_name")
         layout.prop(self, "shader_preset_apply_textures")
         layout.prop(self, "default_sync_selection_enabled")
