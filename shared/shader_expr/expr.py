@@ -134,6 +134,8 @@ class FloatBinaryExprOp(IntEnum):
     POWER = 5
     LESS_THAN = 6
     GREATER_THAN = 7
+    MAXIMUM = 8
+    MINIMUM = 9
 
     def token(self) -> str:
         match self:
@@ -153,6 +155,10 @@ class FloatBinaryExprOp(IntEnum):
                 return "<"
             case FloatBinaryExprOp.GREATER_THAN:
                 return ">"
+            case FloatBinaryExprOp.MAXIMUM:
+                return "max"
+            case FloatBinaryExprOp.MINIMUM:
+                return "min"
             case _:
                 raise NotImplementedError(f"'{self}' not implemented!")
 
@@ -848,6 +854,7 @@ class BsdfPrincipledExpr(ShaderExpr):
     metallic: Optional[FloatExpr]
     roughness: Optional[FloatExpr]
     specular_ior_level: Optional[FloatExpr]
+    ior: Optional[FloatExpr]
     coat_weight: Optional[FloatExpr]
     normal: Optional[VectorExpr]
 
@@ -858,6 +865,7 @@ class BsdfPrincipledExpr(ShaderExpr):
         metallic: Optional[Floaty] = None,
         roughness: Optional[Floaty] = None,
         specular_ior_level: Optional[Floaty] = None,
+        ior: Optional[Floaty] = None,
         coat_weight: Optional[Floaty] = None,
         normal: Optional[VectorExpr] = None,
     ):
@@ -866,6 +874,7 @@ class BsdfPrincipledExpr(ShaderExpr):
         self.metallic = optional_floaty(metallic)
         self.roughness = optional_floaty(roughness)
         self.specular_ior_level = optional_floaty(specular_ior_level)
+        self.ior = optional_floaty(ior)
         self.coat_weight = optional_floaty(coat_weight)
         self.normal = normal
 
@@ -889,6 +898,7 @@ class BsdfPrincipledExpr(ShaderExpr):
         _arg("metallic")
         _arg("roughness")
         _arg("specular_ior_level")
+        _arg("ior")
         _arg("coat_weight")
         _arg("normal")
 
@@ -917,6 +927,7 @@ class BsdfPrincipledExpr(ShaderExpr):
             _arg("metallic")
             _arg("roughness")
             _arg("specular_ior_level")
+            _arg("ior")
             _arg("coat_weight")
             _arg("normal")
 

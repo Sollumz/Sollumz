@@ -35,13 +35,16 @@ class CompiledExpr(NamedTuple):
 class Compiler:
     node_tree: ShaderNodeTree
     root_expr: expr.Expr
-    compiled_expr_cache: dict[expr.Expr, CompiledExpr] = {}
-    separate_xyz_cache: dict[expr.VectorExpr, ShaderNode] = {}
-    uv_map_cache: dict[int, ShaderNode] = {}
+    compiled_expr_cache: dict[expr.Expr, CompiledExpr]
+    separate_xyz_cache: dict[expr.VectorExpr, ShaderNode]
+    uv_map_cache: dict[int, ShaderNode]
 
     def __init__(self, node_tree: ShaderNodeTree, root: expr.Expr):
         self.node_tree = node_tree
         self.root_expr = root
+        self.compiled_expr_cache = {}
+        self.separate_xyz_cache = {}
+        self.uv_map_cache = {}
 
     def compile(self) -> CompiledExpr:
         return self.visit(self.root_expr)
@@ -73,6 +76,10 @@ class Compiler:
                 op = "LESS_THAN"
             case expr.FloatBinaryExprOp.GREATER_THAN:
                 op = "GREATER_THAN"
+            case expr.FloatBinaryExprOp.MAXIMUM:
+                op = "MAXIMUM"
+            case expr.FloatBinaryExprOp.MINIMUM:
+                op = "MINIMUM"
             case _:
                 raise NotImplementedError(f"{e.op} not implemented!")
 
@@ -265,6 +272,7 @@ class Compiler:
             ("Metallic", e.metallic),
             ("Roughness", e.roughness),
             ("Specular IOR Level", e.specular_ior_level),
+            ("IOR", e.ior),
             ("Coat Weight", e.coat_weight),
         ):
             self.connect_float_input(src, bsdf, input_socket)
@@ -457,6 +465,12 @@ def create_shader_uv_maps(dest_node_tree: ShaderNodeTree, shader_def: ShaderDef)
 def compile_expr(dest_node_tree: ShaderNodeTree, expr: expr.Expr) -> CompiledExpr:
     """Convert the expression into nodes."""
     return Compiler(dest_node_tree, expr).compile()
+
+
+def compile_exprs(dest_node_tree: ShaderNodeTree, *exprs: expr.Expr) -> tuple[CompiledExpr, ...]:
+    """Convert multiple expressions into nodes, sharing the nodes of common subexpressions."""
+    compiler = Compiler(dest_node_tree, None)
+    return tuple(compiler.visit(e) for e in exprs)
 
 
 def compile_to_material(name: str, shader_expr: expr.ShaderExpr, shader_def: Optional[ShaderDef] = None) -> Material:

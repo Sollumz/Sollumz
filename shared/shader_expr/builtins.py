@@ -3,6 +3,8 @@ from .expr import (
     Floaty,
     FloatExpr,
     FloatConstantExpr,
+    FloatBinaryExpr,
+    FloatBinaryExprOp,
     FloatMapRangeExpr,
     FloatUnaryExpr,
     FloatUnaryExprOp,
@@ -84,6 +86,21 @@ def dot(a: VectorExpr, b: VectorExpr) -> FloatExpr:
 def cross(a: VectorExpr, b: VectorExpr) -> VectorExpr:
     """Cross product of two vectors."""
     return a.cross(b)
+
+
+def maxf(a: Floaty, b: Floaty) -> FloatExpr:
+    """Maximum of two floats."""
+    return FloatBinaryExpr(a, b, FloatBinaryExprOp.MAXIMUM)
+
+
+def minf(a: Floaty, b: Floaty) -> FloatExpr:
+    """Minimum of two floats."""
+    return FloatBinaryExpr(a, b, FloatBinaryExprOp.MINIMUM)
+
+
+def saturate(v: Floaty) -> FloatExpr:
+    """Clamp a float to [0..1]."""
+    return FloatMapRangeExpr(v, 0.0, 1.0, 0.0, 1.0, clamp=True)
 
 
 def map_range(*args, **kwargs) -> FloatExpr:
