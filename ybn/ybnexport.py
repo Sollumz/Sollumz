@@ -820,6 +820,12 @@ def create_collision_material_data(mat: Material) -> CollisionMaterial:
 
     col_props = mat.collision_properties
     flags_lo, flags_hi = get_collision_mat_raw_flags(mat.collision_flags)
+    if flags_hi & (1 << 3):
+        flags_hi &= ~(1 << 3)
+        logger.warning(
+            f"Collision material '{mat.name}' has the runtime-only VEHICLE WHEEL flag set. "
+            "It has been cleared on export, as the game requires."
+        )
     return CollisionMaterial(
         material_index=col_props.collision_index,
         material_color_index=col_props.material_color_index,
