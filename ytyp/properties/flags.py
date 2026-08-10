@@ -94,7 +94,7 @@ class EntityFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
     flag16: bpy.props.BoolProperty(
         name="LOD Use Alt Fade", update=FlagPropertyGroup.update_flag)
     flag17: bpy.props.BoolProperty(
-        name="Unused", update=FlagPropertyGroup.update_flag)
+        name="Underwater", update=FlagPropertyGroup.update_flag)
     flag18: bpy.props.BoolProperty(
         name="Does Not Touch Water", update=FlagPropertyGroup.update_flag)
     flag19: bpy.props.BoolProperty(name="Does Not Spawn Peds",
