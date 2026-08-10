@@ -410,9 +410,10 @@ class LightProperties(bpy.types.PropertyGroup):
 
     cone_inner_angle: FloatProperty(
         name="Cone Inner Angle",
+        description="Half-angle of the inner cone. The game clamps this to 1° and to one degree below the outer angle",
         get=_get_cone_inner_angle, set=_set_cone_inner_angle,
         subtype="ANGLE",
-        min=0.0, max=math.pi / 2,
+        min=math.radians(1.0), max=math.radians(89.0),
     )
 
     def _get_cone_outer_angle(self) -> float:
@@ -423,9 +424,10 @@ class LightProperties(bpy.types.PropertyGroup):
 
     cone_outer_angle: FloatProperty(
         name="Cone Outer Angle",
+        description="Half-angle of the outer cone. The game clamps this to the range 1°-89°",
         get=_get_cone_outer_angle, set=_set_cone_outer_angle,
         subtype="ANGLE",
-        min=0.0, max=math.pi / 2,
+        min=math.radians(1.0), max=math.radians(89.0),
     )
 
 
