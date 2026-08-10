@@ -739,6 +739,9 @@ def calculate_frag_phys_groups_total_masses(groups: list[PhysGroup], children: l
     for child in children:
         groups[child.group_index].total_mass += child.pristine_mass
 
+    for group in groups:
+        group.total_mass = max(0.001, group.total_mass)
+
 
 def sort_frag_phys_children_and_collisions_inplace(
     children: list[PhysChild],
