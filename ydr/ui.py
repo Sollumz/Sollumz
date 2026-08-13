@@ -943,67 +943,57 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="OUTLINER_DATA_GREASEPENCIL")
 
     def draw(self, context):
-
         wm = context.window_manager
-
         layout = self.layout
 
-        def _visible_icon_prop(layout, obj, prop_name):
-            visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
-            layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
-
-        row = layout.row(align=True)
-        row.label(text=CableAttr.RADIUS.label)
-        _visible_icon_prop(row, wm, "sz_ui_cable_radius_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_radius.bl_idname, text="Set")
+        controls = _attr_row(layout, wm, CableAttr.RADIUS.label, "sz_ui_cable_radius_visualize")
+        controls.prop(wm, "sz_ui_cable_radius", text="")
+        op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_radius.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cable_radius
-        row.prop(wm, "sz_ui_cable_radius", text="")
 
-        row = layout.row(align=True)
-        row.label(text=CableAttr.DIFFUSE_FACTOR.label)
-        _visible_icon_prop(row, wm, "sz_ui_cable_diffuse_factor_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_diffuse_factor.bl_idname, text="Set")
+        controls = _attr_row(layout, wm, CableAttr.DIFFUSE_FACTOR.label, "sz_ui_cable_diffuse_factor_visualize")
+        controls.prop(wm, "sz_ui_cable_diffuse_factor", text="")
+        op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_diffuse_factor.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cable_diffuse_factor
-        row.prop(wm, "sz_ui_cable_diffuse_factor", text="")
 
-        row = layout.row(align=True)
-        row.label(text=CableAttr.UM_SCALE.label)
-        _visible_icon_prop(row, wm, "sz_ui_cable_um_scale_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_um_scale.bl_idname, text="Set")
+        controls = _attr_row(layout, wm, CableAttr.UM_SCALE.label, "sz_ui_cable_um_scale_visualize")
+        controls.prop(wm, "sz_ui_cable_um_scale", text="")
+        op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_um_scale.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cable_um_scale
-        row.prop(wm, "sz_ui_cable_um_scale", text="")
 
-        row = layout.row(align=True)
-        row.label(text=CableAttr.PHASE_OFFSET.label)
-        _visible_icon_prop(row, wm, "sz_ui_cable_phase_offset_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_phase_offset.bl_idname, text="Set")
-        op.value = wm.sz_ui_cable_phase_offset
-        row.prop(wm, "sz_ui_cable_phase_offset", text="")
-
-        row = layout.row(align=True)
-        op = row.operator(cable_ops.SOLLUMZ_OT_cable_randomize_phase_offset.bl_idname, text="Randomize")
-
-        row = layout.row(align=True)
-        row.label(text=CableAttr.MATERIAL_INDEX.label)
-        _visible_icon_prop(row, wm, "sz_ui_cable_material_index_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cable_ops.SOLLUMZ_OT_cable_set_material_index.bl_idname, text="Set")
+        controls = _attr_row(layout, wm, CableAttr.MATERIAL_INDEX.label, "sz_ui_cable_material_index_visualize")
+        controls.prop(wm, "sz_ui_cable_material_index", text="")
+        op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_material_index.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cable_material_index
-        row.prop(wm, "sz_ui_cable_material_index", text="")
+
+        controls = _attr_row(layout, wm, CableAttr.PHASE_OFFSET.label, "sz_ui_cable_phase_offset_visualize")
+        controls.prop(wm, "sz_ui_cable_phase_offset", text="")
+        op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_phase_offset.bl_idname, text="", icon="CHECKMARK")
+        op.value = wm.sz_ui_cable_phase_offset
+
+        controls = _attr_row(layout, wm, "")
+        controls.operator(cable_ops.SOLLUMZ_OT_cable_randomize_phase_offset.bl_idname, text="Randomize")
 
 
 def _visible_icon_prop(layout, obj, prop_name):
     visible_icon = "HIDE_OFF" if getattr(obj, prop_name, False) else "HIDE_ON"
     layout.prop(obj, prop_name, text="", emboss=False, icon=visible_icon)
+
+
+def _attr_row(layout, wm, label, vis_prop=None):
+    """One attribute per line: label, then the controls column, then the visualize eye.
+
+    Every row uses the same column widths so the controls line up vertically.
+    """
+    split = layout.row(align=True).split(factor=0.35, align=True)
+    split.label(text=label)
+    right = split.split(factor=0.88, align=True)
+    controls = right.row(align=True)
+    eye = right.row(align=True)
+    eye.alignment = "RIGHT"
+    if vis_prop:
+        _visible_icon_prop(eye, wm, vis_prop)
+    return controls
 
 
 class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
@@ -1020,76 +1010,48 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         self.layout.label(text="", icon="MATCLOTH")
 
     def draw(self, context):
-
         wm = context.window_manager
-
         layout = self.layout
 
-        row = layout.row(align=True)
-        row.label(text=ClothAttr.VERTEX_WEIGHT.label)
-        _visible_icon_prop(row, wm, "sz_ui_cloth_vertex_weight_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_vertex_weight.bl_idname, text="Set")
+        controls = _attr_row(layout, wm, ClothAttr.VERTEX_WEIGHT.label,
+                                   "sz_ui_cloth_vertex_weight_visualize")
+        controls.prop(wm, "sz_ui_cloth_vertex_weight", text="")
+        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_vertex_weight.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cloth_vertex_weight
-        row.prop(wm, "sz_ui_cloth_vertex_weight", text="")
 
-        row = layout.row(align=True)
-        row.label(text=ClothAttr.INFLATION_SCALE.label)
-        _visible_icon_prop(row, wm, "sz_ui_cloth_inflation_scale_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_inflation_scale.bl_idname, text="Set")
+        controls = _attr_row(layout, wm, ClothAttr.INFLATION_SCALE.label,
+                                   "sz_ui_cloth_inflation_scale_visualize")
+        controls.prop(wm, "sz_ui_cloth_inflation_scale", text="")
+        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_inflation_scale.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cloth_inflation_scale
-        row.prop(wm, "sz_ui_cloth_inflation_scale", text="")
 
-        row = layout.row(align=True)
-        row.label(text=ClothAttr.PINNED.label)
-        _visible_icon_prop(row, wm, "sz_ui_cloth_pinned_visualize")
+        controls = _attr_row(layout, wm, ClothAttr.FORCE_TRANSFORM.label,
+                                   "sz_ui_cloth_force_transform_visualize")
+        controls.prop(wm, "sz_ui_cloth_force_transform", text="")
+        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_force_transform.bl_idname, text="", icon="CHECKMARK")
+        op.value = wm.sz_ui_cloth_force_transform
 
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Pin")
-        op.value = True
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin")
-        op.value = False
+        controls = _attr_row(layout, wm, ClothAttr.PINNED.label, "sz_ui_cloth_pinned_visualize")
+        controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Pin").value = True
+        controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin").value = False
 
-        row = layout.row(align=True)
-        split = row.split(factor=0.5)
-        row = split.row()
-        row.label(text=ClothAttr.PIN_RADIUS.label)
-        row = split.row()
-        split = row.split(factor=0.5)
-        row = split.row()
-        row.prop(wm, "sz_ui_cloth_pin_radius_set", text="")
-        row = split.row()
-        row.alignment = "RIGHT"
-        _visible_icon_prop(row, wm, "sz_ui_cloth_pin_radius_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius.bl_idname, text="Set")
+        controls = _attr_row(layout, wm, ClothAttr.PIN_RADIUS.label, "sz_ui_cloth_pin_radius_visualize")
+        # Set number goes in front of the value so it stays inside the controls column
+        sub = controls.split(factor=0.2, align=True)
+        sub.prop(wm, "sz_ui_cloth_pin_radius_set", text="")
+        sub.prop(wm, "sz_ui_cloth_pin_radius", text="")
+        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius.bl_idname, text="", icon="CHECKMARK")
         op.set_number = wm.sz_ui_cloth_pin_radius_set
         op.value = wm.sz_ui_cloth_pin_radius
-        row.prop(wm, "sz_ui_cloth_pin_radius", text="")
 
-        row = layout.row(align=True)
-        split = row.split(factor=0.5, align=True)
-        row = split.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname, text="Fill Gradient")
+        controls = _attr_row(layout, wm, "Pin Radius Gradient")
+        controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_min", text="")
+        controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_max", text="")
+        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname,
+                               text="", icon="IPO_LINEAR")
         op.min_value = wm.sz_ui_cloth_pin_radius_gradient_min
         op.max_value = wm.sz_ui_cloth_pin_radius_gradient_max
         op.set_number = wm.sz_ui_cloth_pin_radius_set
-        row = split.row(align=True)
-        row.prop(wm, "sz_ui_cloth_pin_radius_gradient_min", text="")
-        row.prop(wm, "sz_ui_cloth_pin_radius_gradient_max", text="")
-
-        row = layout.row(align=True)
-        row.label(text=ClothAttr.FORCE_TRANSFORM.label)
-        _visible_icon_prop(row, wm, "sz_ui_cloth_force_transform_visualize")
-
-        row = layout.row(align=True)
-        op = row.operator(cloth_ops.SOLLUMZ_OT_cloth_set_force_transform.bl_idname, text="Set")
-        op.value = wm.sz_ui_cloth_force_transform
-        row.prop(wm, "sz_ui_cloth_force_transform", text="")
 
 
 class SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL(bpy.types.Panel):
