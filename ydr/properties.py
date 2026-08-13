@@ -18,7 +18,7 @@ import math
 from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlagsMixin
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, MaterialType, FlagPropertyGroup, TimeFlagsMixin
 from ..ydr.shader_materials import shadermats, shadermats_by_filename
 from .render_bucket import RenderBucket, RenderBucketEnumItems
 from .light_flashiness import LightFlashiness, LightFlashinessEnumItems
@@ -653,6 +653,21 @@ def on_blend_file_loaded(_):
     refresh_ui_collections()
 
 
+@persistent
+def on_depsgraph_update_post(_scene, depsgraph):
+    # Bump samplers always contain normal maps, so their images must never be color-managed.
+    for update in depsgraph.updates:
+        mat = update.id.original
+        if not isinstance(mat, Material) or mat.sollum_type != MaterialType.SHADER or mat.node_tree is None:
+            continue
+
+        for node in mat.node_tree.nodes:
+            if (isinstance(node, bpy.types.ShaderNodeTexImage) and node.is_sollumz and
+                    "bump" in node.name.lower() and node.image is not None and
+                    not node.image.colorspace_settings.is_data):
+                node.image.colorspace_settings.is_data = True
+
+
 def register():
     bpy.types.WindowManager.sz_shader_material_index = bpy.props.IntProperty(
         name="Shader Material Index", min=0, max=len(shadermats) - 1)
@@ -834,6 +849,7 @@ def register():
     # )
 
     bpy.app.handlers.load_post.append(on_blend_file_loaded)
+    bpy.app.handlers.depsgraph_update_post.append(on_depsgraph_update_post)
     refresh_ui_collections()
 
 
@@ -886,3 +902,4 @@ def unregister():
     # del bpy.types.WindowManager.sz_ui_cloth_diag_bindings_visualize
 
     bpy.app.handlers.load_post.remove(on_blend_file_loaded)
+    bpy.app.handlers.depsgraph_update_post.remove(on_depsgraph_update_post)
