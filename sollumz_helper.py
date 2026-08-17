@@ -119,21 +119,28 @@ def duplicate_object_with_children(obj):
 
 
 def find_sollumz_parent(obj: bpy.types.Object, parent_type: Optional[SollumType] = None) -> bpy.types.Object | None:
-    """Find parent Fragment or Drawable if one exists. Returns None otherwise."""
+    """Find the Sollumz object ``obj`` belongs to, ``obj`` itself included. Returns None otherwise.
+
+    With ``parent_type``, the closest ancestor of that type is returned; otherwise, the root
+    Fragment/Drawable/dictionary of the hierarchy.
+    """
+    if parent_type is not None:
+        while obj is not None:
+            if obj.sollum_type == parent_type:
+                return obj
+
+            obj = obj.parent
+
+        return None
+
     parent_types = [SollumType.FRAGMENT, SollumType.DRAWABLE, SollumType.DRAWABLE_DICTIONARY,
                     SollumType.CLIP_DICTIONARY, SollumType.DEPRECATED__YMAP, SollumType.BOUND_COMPOSITE]
 
     parent = obj.parent
     if parent is None:
-        if parent_type is not None and obj.sollum_type == parent_type:
-            return obj
+        return obj if obj.sollum_type in parent_types else None
 
-        if parent_type is None and obj.sollum_type in parent_types:
-            return obj
-
-        return None
-
-    return find_sollumz_parent(parent, parent_type)
+    return find_sollumz_parent(parent)
 
 
 class GetSollumzMaterialsMode(Enum):
@@ -212,6 +219,10 @@ def get_parent_inverse(obj: bpy.types.Object) -> Matrix:
 
     if obj.matrix_world.is_identity or parent_obj is None:
         return Matrix()
+
+    if parent_obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+        # Drawables in a dictionary are independent assets, each one is its own origin, not the dictionary
+        parent_obj = find_sollumz_parent(obj, SollumType.DRAWABLE) or parent_obj
 
     if get_export_settings().apply_transforms:
         if parent_obj.sollum_type == SollumType.BOUND_COMPOSITE:
