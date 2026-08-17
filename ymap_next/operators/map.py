@@ -789,7 +789,7 @@ class SOLLUMZ_OT_map_highlight_map_data_entities(Operator):
 class SOLLUMZ_OT_map_go_to_entity(Operator):
     bl_idname = "sollumz.map_go_to_entity"
     bl_label = "Go To Entity"
-    bl_description = "Go to the active entity"
+    bl_description = "Go to the active entity and select the linked objects of all selected entities"
     bl_options = {"UNDO"}
 
     @classmethod
@@ -797,19 +797,27 @@ class SOLLUMZ_OT_map_go_to_entity(Operator):
         return active_entities_collection(context)
 
     def execute(self, context):
-        entity = active_entity(context)
+        entities = active_entities_collection(context)
+        active = entities.active_item if entities else None
 
-        if not entity:
+        if not active:
             return {"CANCELLED"}
 
-        if obj := entity.linked_object:
-            context.region_data.view_location = obj.matrix_world.translation
-            bpy.ops.object.select_all(action="DESELECT")
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-        else:
-            context.region_data.view_location = entity.position
-            bpy.ops.object.select_all(action="DESELECT")
+        active_obj = active.linked_object
+        context.region_data.view_location = (
+            active_obj.matrix_world.translation if active_obj is not None else active.position
+        )
+
+        bpy.ops.object.select_all(action="DESELECT")
+
+        view_layer_objects = set(o.name for o in context.view_layer.objects)
+        for entity in entities.iter_selected_items():
+            obj = entity.linked_object
+            if obj is not None and obj.name in view_layer_objects:
+                obj.select_set(True)
+
+        if active_obj is not None and active_obj.name in view_layer_objects:
+            context.view_layer.objects.active = active_obj
 
         return {"FINISHED"}
 
