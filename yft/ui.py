@@ -14,7 +14,7 @@ from ..sollumz_properties import (
     MAX_VEHICLE_LIGHT_ID,
 )
 from ..sollumz_helper import find_sollumz_parent
-from ..sollumz_ui import FlagsPanel
+from ..sollumz_ui import FlagsPanel, NoVisibilityToggle
 from ..icons import icon
 from .properties import (
     GroupProperties, FragmentProperties, VehicleLightID,
@@ -271,7 +271,7 @@ class SOLLUMZ_PT_FRAG_CLOTH_PANEL(ClothPanel, bpy.types.Panel):
         col.prop(cloth_props, "world_bounds")
 
 
-class SOLLUMZ_PT_FRAG_CLOTH_TUNING_PANEL(ClothPanel, bpy.types.Panel):
+class SOLLUMZ_PT_FRAG_CLOTH_TUNING_PANEL(NoVisibilityToggle, ClothPanel, bpy.types.Panel):
     bl_label = "Tuning"
     bl_idname = "SOLLUMZ_PT_FRAG_CLOTH_TUNING_PANEL"
     bl_parent_id = SOLLUMZ_PT_FRAG_CLOTH_PANEL.bl_idname

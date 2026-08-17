@@ -1,7 +1,7 @@
 import bpy
 
 from ..sollumz_properties import SollumType
-from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
+from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, NoVisibilityToggle
 
 
 def draw_ymap_properties(self, context):
@@ -78,7 +78,7 @@ def draw_ymap_car_generator_properties(self, context):
         layout.prop(obj.ymap_cargen_properties, 'livery')
 
 
-class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_YMAP_TOOL_PANEL(NoVisibilityToggle, bpy.types.Panel):
     bl_label = "(Deprecated) Map Data"
     bl_idname = "SOLLUMZ_PT_YMAP_TOOL_PANEL"
     bl_category = "Sollumz Tools"
@@ -126,7 +126,7 @@ class SOLLUMZ_PT_YMAP_TOOL_PANEL(bpy.types.Panel):
             layout.label(text="No Ymap Selected")
 
 
-class OBJECT_PT_ymap_block(bpy.types.Panel):
+class OBJECT_PT_ymap_block(NoVisibilityToggle, bpy.types.Panel):
     bl_label = "Block"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"

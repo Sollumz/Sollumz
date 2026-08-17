@@ -96,19 +96,9 @@ def register():
         # Initialize all sollumz modules
         auto_load.register()
 
-        # WorkSpaceTools need to be registered after normal modules so the keymaps
-        # detect the registered operators
-        from . import sollumz_tool
-
-        sollumz_tool.register_tools()
-
 
 def unregister():
     if dependencies.has_required_dependencies():
-        from . import sollumz_tool
-
-        sollumz_tool.unregister_tools()
-
         auto_load.unregister()
 
     dependencies.unregister_minimal()

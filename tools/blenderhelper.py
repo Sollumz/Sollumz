@@ -416,6 +416,13 @@ def tag_redraw(context: bpy.types.Context, space_type: str = "PROPERTIES", regio
                         region.tag_redraw()
 
 
+def tag_redraw_all_areas(context: bpy.types.Context):
+    """Redraw all areas in all windows"""
+    for window in context.window_manager.windows:
+        for area in window.screen.areas:
+            area.tag_redraw()
+
+
 def find_bsdf_and_material_output(material: bpy.types.Material) -> Tuple[bpy.types.ShaderNodeBsdfPrincipled, bpy.types.ShaderNodeOutputMaterial]:
     material_output = None
     bsdf = None

@@ -1,6 +1,7 @@
 import bpy
 from bl_ui.space_statusbar import STATUSBAR_HT_header
-from typing import Optional
+from dataclasses import dataclass
+from typing import Iterator, Optional
 
 from .ydr.operators.materials import SOLLUMZ_OT_convert_active_material_to_selected, SOLLUMZ_OT_auto_convert_current_material
 from .sollumz_preferences import get_addon_preferences, get_export_settings, get_import_settings, SollumzImportSettings, SollumzExportSettings
@@ -11,6 +12,8 @@ from .sollumz_properties import (
     SOLLUMZ_UI_NAMES,
 )
 from .sollumz_helper import find_sollumz_parent
+from .tools.blenderhelper import tag_redraw_all_areas
+from .tabbed_panels import TabPanel
 from .lods import (
     LODLevel,
     SOLLUMZ_OT_set_lod_level,
@@ -219,7 +222,6 @@ class SOLLUMZ_PT_import_ydd(bpy.types.Panel, SollumzImportSettingsPanel):
                 row = split.row()
                 row.alert = True
                 row.label(text="No external skeletons saved in preferences.", icon="ERROR")
-
 
 
 class _SollumzImportYtypPanel(SollumzImportSettingsPanel):
@@ -589,12 +591,6 @@ class SOLLUMZ_PT_VERTEX_TOOL_PANEL(GeneralToolChildPanel, bpy.types.Panel):
     bl_idname = "SOLLUMZ_PT_VERTEX_TOOL_PANEL"
     bl_order = 1
 
-    @classmethod
-    def poll(self, context):
-        preferences = get_addon_preferences(bpy.context)
-        show_panel = preferences.show_vertex_painter
-        return show_panel
-
     def draw_header(self, context):
         self.layout.label(text="", icon="BRUSH_DATA")
 
@@ -810,6 +806,274 @@ class TimeFlagsPanel(FlagsPanel):
         row.operator(self.clear_operator)
 
 
+class NoVisibilityToggle:
+    """Mixin for panels that get no show/hide toggle and are not listed in Preferences > UI > Panels."""
+    sz_panel_no_visibility_toggle = True
+
+
+def space_type_ui_name(space_type: str) -> str:
+    item = bpy.types.Space.bl_rna.properties["type"].enum_items.get(space_type)
+    return item.name if item is not None else space_type
+
+
+def context_mode_ui_name(context_mode: str) -> str:
+    item = bpy.types.Context.bl_rna.properties["mode"].enum_items.get(context_mode)
+    return item.name if item is not None else context_mode
+
+
+class PanelVisibility:
+    """Show/hide state of the UI panels."""
+
+    @dataclass(frozen=True, slots=True)
+    class Node:
+        panel: type
+        idname: str
+        label: str
+        children: tuple["Node", ...]
+
+    @dataclass(frozen=True, slots=True)
+    class Group:
+        space_type: str
+        region_type: str
+        category: str
+        roots: tuple["Node", ...]
+
+        @property
+        def label(self) -> str:
+            category = self.category
+            if category and category.islower():
+                # bl_context identifiers like "object" or "material"
+                category = category.replace("_", " ").title()
+            space_name = space_type_ui_name(self.space_type)
+            return f"{space_name} › {category}" if category else space_name
+
+    def __init__(self):
+        self._tree: tuple[PanelVisibility.Group, ...] = ()
+        self._original_polls: dict[type, object | None] = {}
+        self._hidden_ids: set[str] = set()
+
+    def is_hidden(self, panel_id: str) -> bool:
+        return panel_id in self._hidden_ids
+
+    @property
+    def has_hidden(self) -> bool:
+        return bool(self._hidden_ids)
+
+    def sync(self, hidden_panels):
+        """Sync the runtime state with the `hidden_panels` preferences collection."""
+        self._hidden_ids.clear()
+        self._hidden_ids.update(entry.name for entry in hidden_panels)
+
+    def set_hidden(self, context, panel_id: str, hidden: bool):
+        prefs = get_addon_preferences(context)
+        prefs.set_panel_hidden(panel_id, hidden)
+        self.sync(prefs.hidden_panels)
+
+    def show_all(self, context):
+        prefs = get_addon_preferences(context)
+        prefs.clear_hidden_panels()
+        self.sync(prefs.hidden_panels)
+
+    def hook_panels(self, classes):
+        """Build the panels tree from `classes` and replace the `poll` of each panel in it with one
+        that also checks whether the user hid the panel before delegating to the original function.
+        """
+        self._tree = self._build_panel_tree(classes)
+        for node in self._iter_nodes():
+            cls = node.panel
+            if cls in self._original_polls:
+                continue  # already wrapped, don't stack wrappers
+
+            assert not getattr(cls, "is_registered", False), (
+                f"Panel '{node.idname}' is already registered. Its poll must be replaced before "
+                f"registration, Blender only calls poll on classes that defined it at registration time."
+            )
+
+            original_bound_poll = getattr(cls, "poll", None)  # resolved through the MRO, bound to cls
+            self._original_polls[cls] = cls.__dict__.get("poll")  # exact descriptor, to restore later
+            cls.poll = classmethod(self._make_poll(node.idname, original_bound_poll))
+
+    def _make_poll(self, panel_id: str, original_poll):
+        def poll(cls, context):
+            if self.is_hidden(panel_id):
+                return False
+            return original_poll(context) if original_poll is not None else True
+        return poll
+
+    def unhook_panels(self):
+        """Restore the original `poll` of every panel hooked by `hook_panels` and drop the tree."""
+        for cls, original_poll in self._original_polls.items():
+            if original_poll is not None:
+                cls.poll = original_poll
+            elif "poll" in cls.__dict__:
+                del cls.poll  # the panel had no own poll, remove ours to fall back to any inherited one
+        self._original_polls.clear()
+        self._tree = ()
+
+    def draw_prefs_section(self, layout: bpy.types.UILayout):
+        """Draw the panels tree with a show/hide toggle on each panel."""
+        row = layout.row()
+        row.label(text="Panels")
+        subrow = row.row()
+        subrow.alignment = "RIGHT"
+        subrow.operator(SOLLUMZ_OT_prefs_show_all_panels.bl_idname, text="   Show All   ", icon="HIDE_OFF")
+
+        box = layout.box()
+        for group in self._tree:
+            if bpy.app.version >= (4, 1, 0):
+                group_idname = f"sollumz_prefs_ui_panels_group_{group.space_type}_{group.region_type}_{group.category}"
+                group_header, group_body = box.panel(group_idname, default_closed=True)
+            else:
+                group_header, group_body = box, box
+            group_header.label(text=group.label)
+            if group_body:
+                for root in group.roots:
+                    self._draw_node(group_body, root, indent=1, parent_hidden=False)
+
+    def _draw_node(self, layout: bpy.types.UILayout, node: Node, indent: int, parent_hidden: bool):
+        row = layout.row(align=True)
+        row.alignment = "LEFT"
+        row.active = not parent_hidden
+        for _ in range(indent):
+            row.label(text="", icon="BLANK1")
+
+        hidden = self.is_hidden(node.idname)
+        row.operator(
+            SOLLUMZ_OT_prefs_toggle_panel_visibility.bl_idname,
+            text=node.label,
+            icon="CHECKBOX_DEHLT" if hidden else "CHECKBOX_HLT",
+            emboss=False,
+        ).panel_id = node.idname
+
+        for child in node.children:
+            self._draw_node(layout, child, indent + 1, parent_hidden or hidden)
+
+    @staticmethod
+    def _panel_idname(panel: type) -> str:
+        return getattr(panel, "bl_idname", None) or panel.__name__
+
+    @staticmethod
+    def _is_visibility_toggleable(panel: type) -> bool:
+        """Whether the user can show/hide this panel."""
+        if getattr(panel, "sz_panel_no_visibility_toggle", False):
+            return False
+
+        if getattr(panel, "bl_space_type", None) == "FILE_BROWSER":
+            # The import/export settings panels
+            return False
+
+        if getattr(panel, "bl_region_type", None) == "HEADER":
+            # Popover panels (e.g. preset panels), opened from a button drawn by other UI, not
+            # persistent panels the user would toggle here
+            return False
+
+        if issubclass(panel, TabPanel):
+            # Tab panels are always part of other parent panel
+            return False
+
+        return True
+
+    def _build_panel_tree(self, classes) -> tuple[Group, ...]:
+        """Build the tree of panels found in `classes`. Panels whose visibility is not
+        user-controlled are removed along with their whole subtree. Groups come out in
+        display order, sorted by display label.
+        """
+        panels = [cls for cls in classes if issubclass(cls, bpy.types.Panel)]
+        by_idname = {self._panel_idname(cls): cls for cls in panels}
+
+        children_by_parent: dict[str, list[type]] = {}
+        root_panels = []
+        for cls in panels:
+            parent_idname = getattr(cls, "bl_parent_id", None)
+            if parent_idname in by_idname:
+                children_by_parent.setdefault(parent_idname, []).append(cls)
+            else:
+                # either a root panel or a child of a panel not defined by us
+                root_panels.append(cls)
+
+        def _build_node(cls) -> PanelVisibility.Node | None:
+            if not self._is_visibility_toggleable(cls):
+                return None  # remove the whole subtree
+
+            idname = self._panel_idname(cls)
+            children = tuple(
+                node
+                for child in children_by_parent.get(idname, ())
+                if (node := _build_node(child)) is not None
+            )
+            label = getattr(cls, "bl_label", None) or idname
+            return PanelVisibility.Node(cls, idname, label, children)
+
+        groups = {}
+        for cls in root_panels:
+            node = _build_node(cls)
+            if node is None:
+                continue
+
+            parent_idname = getattr(cls, "bl_parent_id", None)
+            group_cls = (bpy.types.Panel.bl_rna_get_subclass_py(parent_idname) if parent_idname else None) or cls
+            space_type = getattr(group_cls, "bl_space_type", "") or ""
+            region_type = getattr(group_cls, "bl_region_type", "") or ""
+            category = getattr(group_cls, "bl_category", None) or getattr(group_cls, "bl_context", None) or ""
+            groups.setdefault((space_type, region_type, category), []).append(node)
+
+        return tuple(sorted(
+            (
+                PanelVisibility.Group(space_type, region_type, category, tuple(nodes))
+                for (space_type, region_type, category), nodes in groups.items()
+            ),
+            key=lambda group: group.label.casefold(),
+        ))
+
+    def _iter_nodes(self) -> Iterator[Node]:
+        """Flat iteration over every node in the tree."""
+        def _flatten(nodes):
+            for node in nodes:
+                yield node
+                yield from _flatten(node.children)
+
+        for group in self._tree:
+            yield from _flatten(group.roots)
+
+
+_panel_visibility = PanelVisibility()
+
+
+def panel_visibility() -> PanelVisibility:
+    return _panel_visibility
+
+
+class SOLLUMZ_OT_prefs_toggle_panel_visibility(bpy.types.Operator):
+    """Show or hide this panel"""
+    bl_idname = "sollumz.prefs_toggle_panel_visibility"
+    bl_label = "Toggle Panel Visibility"
+    bl_options = {"INTERNAL"}
+
+    panel_id: bpy.props.StringProperty(options={"HIDDEN", "SKIP_SAVE"})
+
+    def execute(self, context):
+        panels = panel_visibility()
+        panels.set_hidden(context, self.panel_id, not panels.is_hidden(self.panel_id))
+        tag_redraw_all_areas(context)
+        return {"FINISHED"}
+
+
+class SOLLUMZ_OT_prefs_show_all_panels(bpy.types.Operator):
+    """Show all panels hidden in the panel list"""
+    bl_idname = "sollumz.prefs_show_all_panels"
+    bl_label = "Show All"
+    bl_options = {"INTERNAL"}
+
+    @classmethod
+    def poll(cls, context):
+        return panel_visibility().has_hidden
+
+    def execute(self, context):
+        panel_visibility().show_all(context)
+        tag_redraw_all_areas(context)
+        return {"FINISHED"}
+
+
 def statusbar_draw_sollumz_version(header, context):
     from .meta import sollumz_version
     layout = header.layout.row(align=True)
@@ -832,3 +1096,11 @@ def register():
 
 def unregister():
     statusbar_unregister_draw()
+
+
+def pre_register_classes(classes):
+    panel_visibility().hook_panels(classes)
+
+
+def post_unregister_classes():
+    panel_visibility().unhook_panels()

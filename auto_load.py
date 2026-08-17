@@ -1,9 +1,22 @@
+"""Imports every submodule of the add-on and registers the Blender classes they define, in dependency
+order.
+
+Besides its classes, a module can define any of these functions to take part in the registration:
+
+- `pre_register_classes(ordered_classes)`: called before any class is registered, with the classes
+  in registration order.
+- `register()`: called after all classes are registered.
+- `unregister()`: called before any class is unregistered.
+- `post_unregister_classes()`: called after all classes are unregistered.
+"""
+
 import bpy
 import typing
 import inspect
 import pkgutil
 import importlib
 from pathlib import Path
+
 
 __all__ = (
     "register",
@@ -19,29 +32,35 @@ def register():
     modules = get_all_submodules(Path(__file__).parent, __package__)
     ordered_classes = get_ordered_classes_to_register(modules)
 
+    for pre_register_classes in iter_module_functions("pre_register_classes"):
+        pre_register_classes(ordered_classes)
+
     for cls in ordered_classes:
         bpy.utils.register_class(cls)
 
-    for module in modules:
-        if module.__name__ == __name__:
-            continue
-        if hasattr(module, "register"):
-            module.register()
+    for register in iter_module_functions("register"):
+        register()
 
 
 def unregister():
-    called = set()
-    for module in modules:
-        if module.__name__ == __name__:
-            continue
-        if hasattr(module, "unregister"):
-            # Check if unregister method has already been called
-            if module.unregister not in called:
-                module.unregister()
-                called.add(module.unregister)
+    for unregister in iter_module_functions("unregister"):
+        unregister()
 
     for cls in reversed(ordered_classes):
         bpy.utils.unregister_class(cls)
+
+    for post_unregister_classes in iter_module_functions("post_unregister_classes"):
+        post_unregister_classes()
+
+
+def iter_module_functions(name):
+    """Yield the `name` function of each module that defines one."""
+    for module in modules:
+        if module.__name__ == __name__:
+            continue
+        func = getattr(module, name, None)
+        if func is not None:
+            yield func
 
 
 # Import modules
@@ -58,11 +77,6 @@ def iter_submodules(path, package_name):
 
 def iter_submodule_names(path, root=""):
     for _, module_name, is_package in pkgutil.iter_modules([str(path)]):
-        if module_name == "io":
-            # io can be lazy loaded, there is no blender register/unregister stuff in this package
-            # Also io/gta5/native modules shouldn't be loaded if pymateria is not installed
-            continue
-
         yield root + module_name
         if is_package:
             if module_name == "tests":

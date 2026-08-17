@@ -8,6 +8,8 @@ the developer's real Sollumz preferences.
 import pytest
 
 from .. import sollumz_preferences as prefs_mod
+from .. import sollumz_tool
+from .. import sollumz_ui
 from .shared import log_capture
 
 
@@ -28,6 +30,10 @@ def prefs_temp_file(tmp_path, monkeypatch):
         yield ini_path
     finally:
         prefs_mod._update_bpy_struct_from_dict(prefs, snapshot, eval_strings=True)
+        # `_load_preferences` syncs the REAL panel/tool visibility state; sync it back from the
+        # restored collections so no visibility state leaks into other tests
+        sollumz_ui.panel_visibility().sync(prefs.hidden_panels)
+        sollumz_tool.tool_visibility().sync(prefs.hidden_tools)
 
 
 def test_round_trip(prefs_temp_file):
@@ -67,6 +73,33 @@ def test_round_trip(prefs_temp_file):
     assert tuple(prefs.theme.mlo_gizmo_room) == pytest.approx((0.1, 0.2, 0.3, 0.4), abs=1e-4)
     assert [(d.path, d.recursive) for d in prefs.shared_textures_directories] == [("C:\\textures", False)]
     assert [nt.path for nt in prefs.name_table_paths] == ["C:\\names.txt"]
+
+
+def test_hidden_panels_and_tools_round_trip(prefs_temp_file):
+    """Hidden panel/tool ids survive save -> load, and loading syncs the runtime visibility state."""
+    prefs = prefs_mod.get_addon_preferences()
+
+    prefs.set_panel_hidden("SOLLUMZ_TEST_PT_dummy", True)  # saves internally
+    prefs.set_tool_hidden("sollumz_test.dummy", True)
+    assert prefs.is_panel_hidden("SOLLUMZ_TEST_PT_dummy")
+    assert prefs.is_tool_hidden("sollumz_test.dummy")
+    saved_ini = prefs_temp_file.read_text(encoding="utf-8")
+
+    # Mutate in memory. These auto-save and overwrite the temp .ini, so put the saved snapshot back
+    # on disk before loading.
+    prefs.clear_hidden_panels()
+    prefs.clear_hidden_tools()
+    assert not prefs.is_panel_hidden("SOLLUMZ_TEST_PT_dummy")
+    assert not prefs.is_tool_hidden("sollumz_test.dummy")
+    prefs_temp_file.write_text(saved_ini, encoding="utf-8")
+
+    prefs_mod._load_preferences()
+
+    assert prefs.is_panel_hidden("SOLLUMZ_TEST_PT_dummy")
+    assert prefs.is_tool_hidden("sollumz_test.dummy")
+    # the runtime state is synced from the collections on load
+    assert sollumz_ui.panel_visibility().is_hidden("SOLLUMZ_TEST_PT_dummy")
+    assert sollumz_tool.tool_visibility().is_hidden("sollumz_test.dummy")
 
 
 def test_corrupt_ini_falls_back_and_backs_up(prefs_temp_file):

@@ -22,7 +22,7 @@ from .cloth_diagnostics import cloth_last_export_contexts
 from szio.gta5 import ShaderManager
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, LODLevel, SOLLUMZ_UI_NAMES
-from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
+from ..sollumz_ui import FlagsPanel, NoVisibilityToggle, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
 from ..icons import icon_manager
 from ..shared.shader_nodes import SzShaderNodeParameter
@@ -1092,7 +1092,7 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         row.prop(wm, "sz_ui_cloth_force_transform", text="")
 
 
-class SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL(bpy.types.Panel):
+class SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL(NoVisibilityToggle, bpy.types.Panel):
     bl_label = "Diagnostics"
     bl_idname = "SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL"
     bl_space_type = "VIEW_3D"

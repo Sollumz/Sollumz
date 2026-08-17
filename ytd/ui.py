@@ -6,6 +6,7 @@ from bpy.types import (
 )
 
 from ..shared.multiselection import MultiSelectUIListMixin, multiselect_ui_draw_list
+from ..sollumz_ui import NoVisibilityToggle
 from .operators import (
     selection as txd_select_ops,
 )
@@ -300,7 +301,7 @@ class SOLLUMZ_PT_txd_tool_panel(Panel):
     def draw(self, context): ...
 
 
-class TxdToolChildPanel:
+class TxdToolChildPanel(NoVisibilityToggle):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_txd_tool_panel.bl_idname

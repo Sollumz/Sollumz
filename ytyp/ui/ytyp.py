@@ -1,5 +1,5 @@
 import bpy
-from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
+from ...sollumz_ui import BasicListHelper, NoVisibilityToggle, draw_list_with_add_remove
 from ...sollumz_properties import ArchetypeType
 from ..utils import get_selected_ytyp
 from ...shared.multiselection import (
@@ -31,7 +31,7 @@ class SOLLUMZ_PT_YTYP_TOOL_PANEL(bpy.types.Panel):
         ...
 
 
-class YtypToolChildPanel:
+class YtypToolChildPanel(NoVisibilityToggle):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_parent_id = SOLLUMZ_PT_YTYP_TOOL_PANEL.bl_idname

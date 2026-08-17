@@ -964,13 +964,6 @@ class SollumzAddonPreferences(AddonPreferences):
         update=_on_show_version_update
     )
 
-    show_vertex_painter: BoolProperty(
-        name="Show Vertex Painter",
-        description="Show the Vertex Painter panel in General Tools (Includes Terrain Painter)",
-        default=True,
-        update=_save_preferences_on_update
-    )
-
     extra_color_swatches: BoolProperty(
         name="Extra Vertex Color Swatches",
         description="Add 3 extra color swatches to the Vertex Painter Panel (Max 6)",
@@ -1081,6 +1074,16 @@ class SollumzAddonPreferences(AddonPreferences):
         type=SzFavoriteEntry,
     )
 
+    hidden_panels: CollectionProperty(
+        name="Hidden Panels",
+        type=SzFavoriteEntry,
+    )
+
+    hidden_tools: CollectionProperty(
+        name="Hidden Tools",
+        type=SzFavoriteEntry,
+    )
+
     # TODO: operator to create JSON from procedural.meta
     # tree = ET.parse("procedural.meta")
     # procids = [elem.text for elem in tree.getroot().findall("./procTagTable/Item/name")]
@@ -1178,6 +1181,28 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def toggle_favorite_collision_material(self, collision_material_name: str, favorite: bool):
         self._toggle_favorite(self.favorite_collision_materials, collision_material_name, favorite)
+
+    def is_panel_hidden(self, panel_id: str) -> bool:
+        return self._is_favorite(self.hidden_panels, panel_id)
+
+    def set_panel_hidden(self, panel_id: str, hidden: bool):
+        self._toggle_favorite(self.hidden_panels, panel_id, hidden)
+
+    def clear_hidden_panels(self):
+        if len(self.hidden_panels) > 0:
+            self.hidden_panels.clear()
+            _save_preferences()
+
+    def is_tool_hidden(self, tool_id: str) -> bool:
+        return self._is_favorite(self.hidden_tools, tool_id)
+
+    def set_tool_hidden(self, tool_id: str, hidden: bool):
+        self._toggle_favorite(self.hidden_tools, tool_id, hidden)
+
+    def clear_hidden_tools(self):
+        if len(self.hidden_tools) > 0:
+            self.hidden_tools.clear()
+            _save_preferences()
 
     def draw(self, context):
         layout = self.layout
@@ -1452,9 +1477,19 @@ class SollumzAddonPreferences(AddonPreferences):
 
     def draw_ui(self, context, layout: UILayout):
         layout.prop(self, "show_version_in_statusbar")
-        layout.prop(self, "show_vertex_painter")
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")
+
+        _line_separator(layout, factor=2.0)
+
+        from .sollumz_ui import panel_visibility
+        panel_visibility().draw_prefs_section(layout)
+
+        layout.separator(factor=0.5)
+        _line_separator(layout, factor=2.0)
+
+        from .sollumz_tool import tool_visibility
+        tool_visibility().draw_prefs_section(layout)
 
     def draw_theme(self, context, layout: UILayout):
         def _section_header(layout: UILayout, text: str, icon: str, first: bool = False):
@@ -1669,40 +1704,44 @@ def _load_preferences():
     addon_prefs = get_addon_preferences(bpy.context)
 
     prefs_path = prefs_file_path()
-    if not os.path.isfile(prefs_path):
-        return
-
-    try:
-        config = ConfigParser(interpolation=None)
-        config.read(prefs_path)
-        config_dict = {}
-        for section in config.keys():
-            if section == "DEFAULT":
-                continue
-
-            if section == "main":
-                config_dict.update(config["main"])
-            else:
-                config_dict[section] = dict(config[section])
-
-        _is_loading_preferences = True
+    if os.path.isfile(prefs_path):
         try:
-            _update_bpy_struct_from_dict(addon_prefs, config_dict, eval_strings=True)
-        finally:
-            _is_loading_preferences = False
-    except Exception:
-        # Loading runs from register(), so any error here would propagate out of the add-on registration and prevent it
-        # from being enabled. Catch everything, fall back to the default preferences, and back up the unreadable file
-        # so it isn't silently lost.
-        from . import logger
-        logger.error(
-            f"Failed to load Sollumz preferences from '{prefs_path}'. Falling back to default "
-            f"preferences.\n{traceback.format_exc()}"
-        )
-        try:
-            os.replace(prefs_path, prefs_path + ".bak")
-        except OSError:
-            pass
+            config = ConfigParser(interpolation=None)
+            config.read(prefs_path)
+            config_dict = {}
+            for section in config.keys():
+                if section == "DEFAULT":
+                    continue
+
+                if section == "main":
+                    config_dict.update(config["main"])
+                else:
+                    config_dict[section] = dict(config[section])
+
+            _is_loading_preferences = True
+            try:
+                _update_bpy_struct_from_dict(addon_prefs, config_dict, eval_strings=True)
+            finally:
+                _is_loading_preferences = False
+        except Exception:
+            # Loading runs from register(), so any error here would propagate out of the add-on registration and
+            # prevent it from being enabled. Catch everything, fall back to the default preferences, and back up the
+            # unreadable file so it isn't silently lost.
+            from . import logger
+            logger.error(
+                f"Failed to load Sollumz preferences from '{prefs_path}'. Falling back to default "
+                f"preferences.\n{traceback.format_exc()}"
+            )
+            try:
+                os.replace(prefs_path, prefs_path + ".bak")
+            except OSError:
+                pass
+
+    from .sollumz_ui import panel_visibility
+    panel_visibility().sync(addon_prefs.hidden_panels)
+
+    from .sollumz_tool import tool_visibility
+    tool_visibility().sync(addon_prefs.hidden_tools)
 
 
 def _get_bpy_struct_as_dict(struct: bpy_struct) -> dict:
