@@ -28,7 +28,11 @@ class CollisionMatFlags(bpy.types.PropertyGroup):
     no_decal: bpy.props.BoolProperty(name="NO DECAL", default=False)
     no_navmesh: bpy.props.BoolProperty(name="NO NAVMESH", default=False)
     no_ragdoll: bpy.props.BoolProperty(name="NO RAGDOLL", default=False)
-    vehicle_wheel: bpy.props.BoolProperty(name="VEHICLE WHEEL", default=False)
+    vehicle_wheel: bpy.props.BoolProperty(
+        name="VEHICLE WHEEL",
+        description="Runtime-only flag, cleared on export. The game sets it itself during shape tests and asserts "
+                    "that it is not present in resources",
+        default=False)
     no_ptfx: bpy.props.BoolProperty(name="NO PTFX", default=False)
     too_steep_for_player: bpy.props.BoolProperty(name="TOO STEEP FOR PLAYER", default=False)
     no_network_spawn: bpy.props.BoolProperty(name="NO NETWORK SPAWN", default=False)
@@ -174,8 +178,8 @@ _collision_material_mlo_archetype_cache = {}  # [material name] -> (ytyp index, 
 class CollisionProperties(CollisionMatFlags, bpy.types.PropertyGroup):
     collision_index: bpy.props.IntProperty(name="Collision Index", default=0)
     procedural_id: bpy.props.IntProperty(name="Procedural ID", default=0, min=0, max=MAX_NUM_PROCEDURAL_IDS-1)
-    room_id: bpy.props.IntProperty(name="Room ID", default=0, min=0)
-    ped_density: bpy.props.IntProperty(name="Ped Density", default=0)
+    room_id: bpy.props.IntProperty(name="Room ID", default=0, min=0, max=31)
+    ped_density: bpy.props.IntProperty(name="Ped Density", default=0, min=0, max=7)
     material_color_index: bpy.props.IntProperty(name="Material Color Index", default=0)
 
     def _get_procedural_id(self) -> int:
@@ -250,6 +254,7 @@ class BoundFlags(bpy.types.PropertyGroup):
     map_vehicle: bpy.props.BoolProperty(name="MAP VEHICLE", default=False)
     vehicle_not_bvh: bpy.props.BoolProperty(name="VEHICLE NOT BVH", default=False)
     vehicle_bvh: bpy.props.BoolProperty(name="VEHICLE BVH", default=False)
+    vehicle_box: bpy.props.BoolProperty(name="VEHICLE BOX", default=False)
     ped: bpy.props.BoolProperty(name="PED", default=False)
     ragdoll: bpy.props.BoolProperty(name="RAGDOLL", default=False)
     animal: bpy.props.BoolProperty(name="ANIMAL", default=False)
