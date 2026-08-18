@@ -655,16 +655,19 @@ def on_blend_file_loaded(_):
 
 @persistent
 def on_depsgraph_update_post(_scene, depsgraph):
-    # Bump samplers always contain normal maps, so their images must never be color-managed.
+    # Images assigned to non-color texture parameters (e.g. bump samplers) must never be color-managed.
+    from .ydrimport import is_non_color_texture  # imported here to avoid a circular import
+
     for update in depsgraph.updates:
         mat = update.id.original
         if not isinstance(mat, Material) or mat.sollum_type != MaterialType.SHADER or mat.node_tree is None:
             continue
 
+        shader_filename = mat.shader_properties.filename
         for node in mat.node_tree.nodes:
             if (isinstance(node, bpy.types.ShaderNodeTexImage) and node.is_sollumz and
-                    "bump" in node.name.lower() and node.image is not None and
-                    not node.image.colorspace_settings.is_data):
+                    node.image is not None and not node.image.colorspace_settings.is_data and
+                    is_non_color_texture(shader_filename, node.name)):
                 node.image.colorspace_settings.is_data = True
 
 
