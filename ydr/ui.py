@@ -961,18 +961,19 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_um_scale.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cable_um_scale
 
-        controls = _attr_row(layout, wm, CableAttr.MATERIAL_INDEX.label, "sz_ui_cable_material_index_visualize")
-        controls.prop(wm, "sz_ui_cable_material_index", text="")
-        op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_material_index.bl_idname, text="", icon="CHECKMARK")
-        op.value = wm.sz_ui_cable_material_index
-
-        controls = _attr_row(layout, wm, CableAttr.PHASE_OFFSET.label, "sz_ui_cable_phase_offset_visualize")
+        col = layout.column(align=True)
+        controls = _attr_row(col, wm, CableAttr.PHASE_OFFSET.label, "sz_ui_cable_phase_offset_visualize")
         controls.prop(wm, "sz_ui_cable_phase_offset", text="")
         op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_phase_offset.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cable_phase_offset
 
-        controls = _attr_row(layout, wm, "")
+        controls = _attr_row(col, wm, "")
         controls.operator(cable_ops.SOLLUMZ_OT_cable_randomize_phase_offset.bl_idname, text="Randomize")
+
+        controls = _attr_row(layout, wm, CableAttr.MATERIAL_INDEX.label, "sz_ui_cable_material_index_visualize")
+        controls.prop(wm, "sz_ui_cable_material_index", text="")
+        op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_material_index.bl_idname, text="", icon="CHECKMARK")
+        op.value = wm.sz_ui_cable_material_index
 
 
 def _visible_icon_prop(layout, obj, prop_name):
@@ -1025,17 +1026,12 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_inflation_scale.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cloth_inflation_scale
 
-        controls = _attr_row(layout, wm, ClothAttr.FORCE_TRANSFORM.label,
-                                   "sz_ui_cloth_force_transform_visualize")
-        controls.prop(wm, "sz_ui_cloth_force_transform", text="")
-        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_force_transform.bl_idname, text="", icon="CHECKMARK")
-        op.value = wm.sz_ui_cloth_force_transform
-
         controls = _attr_row(layout, wm, ClothAttr.PINNED.label, "sz_ui_cloth_pinned_visualize")
         controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Pin").value = True
         controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin").value = False
 
-        controls = _attr_row(layout, wm, ClothAttr.PIN_RADIUS.label, "sz_ui_cloth_pin_radius_visualize")
+        col = layout.column(align=True)
+        controls = _attr_row(col, wm, ClothAttr.PIN_RADIUS.label, "sz_ui_cloth_pin_radius_visualize")
         # Set number goes in front of the value so it stays inside the controls column
         sub = controls.split(factor=0.2, align=True)
         sub.prop(wm, "sz_ui_cloth_pin_radius_set", text="")
@@ -1044,14 +1040,20 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         op.set_number = wm.sz_ui_cloth_pin_radius_set
         op.value = wm.sz_ui_cloth_pin_radius
 
-        controls = _attr_row(layout, wm, "Pin Radius Gradient")
+        controls = _attr_row(col, wm, "")
         controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_min", text="")
         controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_max", text="")
-        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname,
-                               text="", icon="IPO_LINEAR")
+
+        controls = _attr_row(col, wm, "")
+        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname, text="Fill Gradient")
         op.min_value = wm.sz_ui_cloth_pin_radius_gradient_min
         op.max_value = wm.sz_ui_cloth_pin_radius_gradient_max
         op.set_number = wm.sz_ui_cloth_pin_radius_set
+
+        controls = _attr_row(layout, wm, ClothAttr.FORCE_TRANSFORM.label, "sz_ui_cloth_force_transform_visualize")
+        controls.prop(wm, "sz_ui_cloth_force_transform", text="")
+        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_force_transform.bl_idname, text="", icon="CHECKMARK")
+        op.value = wm.sz_ui_cloth_force_transform
 
 
 class SOLLUMZ_PT_CLOTH_DIAGNOSTICS_PANEL(bpy.types.Panel):
