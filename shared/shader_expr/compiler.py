@@ -38,6 +38,7 @@ class Compiler:
     compiled_expr_cache: dict[expr.Expr, CompiledExpr]
     separate_xyz_cache: dict[expr.VectorExpr, ShaderNode]
     uv_map_cache: dict[int, ShaderNode]
+    geometry_node: Optional[ShaderNode]
 
     def __init__(self, node_tree: ShaderNodeTree, root: expr.Expr):
         self.node_tree = node_tree
@@ -45,6 +46,7 @@ class Compiler:
         self.compiled_expr_cache = {}
         self.separate_xyz_cache = {}
         self.uv_map_cache = {}
+        self.geometry_node = None
 
     def compile(self) -> CompiledExpr:
         return self.visit(self.root_expr)
@@ -107,6 +109,8 @@ class Compiler:
                 op = "ROUND"
             case expr.FloatUnaryExprOp.TRUNC:
                 op = "TRUNC"
+            case expr.FloatUnaryExprOp.ABSOLUTE:
+                op = "ABSOLUTE"
             case _:
                 raise NotImplementedError(f"{e.op} not implemented!")
 
@@ -193,6 +197,20 @@ class Compiler:
             self.uv_map_cache[e.uv_map_index] = uv
 
         return CompiledExpr(uv, 0)
+
+    def visit_FloatSocketExpr(self, e: expr.FloatSocketExpr) -> CompiledExpr:
+        return CompiledExpr(e.node, e.socket_key)
+
+    def visit_GeometryExpr(self, e: expr.GeometryExpr) -> CompiledExpr:
+        if self.geometry_node is None:
+            self.geometry_node = self.node_tree.nodes.new("ShaderNodeNewGeometry")
+        return CompiledExpr(self.geometry_node, e.socket_name)
+
+    def visit_TangentExpr(self, e: expr.TangentExpr) -> CompiledExpr:
+        tangent = self.node_tree.nodes.new("ShaderNodeTangent")
+        tangent.direction_type = "UV_MAP"
+        tangent.uv_map = get_uv_map_name(e.uv_map_index)
+        return CompiledExpr(tangent, 0)
 
     def visit_ParameterExpr(self, e: expr.ParameterExpr) -> CompiledExpr:
         # TODO: check that node exists

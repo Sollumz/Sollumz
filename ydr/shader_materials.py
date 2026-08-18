@@ -728,6 +728,164 @@ def gta_normal_expr(
     return gta_decode_normal_expr(shader, tex(bump_tex_name, uv(uv_index)).color, uv_index, bump_offset)
 
 
+def _is_parallax_pom(shader: ShaderDef) -> bool:
+    return "heightSampler" in shader.parameter_map and "parallaxSelfShadowAmount" in shader.parameter_map
+
+
+def _is_displacement(shader: ShaderDef) -> bool:
+    return "heightSampler" in shader.parameter_map and "tessellationMultiplier" in shader.parameter_map
+
+
+def gta_tangent_view_expr(uv_index: int) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import geometry, tangent, vec
+
+    view = geometry("Incoming")  # surface -> eye, world space, normalised
+    normal = geometry("Normal")
+    tangent_u = tangent(uv_index)
+    bitangent = normal.cross(tangent_u)
+
+    return vec(tangent_u.dot(view), bitangent.dot(view), normal.dot(view))
+
+
+def gta_parallax_offset_expr(shader: ShaderDef, uv_index: int) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import tex, uv, vec, maxf, saturate, absf
+
+    tan_view = gta_tangent_view_expr(uv_index)
+    height = tex("heightSampler", uv(uv_index)).color.x
+    height_scale = _param_or(shader, "heightScale", 0.03)
+    height_bias = _param_or(shader, "heightBias", 0.015)
+
+    clamped_z = maxf(tan_view.z, 0.1)
+    v_dot_n = absf(tan_view.z)
+    global_scale = saturate(v_dot_n / 0.25)
+
+    k = global_scale * (height_bias - height_scale * (1.0 - height)) / clamped_z
+    return vec(tan_view.x * k, tan_view.y * k, 0.0)
+
+
+def gta_simple_parallax_offset_expr(shader: ShaderDef, uv_index: int) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import tex, uv, vec
+
+    tan_view = gta_tangent_view_expr(uv_index)
+    height = tex("BumpSampler", uv(uv_index)).alpha
+    scale_bias = _param_or(shader, "parallaxScaleBias", 0.03)
+
+    k = scale_bias * (height - 0.5)
+    return vec(tan_view.x * k, tan_view.y * k, 0.0)
+
+TERRAIN_LAYER_BLEND_NODE = "TerrainLayerBlend"
+
+
+def _is_terrain_parallax(shader: ShaderDef) -> bool:
+    return "heightMapSamplerLayer0" in shader.parameter_map
+
+
+def _lerp(a: "expr.Floaty", b: "expr.Floaty", factor: "expr.Floaty") -> "expr.Floaty":
+    return a + (b - a) * factor
+
+
+def gta_terrain_parallax_offset_expr(shader: ShaderDef, uv_index: int, blend_node) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import tex, uv, vec, maxf, saturate, absf, float_socket
+
+    lookup_g = float_socket(blend_node, "Green")
+    lookup_b = float_socket(blend_node, "Blue")
+
+    def blend_layers(values):
+        return _lerp(_lerp(values[0], values[1], lookup_b),
+                     _lerp(values[2], values[3], lookup_b),
+                     lookup_g)
+
+    base_uv = uv(uv_index)
+    height = blend_layers([tex(f"heightMapSamplerLayer{i}", base_uv).color.x for i in range(4)])
+    height_scale = blend_layers([_param_or(shader, f"heightScale{i}", 0.03) for i in range(4)])
+    height_bias = blend_layers([_param_or(shader, f"heightBias{i}", 0.015) for i in range(4)])
+
+    tan_view = gta_tangent_view_expr(uv_index)
+    clamped_z = maxf(tan_view.z, 0.1)
+    global_scale = saturate(absf(tan_view.z) / 0.25)
+
+    k = global_scale * (height_bias - height_scale * (1.0 - height)) / clamped_z
+    return vec(tan_view.x * k, tan_view.y * k, 0.0)
+
+
+def link_parallax_uvs(b: ShaderBuilder):
+    from ..shared.shader_expr import compile_expr
+
+    shader = b.shader
+    node_tree = b.node_tree
+    links = node_tree.links
+
+    if _is_parallax_pom(shader):
+        uv_index = shader.uv_maps.get("DiffuseSampler", 0)
+        offset = gta_parallax_offset_expr(shader, uv_index)
+        target_names = ("DiffuseSampler", "BumpSampler", "SpecSampler")
+    elif _is_terrain_parallax(shader):
+        uv_index = shader.uv_maps.get("TextureSampler_layer0", 0)
+        blend_node = try_get_node(node_tree, TERRAIN_LAYER_BLEND_NODE)
+        if blend_node is None:
+            return
+        offset = gta_terrain_parallax_offset_expr(shader, uv_index, blend_node)
+        target_names = tuple(f"TextureSampler_layer{i}" for i in range(4)) + \
+            tuple(f"BumpSampler_layer{i}" for i in range(4))
+    elif "parallaxScaleBias" in shader.parameter_map and "BumpSampler" in shader.parameter_map:
+        uv_index = shader.uv_maps.get("DiffuseSampler", 0)
+        offset = gta_simple_parallax_offset_expr(shader, uv_index)
+        target_names = ("DiffuseSampler",)
+    else:
+        return
+
+    targets = [node for node in (try_get_node(node_tree, name) for name in target_names)
+               if node is not None]
+    if not targets:
+        return
+
+    compiled_offset = compile_expr(node_tree, offset)
+    uv_map_node = try_get_node(node_tree, get_uv_map_name(uv_index))
+
+    for tex_node in targets:
+        uv_input = tex_node.inputs[0]
+        if uv_input.is_linked:
+            uv_source = uv_input.links[0].from_socket
+        elif uv_map_node is not None:
+            uv_source = uv_map_node.outputs[0]
+        else:
+            continue
+
+        add = node_tree.nodes.new("ShaderNodeVectorMath")
+        add.operation = "ADD"
+        links.new(uv_source, add.inputs[0])
+        links.new(compiled_offset.output, add.inputs[1])
+        links.new(add.outputs[0], uv_input)
+
+
+def link_displacement(b: ShaderBuilder):
+    from ..shared.shader_expr import compile_expr
+    from ..shared.shader_expr.builtins import tex, uv
+
+    shader = b.shader
+    if not _is_displacement(shader):
+        return
+
+    node_tree = b.node_tree
+    uv_index = shader.uv_maps.get("heightSampler", 0)
+
+    height = tex("heightSampler", uv(uv_index)).color.x
+    height_scale = _param_or(shader, "heightScale", 0.25)
+    height_bias = _param_or(shader, "heightBias", -0.5)
+
+    compiled = compile_expr(node_tree, (height + height_bias) * height_scale)
+
+    displacement = node_tree.nodes.new("ShaderNodeDisplacement")
+    displacement.space = "OBJECT"
+    displacement.inputs["Midlevel"].default_value = 0.0
+    displacement.inputs["Scale"].default_value = 1.0
+    node_tree.links.new(compiled.output, displacement.inputs["Height"])
+    node_tree.links.new(displacement.outputs["Displacement"], b.material_output.inputs["Displacement"])
+
+    if hasattr(b.material, "displacement_method"):
+        b.material.displacement_method = "BOTH"
+
+
 def link_diffuse(b: ShaderBuilder, imgnode):
     node_tree = b.node_tree
     bsdf = b.bsdf
@@ -1303,6 +1461,7 @@ def create_terrain_shader(b: ShaderBuilder):
         mixns.append(mix)
 
     seprgb = node_tree.nodes.new("ShaderNodeSeparateColor")
+    seprgb.name = TERRAIN_LAYER_BLEND_NODE
     seprgb.mode = "RGB"
     if shader.is_terrain_mask_only:
         links.new(tm.outputs[0], seprgb.inputs["Color"])
@@ -1471,6 +1630,11 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
         add_grass_batch_color_nodes(builder)
 
     link_uv_map_nodes_to_textures(builder)
+
+    # Must come last: these add their offset on top of whatever already drives each
+    # texture's UV, including the global animated UVs.
+    link_parallax_uvs(builder)
+    link_displacement(builder)
 
     organize_node_tree(builder)
 
