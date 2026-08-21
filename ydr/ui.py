@@ -961,7 +961,7 @@ class SOLLUMZ_PT_CABLE_TOOLS_PANEL(bpy.types.Panel):
         op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_um_scale.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cable_um_scale
 
-        col = layout.column(align=True)
+        col = layout.column()
         controls = _attr_row(col, wm, CableAttr.PHASE_OFFSET.label, "sz_ui_cable_phase_offset_visualize")
         controls.prop(wm, "sz_ui_cable_phase_offset", text="")
         op = controls.operator(cable_ops.SOLLUMZ_OT_cable_set_phase_offset.bl_idname, text="", icon="CHECKMARK")
@@ -1014,14 +1014,12 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         wm = context.window_manager
         layout = self.layout
 
-        controls = _attr_row(layout, wm, ClothAttr.VERTEX_WEIGHT.label,
-                                   "sz_ui_cloth_vertex_weight_visualize")
+        controls = _attr_row(layout, wm, ClothAttr.VERTEX_WEIGHT.label, "sz_ui_cloth_vertex_weight_visualize")
         controls.prop(wm, "sz_ui_cloth_vertex_weight", text="")
         op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_vertex_weight.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cloth_vertex_weight
 
-        controls = _attr_row(layout, wm, ClothAttr.INFLATION_SCALE.label,
-                                   "sz_ui_cloth_inflation_scale_visualize")
+        controls = _attr_row(layout, wm, ClothAttr.INFLATION_SCALE.label, "sz_ui_cloth_inflation_scale_visualize")
         controls.prop(wm, "sz_ui_cloth_inflation_scale", text="")
         op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_inflation_scale.bl_idname, text="", icon="CHECKMARK")
         op.value = wm.sz_ui_cloth_inflation_scale
@@ -1030,7 +1028,7 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Pin").value = True
         controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pinned.bl_idname, text="Unpin").value = False
 
-        col = layout.column(align=True)
+        col = layout.column()
         controls = _attr_row(col, wm, ClothAttr.PIN_RADIUS.label, "sz_ui_cloth_pin_radius_visualize")
         # Set number goes in front of the value so it stays inside the controls column
         sub = controls.split(factor=0.2, align=True)
@@ -1040,11 +1038,12 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         op.set_number = wm.sz_ui_cloth_pin_radius_set
         op.value = wm.sz_ui_cloth_pin_radius
 
-        controls = _attr_row(col, wm, "")
+        subcol = col.column(align=True)
+        controls = _attr_row(subcol, wm, "")
         controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_min", text="")
         controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_max", text="")
 
-        controls = _attr_row(col, wm, "")
+        controls = _attr_row(subcol, wm, "")
         op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname, text="Fill Gradient")
         op.min_value = wm.sz_ui_cloth_pin_radius_gradient_min
         op.max_value = wm.sz_ui_cloth_pin_radius_gradient_max
