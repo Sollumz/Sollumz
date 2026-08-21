@@ -986,14 +986,18 @@ def _attr_row(layout, wm, label, vis_prop=None):
 
     Every row uses the same column widths so the controls line up vertically.
     """
-    split = layout.row(align=True).split(factor=0.35, align=True)
-    split.label(text=label)
-    right = split.split(factor=0.88, align=True)
+    split = layout.split(factor=0.4, align=True)
+    row = split.row()
+    row.alignment = "RIGHT"
+    row.label(text=label)
+    right = split.row()
     controls = right.row(align=True)
-    eye = right.row(align=True)
-    eye.alignment = "RIGHT"
+    eye = right.row(align=False)
     if vis_prop:
         _visible_icon_prop(eye, wm, vis_prop)
+    else:
+        # blank label for aligning controls of rows without eye toggle
+        eye.label(text="", icon="BLANK1")
     return controls
 
 
@@ -1031,7 +1035,7 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
         col = layout.column()
         controls = _attr_row(col, wm, ClothAttr.PIN_RADIUS.label, "sz_ui_cloth_pin_radius_visualize")
         # Set number goes in front of the value so it stays inside the controls column
-        sub = controls.split(factor=0.2, align=True)
+        sub = controls.split(factor=0.3, align=True)
         sub.prop(wm, "sz_ui_cloth_pin_radius_set", text="")
         sub.prop(wm, "sz_ui_cloth_pin_radius", text="")
         op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius.bl_idname, text="", icon="CHECKMARK")
@@ -1040,11 +1044,11 @@ class SOLLUMZ_PT_CLOTH_TOOLS_PANEL(bpy.types.Panel):
 
         subcol = col.column(align=True)
         controls = _attr_row(subcol, wm, "")
-        controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_min", text="")
-        controls.prop(wm, "sz_ui_cloth_pin_radius_gradient_max", text="")
-
-        controls = _attr_row(subcol, wm, "")
-        op = controls.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname, text="Fill Gradient")
+        controls_col = controls.column(align=True)
+        controls_row = controls_col.row(align=True)
+        controls_row.prop(wm, "sz_ui_cloth_pin_radius_gradient_min", text="")
+        controls_row.prop(wm, "sz_ui_cloth_pin_radius_gradient_max", text="")
+        op = controls_col.operator(cloth_ops.SOLLUMZ_OT_cloth_set_pin_radius_gradient.bl_idname, text="Fill Gradient")
         op.min_value = wm.sz_ui_cloth_pin_radius_gradient_min
         op.max_value = wm.sz_ui_cloth_pin_radius_gradient_max
         op.set_number = wm.sz_ui_cloth_pin_radius_set
