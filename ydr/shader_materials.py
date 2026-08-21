@@ -693,14 +693,29 @@ def create_diff_palette_nodes(
     palette_tex: bpy.types.ShaderNodeTexImage,
     diffuse_tex: bpy.types.ShaderNodeTexImage
 ):
+    """
+    The diffuse alpha holds a palette index; values in [32, 160] index a column of the DiffPal
+    texture, whose colour *tints* (multiplies) the diffuse and forces alpha to 1. Values outside
+    that range leave the diffuse untouched.
+    """
+    ALPHA_MIN = 32.0
+    ALPHA_MAX = 160.0
+    # palette row is set from the ped/weapon variation at runtime, so preview the first row. Expose it as a material property if that's not enough.
+    PALETTE_ROW_V = 0.999  # Blender V is flipped, ~1.0 == top row
+
     palette_tex.interpolation = "Closest"
+    palette_tex.extension = "EXTEND"  # don't wrap around at index 160 (u == 1.0)
     node_tree = b.node_tree
     bsdf = b.bsdf
     links = node_tree.links
+
+    # Anything consuming the raw diffuse alpha must see the palettized alpha instead. Grab them before adding our own nodes.
+    alpha_consumers = [link.to_socket for link in diffuse_tex.outputs["Alpha"].links]
+
     mathns = []
     locx = 0
     locy = 50
-    for _ in range(6):
+    for _ in range(7):
         math = node_tree.nodes.new("ShaderNodeMath")
         math.location.x = locx
         math.location.y = locy
@@ -712,29 +727,46 @@ def create_diff_palette_nodes(
     links.new(diffuse_tex.outputs["Alpha"], mathns[0].inputs[0])
     mathns[0].inputs[1].default_value = 255.009995
 
-    mathns[1].operation = "ROUND"
+    mathns[1].operation = "FLOOR"
     links.new(mathns[0].outputs[0], mathns[1].inputs[0])
 
     mathns[2].operation = "SUBTRACT"
     links.new(mathns[1].outputs[0], mathns[2].inputs[0])
-    mathns[2].inputs[1].default_value = 32.0
+    mathns[2].inputs[1].default_value = ALPHA_MIN
 
-    mathns[3].operation = "MULTIPLY"
+    mathns[3].operation = "DIVIDE"
     links.new(mathns[2].outputs[0], mathns[3].inputs[0])
-    mathns[3].inputs[1].default_value = 0.007813
+    mathns[3].inputs[1].default_value = ALPHA_MAX - ALPHA_MIN
     links.new(mathns[3].outputs[0], comxyz.inputs[0])
-
-    mathns[4].operation = "MULTIPLY"
-    mathns[4].inputs[0].default_value = 0.03125
-    mathns[4].inputs[1].default_value = 0.5
-
-    mathns[5].operation = "SUBTRACT"
-    mathns[5].inputs[0].default_value = 1
-    links.new(mathns[4].outputs[0], mathns[5].inputs[1])
-    links.new(mathns[5].outputs[0], comxyz.inputs[1])
-
+    comxyz.inputs[1].default_value = PALETTE_ROW_V
     links.new(comxyz.outputs[0], palette_tex.inputs[0])
-    links.new(palette_tex.outputs[0], bsdf.inputs["Base Color"])
+
+    mathns[4].operation = "GREATER_THAN"
+    links.new(mathns[1].outputs[0], mathns[4].inputs[0])
+    mathns[4].inputs[1].default_value = ALPHA_MIN - 0.5
+
+    mathns[5].operation = "LESS_THAN"
+    links.new(mathns[1].outputs[0], mathns[5].inputs[0])
+    mathns[5].inputs[1].default_value = ALPHA_MAX + 0.5
+
+    mathns[6].operation = "MULTIPLY"
+    links.new(mathns[4].outputs[0], mathns[6].inputs[0])
+    links.new(mathns[5].outputs[0], mathns[6].inputs[1])
+    in_range = mathns[6].outputs[0]
+
+    tint = node_tree.nodes.new("ShaderNodeMixRGB")
+    tint.blend_type = "MULTIPLY"
+    links.new(in_range, tint.inputs["Fac"])
+    links.new(diffuse_tex.outputs["Color"], tint.inputs["Color1"])
+    links.new(palette_tex.outputs["Color"], tint.inputs["Color2"])
+    links.new(tint.outputs["Color"], bsdf.inputs["Base Color"])
+
+    alpha = node_tree.nodes.new("ShaderNodeMath")
+    alpha.operation = "MAXIMUM"
+    links.new(diffuse_tex.outputs["Alpha"], alpha.inputs[0])
+    links.new(in_range, alpha.inputs[1])
+    for socket in alpha_consumers:
+        links.new(alpha.outputs[0], socket)
 
 
 def create_tint_nodes(
