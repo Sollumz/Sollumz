@@ -168,6 +168,9 @@ def export_light(light_obj: Object, parent_obj: Object) -> Light:
     light_type = LightType(light_data.sollum_type)
     is_spot = light_type == LightType.SPOT
 
+    cone_outer_angle = min(max(degrees(light_props.cone_outer_angle), 1.0), 89.0) if is_spot else 0.0
+    cone_inner_angle = min(max(degrees(light_props.cone_inner_angle), 1.0), cone_outer_angle - 1.0) if is_spot else 0.0
+
     return Light(
         light_type=light_type.to_io(),
         position=position,
@@ -201,8 +204,8 @@ def export_light(light_obj: Object, parent_obj: Object) -> Light:
         volumetric_fade_distance=int(light_props.volumetric_fade_distance),
         shadow_near_clip=light_props.shadow_near_clip,
         shadow_blur=int(light_props.shadow_blur * 255),
-        cone_inner_angle=degrees(light_props.cone_inner_angle) if is_spot else 0.0,
-        cone_outer_angle=degrees(light_props.cone_outer_angle) if is_spot else 0.0,
+        cone_inner_angle=cone_inner_angle,
+        cone_outer_angle=cone_outer_angle,
     )
 
 
