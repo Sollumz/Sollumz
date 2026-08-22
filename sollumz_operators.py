@@ -126,6 +126,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             from .ydd.yddimport import import_ydd as import_ydd_asset, find_ydd_external_dependencies
             from .yft.yftimport import import_yft as import_yft_asset, find_yft_external_dependencies
             from .ytyp.ytypimport import import_ytyp as import_ytyp_asset
+            from .ytd.gtxdimport import import_gtxd as import_gtxd_asset
             from .ytd.ytdimport import import_ytd as import_ytd_asset, find_ytd_external_dependencies
             from .ymap_next.ymapimport import import_ymap as import_ymap_asset, begin_import_ymap_group, end_import_ymap_group
 
@@ -212,6 +213,8 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                                 import_ytd_asset(asset_with_deps, name)
                             case AssetType.MAP_DATA:
                                 import_ymap_asset(asset, name)
+                            case AssetType.MAP_PARENT_TXDS:
+                                import_gtxd_asset(asset, name)
                             case _:
                                 assert False, f"Unsupported asset type '{asset.ASSET_TYPE}'"
 
@@ -328,7 +331,7 @@ if bpy.app.version >= (4, 1, 0):
         bl_import_operator = SOLLUMZ_OT_import_assets.bl_idname
         # Supports handling multiple extensions, but doesn't support multi-dot extensions like .yft.xml. `.xml` should
         # be fine because the operator checks the extension, but it is a bit broad.
-        bl_file_extensions = ".ybn;.ydr;.ydd;.yft;.ytyp;.ytd;.ymap;.xml;"
+        bl_file_extensions = ".ybn;.ydr;.ydd;.yft;.ytyp;.ytd;.ymap;.xml;.meta;"
 
         @classmethod
         def poll_drop(cls, context):
