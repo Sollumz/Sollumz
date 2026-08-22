@@ -35,13 +35,18 @@ class CompiledExpr(NamedTuple):
 class Compiler:
     node_tree: ShaderNodeTree
     root_expr: expr.Expr
-    compiled_expr_cache: dict[expr.Expr, CompiledExpr] = {}
-    separate_xyz_cache: dict[expr.VectorExpr, ShaderNode] = {}
-    uv_map_cache: dict[int, ShaderNode] = {}
+    compiled_expr_cache: dict[expr.Expr, CompiledExpr]
+    separate_xyz_cache: dict[expr.VectorExpr, ShaderNode]
+    uv_map_cache: dict[int, ShaderNode]
+    geometry_node: Optional[ShaderNode]
 
     def __init__(self, node_tree: ShaderNodeTree, root: expr.Expr):
         self.node_tree = node_tree
         self.root_expr = root
+        self.compiled_expr_cache = {}
+        self.separate_xyz_cache = {}
+        self.uv_map_cache = {}
+        self.geometry_node = None
 
     def compile(self) -> CompiledExpr:
         return self.visit(self.root_expr)
@@ -73,6 +78,10 @@ class Compiler:
                 op = "LESS_THAN"
             case expr.FloatBinaryExprOp.GREATER_THAN:
                 op = "GREATER_THAN"
+            case expr.FloatBinaryExprOp.MAXIMUM:
+                op = "MAXIMUM"
+            case expr.FloatBinaryExprOp.MINIMUM:
+                op = "MINIMUM"
             case _:
                 raise NotImplementedError(f"{e.op} not implemented!")
 
@@ -100,6 +109,8 @@ class Compiler:
                 op = "ROUND"
             case expr.FloatUnaryExprOp.TRUNC:
                 op = "TRUNC"
+            case expr.FloatUnaryExprOp.ABSOLUTE:
+                op = "ABSOLUTE"
             case _:
                 raise NotImplementedError(f"{e.op} not implemented!")
 
@@ -187,6 +198,20 @@ class Compiler:
 
         return CompiledExpr(uv, 0)
 
+    def visit_FloatSocketExpr(self, e: expr.FloatSocketExpr) -> CompiledExpr:
+        return CompiledExpr(e.node, e.socket_key)
+
+    def visit_GeometryExpr(self, e: expr.GeometryExpr) -> CompiledExpr:
+        if self.geometry_node is None:
+            self.geometry_node = self.node_tree.nodes.new("ShaderNodeNewGeometry")
+        return CompiledExpr(self.geometry_node, e.socket_name)
+
+    def visit_TangentExpr(self, e: expr.TangentExpr) -> CompiledExpr:
+        tangent = self.node_tree.nodes.new("ShaderNodeTangent")
+        tangent.direction_type = "UV_MAP"
+        tangent.uv_map = get_uv_map_name(e.uv_map_index)
+        return CompiledExpr(tangent, 0)
+
     def visit_ParameterExpr(self, e: expr.ParameterExpr) -> CompiledExpr:
         # TODO: check that node exists
         param_node = self.node_tree.nodes[e.parameter_name]
@@ -265,6 +290,7 @@ class Compiler:
             ("Metallic", e.metallic),
             ("Roughness", e.roughness),
             ("Specular IOR Level", e.specular_ior_level),
+            ("IOR", e.ior),
             ("Coat Weight", e.coat_weight),
         ):
             self.connect_float_input(src, bsdf, input_socket)
@@ -457,6 +483,12 @@ def create_shader_uv_maps(dest_node_tree: ShaderNodeTree, shader_def: ShaderDef)
 def compile_expr(dest_node_tree: ShaderNodeTree, expr: expr.Expr) -> CompiledExpr:
     """Convert the expression into nodes."""
     return Compiler(dest_node_tree, expr).compile()
+
+
+def compile_exprs(dest_node_tree: ShaderNodeTree, *exprs: expr.Expr) -> tuple[CompiledExpr, ...]:
+    """Convert multiple expressions into nodes, sharing the nodes of common subexpressions."""
+    compiler = Compiler(dest_node_tree, None)
+    return tuple(compiler.visit(e) for e in exprs)
 
 
 def compile_to_material(name: str, shader_expr: expr.ShaderExpr, shader_def: Optional[ShaderDef] = None) -> Material:

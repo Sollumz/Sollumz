@@ -569,6 +569,323 @@ def create_parameter_node(
     return node
 
 
+def _spec_map_is_packed(shader: ShaderDef) -> bool:
+    return "specMapIntMask" not in shader.parameter_map
+
+
+def _param_or(shader: ShaderDef, name: str, default: "expr.Floaty") -> "expr.Floaty":
+    from ..shared.shader_expr.builtins import float_param
+    return float_param(name) if name in shader.parameter_map else default
+
+VEHICLE_SPECULAR_CONSTANTS = {
+    "vehicle_mesh": (0.6, 460.0, 1.0),
+    "vehicle_mesh_enveff": (0.4, 512.0, 1.0),
+    "vehicle_mesh2_enveff": (0.4, 512.0, 1.0),
+    "vehicle_tire": (1.0, 512.0, 1.0),
+    "vehicle_tire_emissive": (1.0, 512.0, 1.0),
+    "vehicle_shuts": (0.065, 179.0, 0.83),
+    "vehicle_detail2": (1.0, 15.0, 0.8),
+    "vehicle_decal": (0.25, 15.0, 0.9),
+    "vehicle_blurredrotor": (0.4, 512.0, 0.968),
+    "vehicle_blurredrotor_emissive": (0.4, 512.0, 0.968),
+    "vehicle_vehglass": (1.0, 510.0, 0.96),
+    "vehicle_vehglass_inner": (0.05, 512.0, 1.0),
+    "vehicle_lightsemissive": (0.8, 510.0, 0.96),
+    "vehicle_lightsemissive_siren": (0.8, 510.0, 0.96),
+    "vehicle_emissive_opaque": (0.8, 510.0, 0.96),
+    "vehicle_emissive_alpha": (0.8, 510.0, 0.96),
+    "vehicle_track_siren": (0.8, 510.0, 0.96),
+    "vehicle_dash_emissive": (0.0, 100.0, 1.0),
+    "vehicle_dash_emissive_opaque": (0.0, 100.0, 1.0),
+    "vehicle_interior": (0.0, 10.0, 0.97),
+    "vehicle_interior2": (0.0, 10.0, 0.97),
+    "vehicle_cloth": (0.0, 10.0, 0.97),
+    "vehicle_cloth2": (0.0, 10.0, 0.97),
+}
+
+FRESNEL_FROM_SPEC_MAP_SHADERS = frozenset({
+    "vehicle_mesh", "vehicle_mesh_enveff", "vehicle_mesh2_enveff", "vehicle_tire",
+    "vehicle_tire_emissive",
+})
+
+DEFAULT_SPECULAR_FRESNEL = 0.98
+
+
+def _specular_params(shader: ShaderDef):
+    constants = VEHICLE_SPECULAR_CONSTANTS.get(shader.base_name)
+    has_params = ("specularIntensityMult" in shader.parameter_map or
+                  "specularFalloffMult" in shader.parameter_map)
+    if not has_params and constants is None:
+        return None
+
+    default_intensity, default_falloff, default_fresnel = \
+        constants or (0.125, 100.0, DEFAULT_SPECULAR_FRESNEL)
+    return (
+        _param_or(shader, "specularIntensityMult", default_intensity),
+        _param_or(shader, "specularFalloffMult", default_falloff),
+        _param_or(shader, "specularFresnel", default_fresnel),
+    )
+
+
+def gta_specular_expr(shader: ShaderDef, spec_tex_name: Optional[str]):
+    from ..shared.shader_expr.builtins import tex, uv, vec, param, maxf, saturate
+
+    params = _specular_params(shader)
+    if params is None:
+        return None, None, None
+    intensity_mult, falloff_mult, fresnel = params
+
+    if spec_tex_name is None:
+        intensity = intensity_mult
+        exponent = falloff_mult
+    else:
+        spec = tex(spec_tex_name, uv(shader.uv_maps.get(spec_tex_name, 0)))
+        spec_color = spec.color
+        r = spec_color.x * spec_color.x
+        g = spec_color.y * spec_color.y
+
+        if _spec_map_is_packed(shader):
+            intensity = r * intensity_mult
+            exponent = g * falloff_mult
+            if shader.base_name in FRESNEL_FROM_SPEC_MAP_SHADERS:
+                fresnel = fresnel * (1.0 - spec_color.z)
+        else:
+            mask = param("specMapIntMask")
+            intensity = vec(r, g, spec_color.z).dot(vec(mask.x, mask.y, mask.z)) * intensity_mult
+            exponent = spec.alpha * falloff_mult
+
+    blinn_exponent = 3.0 * exponent + 555.0 * maxf(exponent - 500.0, 0.0)
+    roughness = (2.0 / (blinn_exponent + 2.0)) ** 0.25
+    return saturate(intensity), roughness, gta_fresnel_ior_expr(fresnel)
+
+
+def gta_fresnel_ior_expr(fresnel: "expr.Floaty") -> "expr.Floaty":
+    from ..shared.shader_expr.builtins import saturate
+
+    f0 = (1.0 - saturate(fresnel)) * 0.5
+    sqrt_f0 = f0 ** 0.5
+    return (1.0 + sqrt_f0) / (1.0 - sqrt_f0)
+
+
+def gta_detail_expr(shader: ShaderDef, detail_tex_name: str, extra_tex_name: str, spec_tex_name: Optional[str]):
+    from ..shared.shader_expr.builtins import tex, uv, vec, param
+
+    settings = param("detailSettings")
+    detail_intensity, detail_bump_intensity = settings.x, settings.y
+    scale = vec(settings.z, settings.w, 0.0)  # detailScaleUV
+
+    detail_uv = uv(shader.uv_maps.get(detail_tex_name, 0)) * scale
+    d1 = tex(detail_tex_name, detail_uv * vec(3.17, 3.17, 1.0)).color
+    d2 = tex(extra_tex_name, detail_uv).color
+
+    detail_x = d1.x + d2.x - 1.0
+    detail_y = d1.y + d2.y - 1.0
+
+    detail_alpha = tex(spec_tex_name, uv(shader.uv_maps.get(spec_tex_name, 0))).alpha \
+        if spec_tex_name else 1.0
+
+    k = detail_bump_intensity * detail_alpha
+    bump_offset = vec(detail_x * k, detail_y * k, 0.0)
+    intensity = 1.0 - detail_x * detail_intensity * detail_alpha
+
+    return bump_offset, intensity
+
+
+def gta_decode_normal_expr(
+    shader: ShaderDef,
+    packed: "expr.VectorExpr",
+    uv_index: int,
+    bump_offset: Optional["expr.VectorExpr"] = None,
+) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import vec, normal_map, maxf
+
+    packed_x, packed_y = packed.x, packed.y
+    if bump_offset is not None:
+        packed_x = packed_x + bump_offset.x
+        packed_y = packed_y + bump_offset.y
+
+    n_x = packed_x * 2.0 - 1.0
+    n_y = packed_y * 2.0 - 1.0
+    n_z = (1.0 - (n_x * n_x + n_y * n_y)) ** 0.5
+
+    bumpiness = maxf(_param_or(shader, "bumpiness", 1.0), 0.001)
+    n_x = n_x * bumpiness
+    n_y = n_y * bumpiness
+
+    packed_normal = vec(n_x * 0.5 + 0.5, n_y * -0.5 + 0.5, n_z * 0.5 + 0.5)
+    return normal_map(packed_normal, 1.0, uv_index)
+
+
+def gta_normal_expr(
+    shader: ShaderDef,
+    bump_tex_name: str,
+    bump_offset: Optional["expr.VectorExpr"] = None,
+) -> "expr.VectorExpr":
+    """Tangent-space normal sampled from a bump map. See `gta_decode_normal_expr`."""
+    from ..shared.shader_expr.builtins import tex, uv
+
+    uv_index = shader.uv_maps.get(bump_tex_name, 0)
+    return gta_decode_normal_expr(shader, tex(bump_tex_name, uv(uv_index)).color, uv_index, bump_offset)
+
+
+def _is_parallax_pom(shader: ShaderDef) -> bool:
+    return "heightSampler" in shader.parameter_map and "parallaxSelfShadowAmount" in shader.parameter_map
+
+
+def _is_displacement(shader: ShaderDef) -> bool:
+    return "heightSampler" in shader.parameter_map and "tessellationMultiplier" in shader.parameter_map
+
+
+def gta_tangent_view_expr(uv_index: int) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import geometry, tangent, vec
+
+    view = geometry("Incoming")  # surface -> eye, world space, normalised
+    normal = geometry("Normal")
+    tangent_u = tangent(uv_index)
+    bitangent = normal.cross(tangent_u)
+
+    return vec(tangent_u.dot(view), bitangent.dot(view), normal.dot(view))
+
+
+def gta_parallax_offset_expr(shader: ShaderDef, uv_index: int) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import tex, uv, vec, maxf, saturate, absf
+
+    tan_view = gta_tangent_view_expr(uv_index)
+    height = tex("heightSampler", uv(uv_index)).color.x
+    height_scale = _param_or(shader, "heightScale", 0.03)
+    height_bias = _param_or(shader, "heightBias", 0.015)
+
+    clamped_z = maxf(tan_view.z, 0.1)
+    v_dot_n = absf(tan_view.z)
+    global_scale = saturate(v_dot_n / 0.25)
+
+    k = global_scale * (height_bias - height_scale * (1.0 - height)) / clamped_z
+    return vec(tan_view.x * k, tan_view.y * k, 0.0)
+
+
+def gta_simple_parallax_offset_expr(shader: ShaderDef, uv_index: int) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import tex, uv, vec
+
+    tan_view = gta_tangent_view_expr(uv_index)
+    height = tex("BumpSampler", uv(uv_index)).alpha
+    scale_bias = _param_or(shader, "parallaxScaleBias", 0.03)
+
+    k = scale_bias * (height - 0.5)
+    return vec(tan_view.x * k, tan_view.y * k, 0.0)
+
+TERRAIN_LAYER_BLEND_NODE = "TerrainLayerBlend"
+
+
+def _is_terrain_parallax(shader: ShaderDef) -> bool:
+    return "heightMapSamplerLayer0" in shader.parameter_map
+
+
+def _lerp(a: "expr.Floaty", b: "expr.Floaty", factor: "expr.Floaty") -> "expr.Floaty":
+    return a + (b - a) * factor
+
+
+def gta_terrain_parallax_offset_expr(shader: ShaderDef, uv_index: int, blend_node) -> "expr.VectorExpr":
+    from ..shared.shader_expr.builtins import tex, uv, vec, maxf, saturate, absf, float_socket
+
+    lookup_g = float_socket(blend_node, "Green")
+    lookup_b = float_socket(blend_node, "Blue")
+
+    def blend_layers(values):
+        return _lerp(_lerp(values[0], values[1], lookup_b),
+                     _lerp(values[2], values[3], lookup_b),
+                     lookup_g)
+
+    base_uv = uv(uv_index)
+    height = blend_layers([tex(f"heightMapSamplerLayer{i}", base_uv).color.x for i in range(4)])
+    height_scale = blend_layers([_param_or(shader, f"heightScale{i}", 0.03) for i in range(4)])
+    height_bias = blend_layers([_param_or(shader, f"heightBias{i}", 0.015) for i in range(4)])
+
+    tan_view = gta_tangent_view_expr(uv_index)
+    clamped_z = maxf(tan_view.z, 0.1)
+    global_scale = saturate(absf(tan_view.z) / 0.25)
+
+    k = global_scale * (height_bias - height_scale * (1.0 - height)) / clamped_z
+    return vec(tan_view.x * k, tan_view.y * k, 0.0)
+
+
+def link_parallax_uvs(b: ShaderBuilder):
+    from ..shared.shader_expr import compile_expr
+
+    shader = b.shader
+    node_tree = b.node_tree
+    links = node_tree.links
+
+    if _is_parallax_pom(shader):
+        uv_index = shader.uv_maps.get("DiffuseSampler", 0)
+        offset = gta_parallax_offset_expr(shader, uv_index)
+        target_names = ("DiffuseSampler", "BumpSampler", "SpecSampler")
+    elif _is_terrain_parallax(shader):
+        uv_index = shader.uv_maps.get("TextureSampler_layer0", 0)
+        blend_node = try_get_node(node_tree, TERRAIN_LAYER_BLEND_NODE)
+        if blend_node is None:
+            return
+        offset = gta_terrain_parallax_offset_expr(shader, uv_index, blend_node)
+        target_names = tuple(f"TextureSampler_layer{i}" for i in range(4)) + \
+            tuple(f"BumpSampler_layer{i}" for i in range(4))
+    elif "parallaxScaleBias" in shader.parameter_map and "BumpSampler" in shader.parameter_map:
+        uv_index = shader.uv_maps.get("DiffuseSampler", 0)
+        offset = gta_simple_parallax_offset_expr(shader, uv_index)
+        target_names = ("DiffuseSampler",)
+    else:
+        return
+
+    targets = [node for node in (try_get_node(node_tree, name) for name in target_names)
+               if node is not None]
+    if not targets:
+        return
+
+    compiled_offset = compile_expr(node_tree, offset)
+    uv_map_node = try_get_node(node_tree, get_uv_map_name(uv_index))
+
+    for tex_node in targets:
+        uv_input = tex_node.inputs[0]
+        if uv_input.is_linked:
+            uv_source = uv_input.links[0].from_socket
+        elif uv_map_node is not None:
+            uv_source = uv_map_node.outputs[0]
+        else:
+            continue
+
+        add = node_tree.nodes.new("ShaderNodeVectorMath")
+        add.operation = "ADD"
+        links.new(uv_source, add.inputs[0])
+        links.new(compiled_offset.output, add.inputs[1])
+        links.new(add.outputs[0], uv_input)
+
+
+def link_displacement(b: ShaderBuilder):
+    from ..shared.shader_expr import compile_expr
+    from ..shared.shader_expr.builtins import tex, uv
+
+    shader = b.shader
+    if not _is_displacement(shader):
+        return
+
+    node_tree = b.node_tree
+    uv_index = shader.uv_maps.get("heightSampler", 0)
+
+    height = tex("heightSampler", uv(uv_index)).color.x
+    height_scale = _param_or(shader, "heightScale", 0.25)
+    height_bias = _param_or(shader, "heightBias", -0.5)
+
+    compiled = compile_expr(node_tree, (height + height_bias) * height_scale)
+
+    displacement = node_tree.nodes.new("ShaderNodeDisplacement")
+    displacement.space = "OBJECT"
+    displacement.inputs["Midlevel"].default_value = 0.0
+    displacement.inputs["Scale"].default_value = 1.0
+    node_tree.links.new(compiled.output, displacement.inputs["Height"])
+    node_tree.links.new(displacement.outputs["Displacement"], b.material_output.inputs["Displacement"])
+
+    if hasattr(b.material, "displacement_method"):
+        b.material.displacement_method = "BOTH"
+
+
 def link_diffuse(b: ShaderBuilder, imgnode):
     node_tree = b.node_tree
     bsdf = b.bsdf
@@ -589,84 +906,76 @@ def link_diffuses(b: ShaderBuilder, tex1, tex2):
     return rgb
 
 
-def link_detailed_normal(b: ShaderBuilder, bumptex, dtltex, spectex):
+def link_normal_and_specular(b: ShaderBuilder, bumptex, spectex, detltex) -> Optional[bpy.types.NodeSocket]:
+    from ..shared.shader_expr.builtins import f2v
+    from ..shared.shader_expr import compile_exprs
+
     node_tree = b.node_tree
-    bsdf = b.bsdf
-    dtltex2 = node_tree.nodes.new("ShaderNodeTexImage")
-    dtltex2.name = "Extra"
-    dtltex2.label = dtltex2.name
-    ds = node_tree.nodes["detailSettings"]
     links = node_tree.links
-    uv_map0 = node_tree.nodes[get_uv_map_name(0)]
-    comxyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
-    mathns = []
-    for _ in range(9):
-        math = node_tree.nodes.new("ShaderNodeVectorMath")
-        mathns.append(math)
-    nrm = node_tree.nodes.new("ShaderNodeNormalMap")
+    spec_name = spectex.name if spectex else None
 
-    links.new(uv_map0.outputs[0], mathns[0].inputs[0])
+    bump_offset = None
+    detail_intensity = None
+    if detltex is not None:
+        extra = node_tree.nodes.new("ShaderNodeTexImage")
+        extra.name = "Extra"
+        extra.label = extra.name
+        bump_offset, detail_intensity = gta_detail_expr(b.shader, detltex.name, extra.name, spec_name)
 
-    links.new(ds.outputs["Z"], comxyz.inputs[0])
-    links.new(ds.outputs["W"], comxyz.inputs[1])
+    normal = gta_normal_expr(b.shader, bumptex.name, bump_offset) if bumptex else None
+    spec_intensity, roughness, ior = gta_specular_expr(b.shader, spec_name)
+    if spec_intensity is None:
+        b.bsdf.inputs["Specular IOR Level"].default_value = 0.0
+    elif detail_intensity is not None:
+        spec_intensity = spec_intensity * detail_intensity
 
-    mathns[0].operation = "MULTIPLY"
-    links.new(comxyz.outputs[0], mathns[0].inputs[1])
-    links.new(mathns[0].outputs[0], dtltex2.inputs[0])
+    targets = []
+    if spec_intensity is not None:
+        targets.append((spec_intensity, "Specular IOR Level"))
+        targets.append((roughness, "Roughness"))
+        targets.append((ior, "IOR"))
+    if normal is not None:
+        targets.append((normal, "Normal"))
 
-    mathns[1].operation = "MULTIPLY"
-    mathns[1].inputs[1].default_value[0] = 3.17
-    mathns[1].inputs[1].default_value[1] = 3.17
-    links.new(mathns[0].outputs[0], mathns[1].inputs[0])
-    links.new(mathns[1].outputs[0], dtltex.inputs[0])
+    detail_intensity_vec = None if detail_intensity is None else f2v(detail_intensity)
+    exprs = [e for e, _ in targets] + ([] if detail_intensity_vec is None else [detail_intensity_vec])
+    if not exprs:
+        return None
 
-    mathns[2].operation = "SUBTRACT"
-    mathns[2].inputs[1].default_value[0] = 0.5
-    mathns[2].inputs[1].default_value[1] = 0.5
-    links.new(dtltex.outputs[0], mathns[2].inputs[0])
+    compiled = compile_exprs(node_tree, *exprs)
+    for compiled_expr, (_, socket_name) in zip(compiled, targets):
+        links.new(compiled_expr.output, b.bsdf.inputs[socket_name])
 
-    mathns[3].operation = "SUBTRACT"
-    mathns[3].inputs[1].default_value[0] = 0.5
-    mathns[3].inputs[1].default_value[1] = 0.5
-    links.new(dtltex2.outputs[0], mathns[3].inputs[0])
-
-    mathns[4].operation = "ADD"
-    links.new(mathns[2].outputs[0], mathns[4].inputs[0])
-    links.new(mathns[3].outputs[0], mathns[4].inputs[1])
-
-    mathns[5].operation = "MULTIPLY"
-    links.new(mathns[4].outputs[0], mathns[5].inputs[0])
-    links.new(ds.outputs["Y"], mathns[5].inputs[1])
-
-    mathns[6].operation = "MULTIPLY"
-    if spectex:
-        links.new(spectex.outputs[1], mathns[6].inputs[0])
-    links.new(mathns[5].outputs[0], mathns[6].inputs[1])
-
-    mathns[7].operation = "MULTIPLY"
-    mathns[7].inputs[1].default_value[0] = 1
-    mathns[7].inputs[1].default_value[1] = 1
-    links.new(mathns[6].outputs[0], mathns[7].inputs[0])
-
-    mathns[8].operation = "ADD"
-    links.new(mathns[7].outputs[0], mathns[8].inputs[0])
-    links.new(bumptex.outputs[0], mathns[8].inputs[1])
-
-    links.new(mathns[8].outputs[0], nrm.inputs[1])
-    links.new(nrm.outputs[0], bsdf.inputs["Normal"])
+    return compiled[-1].output if detail_intensity_vec is not None else None
 
 
-def link_normal(b: ShaderBuilder, nrmtex):
+def link_terrain_specular(b: ShaderBuilder):
+    from ..shared.shader_expr import compile_exprs
+
+    intensity, roughness, ior = gta_specular_expr(b.shader, None)
+    if intensity is None:
+        b.bsdf.inputs["Specular IOR Level"].default_value = 0.0
+        return
+
+    intensity = intensity * intensity
+    compiled = compile_exprs(b.node_tree, intensity, roughness, ior)
+    for compiled_expr, socket_name in zip(compiled, ("Specular IOR Level", "Roughness", "IOR")):
+        b.node_tree.links.new(compiled_expr.output, b.bsdf.inputs[socket_name])
+
+
+def link_detail_intensity_to_base_color(b: ShaderBuilder, detail_intensity: bpy.types.NodeSocket):
+    base_color_input = b.bsdf.inputs["Base Color"]
+    if not base_color_input.is_linked:
+        return
+
     node_tree = b.node_tree
-    bsdf = b.bsdf
     links = node_tree.links
-    normalmap = node_tree.nodes.new("ShaderNodeNormalMap")
+    mult = node_tree.nodes.new("ShaderNodeVectorMath")
+    mult.operation = "MULTIPLY"
 
-    rgb_curves = create_normal_invert_node(node_tree)
-
-    links.new(nrmtex.outputs["Color"], rgb_curves.inputs["Color"])
-    links.new(rgb_curves.outputs["Color"], normalmap.inputs["Color"])
-    links.new(normalmap.outputs["Normal"], bsdf.inputs["Normal"])
+    links.new(base_color_input.links[0].from_socket, mult.inputs[0])
+    links.new(detail_intensity, mult.inputs[1])
+    links.new(mult.outputs[0], base_color_input)
 
 
 def create_normal_invert_node(node_tree: bpy.types.NodeTree):
@@ -679,13 +988,6 @@ def create_normal_invert_node(node_tree: bpy.types.NodeTree):
     green_curves.points[1].location = (1, 0)
 
     return rgb_curves
-
-
-def link_specular(b: ShaderBuilder, spctex):
-    node_tree = b.node_tree
-    bsdf = b.bsdf
-    links = node_tree.links
-    links.new(spctex.outputs["Color"], bsdf.inputs["Specular IOR Level"])
 
 
 def create_diff_palette_nodes(
@@ -942,74 +1244,13 @@ def create_emissive_nodes(b: ShaderBuilder):
 
 
 def link_value_shader_parameters(b: ShaderBuilder):
-    shader = b.shader
     node_tree = b.node_tree
     links = node_tree.links
 
-    bsdf = b.bsdf
-    bmp = None
-    spec_im = None
-    spec_fm = None
-    em_m = None
-    spec_m = None
-
-    for param in shader.parameters:
-        if param.name == "bumpiness":
-            bmp = node_tree.nodes["bumpiness"]
-        elif param.name == "specularIntensityMult":
-            spec_im = node_tree.nodes["specularIntensityMult"]
-        elif param.name == "specularFalloffMult":
-            spec_fm = node_tree.nodes["specularFalloffMult"]
-        elif param.name == "emissiveMultiplier":
-            em_m = node_tree.nodes["emissiveMultiplier"]
-        elif param.name == "specMapIntMask":
-            spec_m = node_tree.nodes["specMapIntMask"]
-
-    if bmp:
-        nm = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeNormalMap)
-        if nm:
-            links.new(bmp.outputs["X"], nm.inputs[0])
-    if spec_im:
-        spec = try_get_node(node_tree, "SpecSampler")
-        if spec:
-            map = node_tree.nodes.new("ShaderNodeMapRange")
-            map.inputs[2].default_value = 1
-            map.inputs[4].default_value = 1
-            map.clamp = True
-            mult = node_tree.nodes.new("ShaderNodeMath")
-            mult.operation = "MULTIPLY"
-            if spec_m:
-                dot_prod = node_tree.nodes.new("ShaderNodeVectorMath")
-                dot_prod.operation = "DOT_PRODUCT"
-                links.new(dot_prod.inputs[0], spec.outputs[0])
-                combine_xyz = node_tree.nodes.new("ShaderNodeCombineXYZ")
-                spec_mask = try_get_node(node_tree, "specMapIntMask")
-                links.new(spec_mask.outputs["X"], combine_xyz.inputs["X"])
-                links.new(spec_mask.outputs["Y"], combine_xyz.inputs["Y"])
-                links.new(spec_mask.outputs["Z"], combine_xyz.inputs["Z"])
-                links.new(combine_xyz.outputs[0], dot_prod.inputs[1])
-                links.new(dot_prod.outputs["Value"], mult.inputs[0])
-                links.new(map.outputs[0], mult.inputs[1])
-                links.new(spec_im.outputs["X"], map.inputs[0])
-                links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
-            else:
-                links.new(spec.outputs[0], mult.inputs[0])
-                links.new(map.outputs[0], mult.inputs[1])
-                links.new(spec_im.outputs["X"], map.inputs[0])
-                links.new(mult.outputs[0], bsdf.inputs["Specular IOR Level"])
-
-    if spec_fm:
-        map = node_tree.nodes.new("ShaderNodeMapRange")
-        map.inputs[2].default_value = 512
-        map.inputs[3].default_value = 1
-        map.inputs[4].default_value = 0
-        map.clamp = True
-        links.new(spec_fm.outputs["X"], map.inputs[0])
-        links.new(map.outputs[0], bsdf.inputs["Roughness"])
-    if em_m:
+    if "emissiveMultiplier" in b.shader.parameter_map:
         em = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeEmission)
         if em:
-            links.new(em_m.outputs["X"], em.inputs[1])
+            links.new(node_tree.nodes["emissiveMultiplier"].outputs["X"], em.inputs[1])
 
 
 def create_water_nodes(b: ShaderBuilder):
@@ -1089,13 +1330,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
 
     use_diff = True if texture else False
     use_diff2 = True if texture2 else False
-    use_bump = True if bumptex else False
-    use_spec = True if spectex else False
-    use_detl = True if detltex else False
     use_tint = True if tintpal else False
 
-    # Some shaders have TextureSamplerDiffPal but don't actually use it, so we only create palette
-    # shader nodes on the specific shaders that use it
     use_palette = diffpal is not None and filename in ShaderManager.palette_shaders
 
     use_decal = shader.is_alpha or shader.is_decal or shader.is_cutout
@@ -1136,21 +1372,16 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     else:
         create_decal_nodes(b, texture, decalflag)
 
-    if use_bump:
-        if use_detl:
-            link_detailed_normal(b, bumptex, detltex, spectex)
-        else:
-            link_normal(b, bumptex)
-    if use_spec:
-        link_specular(b, spectex)
-    else:
-        bsdf.inputs["Specular IOR Level"].default_value = 0
+    detail_intensity = link_normal_and_specular(b, bumptex, spectex, detltex)
 
     if use_tint:
         create_tint_nodes(b, texture)
 
     if use_palette:
         create_diff_palette_nodes(b, diffpal, texture)
+
+    if detail_intensity is not None:
+        link_detail_intensity_to_base_color(b, detail_intensity)
 
     if is_emissive:
         create_emissive_nodes(b)
@@ -1230,6 +1461,7 @@ def create_terrain_shader(b: ShaderBuilder):
         mixns.append(mix)
 
     seprgb = node_tree.nodes.new("ShaderNodeSeparateColor")
+    seprgb.name = TERRAIN_LAYER_BLEND_NODE
     seprgb.mode = "RGB"
     if shader.is_terrain_mask_only:
         links.new(tm.outputs[0], seprgb.inputs["Color"])
@@ -1273,8 +1505,12 @@ def create_terrain_shader(b: ShaderBuilder):
         links.new(mixns[4].outputs[0], mixns[6].inputs[1])
         links.new(mixns[5].outputs[0], mixns[6].inputs[2])
 
+        invert_green = create_normal_invert_node(node_tree)
         nrm = node_tree.nodes.new("ShaderNodeNormalMap")
-        links.new(mixns[6].outputs[0], nrm.inputs[1])
+        links.new(mixns[6].outputs[0], invert_green.inputs["Color"])
+        links.new(invert_green.outputs["Color"], nrm.inputs["Color"])
+        if "bumpiness" in shader.parameter_map:
+            links.new(node_tree.nodes["bumpiness"].outputs["X"], nrm.inputs["Strength"])
         links.new(nrm.outputs[0], bsdf.inputs["Normal"])
 
     # assign lookup sampler last so that it overwrites any socket connections
@@ -1283,8 +1519,7 @@ def create_terrain_shader(b: ShaderBuilder):
         links.new(uv_map1.outputs[0], tm.inputs[0])
         links.new(tm.outputs[0], mixns[0].inputs[1])
 
-    # link value parameters
-    bsdf.inputs["Specular IOR Level"].default_value = 0
+    link_terrain_specular(b)
     link_value_shader_parameters(b)
 
 
@@ -1395,6 +1630,11 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
         add_grass_batch_color_nodes(builder)
 
     link_uv_map_nodes_to_textures(builder)
+
+    # Must come last: these add their offset on top of whatever already drives each
+    # texture's UV, including the global animated UVs.
+    link_parallax_uvs(builder)
+    link_displacement(builder)
 
     organize_node_tree(builder)
 
