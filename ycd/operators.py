@@ -216,11 +216,20 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
             ("EMPTY", "Empty", "Add an empty tag", 0),
             ("MOVE_EVENT", "MoVE Event", "Add a MoVE event tag", 1),
             ("AUDIO", "Audio", "Add an audio trigger event tag", 2),
-            ("FOOT", "Foot", "Add a foot synchronization tag", 3),
-            ("MOVER_FIXUP", "Mover Fixup", "Add a mover fixup tag", 4),
-            ("FACIAL", "Facial", "Add a facial tag", 5),
-            ("OBJECT", "Object", "Add a object tag", 6),
-            ("ARMS_IK", "Arms IK", "Add a arms IK tag", 7),
+            ("LOOPING_AUDIO", "Looping Audio", "Add a looping audio event tag", 3),
+            ("FOOT", "Foot", "Add a foot synchronization tag", 4),
+            ("MOVER_FIXUP", "Mover Fixup", "Add a mover fixup tag", 5),
+            ("FACIAL", "Facial", "Add a facial tag", 6),
+            ("OBJECT", "Object", "Add an object event tag", 7),
+            ("ARMS_IK", "Arms IK", "Add an arms IK tag", 8),
+            ("LEGS_IK", "Legs IK", "Add a legs IK tag", 9),
+            ("IK", "IK", "Add an IK tag", 10),
+            ("DOOR", "Door", "Add a door event tag", 11),
+            ("APPLY_FORCE", "Apply Force", "Add an apply force tag", 12),
+            ("BLOCK_RAGDOLL", "Block Ragdoll", "Add a block ragdoll tag", 13),
+            ("OBJECT_VFX", "Object VFX", "Add an object VFX tag", 14),
+            ("CAN_SWITCH_TO_NM", "Can Switch To NM", "Add a natural motion switch tag", 15),
+            ("ADJUST_ANIM_VEL", "Adjust Anim Vel", "Add an animated velocity adjustment tag", 16),
         ],
         default="EMPTY",
         name="Tag Template",
@@ -282,8 +291,15 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
             name = "audio"
             attrs = [
                 ("id", "HashString"),
+                ("relevantweightthreshold", "Float"),
             ]
-            pass
+        elif self.template == "LOOPING_AUDIO":
+            name = "loopingaudio"
+            attrs = [
+                ("id", "HashString"),
+                ("relevantweightthreshold", "Float"),
+                ("start", "Bool"),
+            ]
         elif self.template == "FOOT":
             name = "foot"
             attrs = [
@@ -321,6 +337,48 @@ class SOLLUMZ_OT_clip_new_tag(SOLLUMZ_OT_base, bpy.types.Operator):
                 ("allowed", "Bool"),
                 ("blocked", "Bool"),
             ]
+        elif self.template == "LEGS_IK":
+            name = "legsik"
+            attrs = [
+                ("allowed", "Bool"),
+                ("blendin", "Float"),
+                ("blendout", "Float"),
+            ]
+        elif self.template == "IK":
+            name = "ik"
+            attrs = [
+                ("right", "Bool"),
+                ("on", "Bool"),
+            ]
+        elif self.template == "DOOR":
+            name = "door"
+            attrs = [
+                ("start", "Bool"),
+            ]
+        elif self.template == "APPLY_FORCE":
+            name = "applyforce"
+            attrs = [
+                ("force", "Float"),
+                ("xoffset", "Float"),
+                ("yoffset", "Float"),
+            ]
+        elif self.template == "BLOCK_RAGDOLL":
+            name = "blockragdoll"
+            attrs = [
+                ("blockall", "Bool"),
+                ("blockfromthisvehiclemoving", "Bool"),
+            ]
+        elif self.template == "OBJECT_VFX":
+            name = "objectvfx"
+            attrs = [
+                ("register", "Bool"),
+                ("trigger", "Bool"),
+                ("vfxname", "HashString"),
+            ]
+        elif self.template == "CAN_SWITCH_TO_NM":
+            name = "canswitchtonm"
+        elif self.template == "ADJUST_ANIM_VEL":
+            name = "adjustanimvel"
         else:
             raise Exception("Invalid template")
 
