@@ -56,6 +56,27 @@ class TestAllLanguages:
         assert mo is not None
 
 
+@pytest.mark.parametrize("shader", SOLLUMZ_SHADERS)
+def test_parameters_reach_cycles_through_driven_value_nodes(shader):
+    # Cycles ignores links from Python-defined nodes, so no link may start at a parameter node.
+    from ..shared.shader_nodes import SzShaderNodeParameter
+
+    mat = create_shader(shader)
+    node_tree = mat.node_tree
+    bpy.context.view_layer.update()
+
+    assert not any(isinstance(link.from_node, SzShaderNodeParameter) for link in node_tree.links)
+
+    drivers = node_tree.animation_data.drivers if node_tree.animation_data else []
+    for fcurve in drivers:
+        assert fcurve.driver.is_valid, fcurve.data_path
+        target = fcurve.driver.variables[0].targets[0]
+        assert target.id == mat
+        assert fcurve.evaluate(0) == pytest.approx(mat.path_resolve(target.data_path))
+
+    bpy.data.materials.remove(mat)
+
+
 def static_sample(population, k, seed=0):
     """Random sample from a specific ``seed``."""
     random.seed(seed)
