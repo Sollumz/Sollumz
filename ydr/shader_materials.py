@@ -1670,45 +1670,6 @@ def link_tile_uvs(b: ShaderBuilder):
         node_tree.links.new(scale.outputs[0], tex_node.inputs[0])
 
 
-def link_parameters_through_drivers(b: ShaderBuilder):
-    material = b.material
-    node_tree = b.node_tree
-
-    if node_tree.animation_data:
-        for fcurve in list(node_tree.animation_data.drivers):
-            node_name = fcurve.data_path.partition('nodes["')[2].partition('"]')[0]
-            if node_name and node_name not in node_tree.nodes:
-                node_tree.animation_data.drivers.remove(fcurve)
-
-    value_nodes = {}
-    for link in list(node_tree.links):
-        param_node = link.from_node
-        if not isinstance(param_node, SzShaderNodeParameter):
-            continue
-
-        socket_index = list(param_node.outputs).index(link.from_socket)
-        key = (param_node.name, socket_index)
-        value_node = value_nodes.get(key)
-        if value_node is None:
-            value_node = node_tree.nodes.new("ShaderNodeValue")
-            value_node.label = f"{param_node.name}.{link.from_socket.name}"
-            value_node.outputs[0].default_value = link.from_socket.default_value
-
-            driver = value_node.outputs[0].driver_add("default_value").driver
-            driver.type = "AVERAGE"
-            var = driver.variables.new()
-            var.type = "SINGLE_PROP"
-            var.targets[0].id_type = "MATERIAL"
-            var.targets[0].id = material
-            node_name = bpy.utils.escape_identifier(param_node.name)
-            var.targets[0].data_path = f'node_tree.nodes["{node_name}"].outputs[{socket_index}].default_value'
-            value_nodes[key] = value_node
-
-        to_socket = link.to_socket
-        node_tree.links.remove(link)
-        node_tree.links.new(value_node.outputs[0], to_socket)
-
-
 def create_shader(filename: str, in_place_material: Optional[bpy.types.Material] = None) -> bpy.types.Material:
     # from ..sollumz_preferences import get_addon_preferences
     # preferences = get_addon_preferences(bpy.context)
@@ -1792,7 +1753,6 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
     # texture's UV, including the global animated UVs.
     link_parallax_uvs(builder)
     link_displacement(builder)
-    link_parameters_through_drivers(builder)
 
     organize_node_tree(builder)
 
