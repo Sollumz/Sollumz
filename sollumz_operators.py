@@ -27,7 +27,7 @@ from .ynv.ynvimport import import_ynv
 from .ycd.ycdimport import import_ycd
 from .ycd.ycdexport import export_ycd
 from .ymap.ymapexport import export_ymap as deprecated_export_ymap
-from .tools.blenderhelper import remove_number_suffix
+from .tools.blenderhelper import remove_number_suffix, temporarily_unhide_all
 from .dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
 from .iecontext import (
     export_context_scope,
@@ -410,6 +410,10 @@ class ExportAssetsOperatorImpl(ExportSettingsBase, TimedOperator):
             return {"RUNNING_MODAL"}
 
     def execute_timed(self, context: Context):
+        with temporarily_unhide_all(context):
+            return self._execute_export(context)
+
+    def _execute_export(self, context: Context):
         with logger.use_operator_logger(self) as op_log:
             logger.info("Starting export...")
             prefs_export_settings = self if self.use_custom_settings else get_export_settings()
