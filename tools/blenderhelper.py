@@ -4,6 +4,7 @@ import bmesh
 from mathutils import Matrix, Vector
 from typing import Optional, Tuple
 
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, LODLevel
 
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
@@ -43,15 +44,11 @@ def material_from_image(img, name="Material", nodename="Image"):
 
 
 def select_object_and_children(obj):
-    if obj.hide_get():
-        obj.hide_set(False)
-    obj.select_set(True)
-    for child in obj.children:
-        if child.hide_get():
-            child.hide_set(False)
-        child.select_set(True)
-        for grandchild in child.children:
-            select_object_and_children(grandchild)
+    hierarchy = ObjectHierarchySnapshot.for_scene()
+    for o in hierarchy.get_object_with_children_recursive(obj):
+        if o.hide_get():
+            o.hide_set(False)
+        o.select_set(True)
 
 
 def duplicate_object(obj):
@@ -228,18 +225,18 @@ def get_armature_obj(armature):
     return get_data_obj(armature)
 
 
-def get_children_recursive(obj) -> list[bpy.types.Object]:
+def get_children_recursive(obj, hierarchy: ObjectHierarchySnapshot | None = None) -> list[bpy.types.Object]:
     if obj is None:
         return []
 
-    return obj.children_recursive
+    hierarchy = hierarchy or ObjectHierarchySnapshot.for_object(obj)
+    return hierarchy.get_children_recursive(obj)
 
 
-def get_object_with_children(obj):
+def get_object_with_children_recursive(obj, hierarchy: ObjectHierarchySnapshot | None = None):
     """Get the object including the whole child hierarchy"""
-    objs = [obj]
-    objs.extend(get_children_recursive(obj))
-    return objs
+    hierarchy = hierarchy or ObjectHierarchySnapshot.for_object(obj)
+    return hierarchy.get_object_with_children_recursive(obj)
 
 
 # Sollumz types for which Object.hide_render should be set to false when created.

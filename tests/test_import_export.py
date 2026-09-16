@@ -339,6 +339,44 @@ def test_export_model_with_external_textures(tmp_path: Path):
         assert expected_file.read_bytes() == expected_contents
 
 
+@assert_logs_no_warnings_or_errors
+def test_export_drawable_ignores_model_removed_from_scene(tmp_path: Path):
+    # `test_drawable` has two drawable models parented to it: `in_scene.model` is linked to the scene, while
+    # `removed_from_scene.model` was deleted from the scene but is still in the .blend
+    data = load_blend_data("model_removed_from_scene.blend")
+    removed_model = data.objects["removed_from_scene.model"]
+    assert removed_model.parent == data.objects["test_drawable"]
+    assert removed_model.name not in bpy.context.scene.objects
+
+    # .blend was saved with the object to export already selected
+    res = bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS | {
+            "target_formats": {"CWXML"},
+            "target_versions": {"GEN8"},
+        },
+    )
+    assert res == {"FINISHED"}
+
+    drawable = ET.parse(tmp_path / "test_drawable.ydr.xml").getroot()
+    models = drawable.findall("./DrawableModelsHigh/Item")
+    assert len(models) == 1
+    geometries = models[0].findall("./Geometries/Item")
+    assert len(geometries) == 1
+
+    # only `in_scene.model` geometry, `removed_from_scene.model` would span z=2..4
+    bb_min = geometries[0].find("BoundingBoxMin").attrib
+    bb_max = geometries[0].find("BoundingBoxMax").attrib
+    assert (float(bb_min["x"]), float(bb_min["y"]), float(bb_min["z"])) == pytest.approx((-1.0, -1.0, 0.0))
+    assert (float(bb_max["x"]), float(bb_max["y"]), float(bb_max["z"])) == pytest.approx((1.0, 1.0, 2.0))
+
+    # the material only used by `removed_from_scene.model` must not be exported either
+    shader_names = [s.find("Name").text for s in drawable.findall("./ShaderGroup/Shaders/Item")]
+    assert shader_names == ["default"]
+
+
 @requires_szio_native
 @pytest.mark.parametrize("version_dir", ("gen8", "gen9"))
 @pytest.mark.parametrize("textures_mode", ("PACK", "IMPORT_DIR", "CUSTOM_DIR", "CUSTOM_DIR_NOT_SET"))

@@ -49,6 +49,7 @@ from .cloth_diagnostics import (
     cloth_export_context,
 )
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 CLOTH_CHAR_MAX_VERTICES = 254
 CLOTH_CHAR_VERTEX_GROUP_NAME = "CLOTH"
@@ -59,7 +60,7 @@ def cloth_char_find_mesh_objects(drawable_obj: Object, silent: bool = False) -> 
     has a cloth material but also other materials or multiple cloth materials.
     """
     mesh_objs = []
-    for obj in drawable_obj.children_recursive:
+    for obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(drawable_obj):
         if obj.sollum_type != SollumType.CHARACTER_CLOTH_MESH or obj.type != "MESH":
             continue
 
@@ -71,7 +72,7 @@ def cloth_char_find_mesh_objects(drawable_obj: Object, silent: bool = False) -> 
 
 def cloth_char_find_bounds(char_cloth_obj: Object) -> list[Object]:
     composite_objs = []
-    for obj in char_cloth_obj.children:
+    for obj in ObjectHierarchySnapshot.for_scene().get_children(char_cloth_obj):
         if obj.sollum_type != SollumType.BOUND_COMPOSITE:
             continue
 
@@ -116,7 +117,7 @@ def cloth_char_export(
         )
 
     invalid_bounds = [
-        c for c in cloth_bounds_obj.children
+        c for c in ObjectHierarchySnapshot.for_scene().get_children(cloth_bounds_obj)
         if c.sollum_type != SollumType.BOUND_CAPSULE
     ]
     if invalid_bounds:
@@ -519,7 +520,7 @@ def cloth_char_get_mesh_to_cloth_bindings(
 
 def cloth_char_export_dictionary(dwd_obj: Object) -> AssetClothDictionary | None:
     cloths = {}
-    for drawable_obj in dwd_obj.children:
+    for drawable_obj in ObjectHierarchySnapshot.for_scene().get_children(dwd_obj):
         if drawable_obj.sollum_type != SollumType.DRAWABLE:
             continue
 

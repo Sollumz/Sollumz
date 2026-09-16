@@ -2,6 +2,7 @@ import bpy
 from ..sollumz_helper import SOLLUMZ_OT_base, set_object_collection
 from ..tools.ymaphelper import add_occluder_material, create_ymap, create_ymap_group, get_cargen_mesh, generate_ymap_extents
 from ..sollumz_properties import SollumType
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class SOLLUMZ_OT_create_ymap(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -33,7 +34,7 @@ class SOLLUMZ_OT_create_entity_group(SOLLUMZ_OT_base, bpy.types.Operator):
 
         existing_groups = []
         # Do not let user create Entities Group if there is already one, and if there is any kind of Occlusion Group
-        for child in aobj.children:
+        for child in ObjectHierarchySnapshot.for_scene().get_children(aobj):
             existing_groups.append(child.name)
         for group in existing_groups:
             if group == "Entities" or group == "Box Occluders" or group == "Model Occluders":
@@ -61,7 +62,7 @@ class SOLLUMZ_OT_create_model_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator
 
         existing_groups = []
         # Do not let user create Model Occluders Group if there is already one, and if there is already Entities Group
-        for child in aobj.children:
+        for child in ObjectHierarchySnapshot.for_scene().get_children(aobj):
             existing_groups.append(child.name)
         for group in existing_groups:
             if group == "Entities" or group == "Model Occluders":
@@ -88,7 +89,7 @@ class SOLLUMZ_OT_create_box_occluder_group(SOLLUMZ_OT_base, bpy.types.Operator):
 
         existing_groups = []
         # Do not let user create Box Occluders Group if there is already one, and if there is already Entities Group
-        for child in aobj.children:
+        for child in ObjectHierarchySnapshot.for_scene().get_children(aobj):
             existing_groups.append(child.name)
         for group in existing_groups:
             if group == "Entities" or group == "Box Occluders":
@@ -114,7 +115,7 @@ class SOLLUMZ_OT_create_car_generator_group(SOLLUMZ_OT_base, bpy.types.Operator)
             return False
 
         existing_groups = []
-        for child in aobj.children:
+        for child in ObjectHierarchySnapshot.for_scene().get_children(aobj):
             existing_groups.append(child.name)
         for group in existing_groups:
             if group == "Car Generators":

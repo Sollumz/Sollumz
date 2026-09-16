@@ -34,6 +34,7 @@ from ..tools.blenderhelper import get_child_of_bone
 from ..ytd.ytdimport import try_load_hd_txd
 from ..iecontext import import_context
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def find_yft_external_dependencies(asset: AssetFragment, name: str) -> AssetWithDependencies | None:
@@ -624,7 +625,7 @@ def find_frag_vehicle_window_bone(window: FragVehicleWindow, frag: AssetFragment
 
 
 def find_frag_vehicle_window_col(frag_obj: Object, bone_name: str) -> Object | None:
-    for obj in frag_obj.children_recursive:
+    for obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(frag_obj):
         if obj.sollum_type in BOUND_TYPES:
             col_bone = get_child_of_bone(obj)
 

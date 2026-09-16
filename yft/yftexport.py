@@ -68,6 +68,7 @@ from .properties import (
     GroupProperties,
     get_glass_type_index,
 )
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 class FragmentObjects(NamedTuple):
     """Contains the important Blender objects in a fragment hierarchy."""
     fragment: Object
@@ -95,7 +96,7 @@ def locate_fragment_objects(frag: Object) -> Optional[FragmentObjects]:
     composites = []
     damaged_composites = []
 
-    for obj in frag.children:
+    for obj in ObjectHierarchySnapshot.for_scene().get_children(frag):
         match obj.sollum_type:
             case SollumType.DRAWABLE:
                 if ".damaged" in obj.name:
@@ -306,7 +307,7 @@ def create_fragment_asset_core(
 
 
 def has_hi_lods(frag_obj: Object) -> bool:
-    for child in frag_obj.children_recursive:
+    for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(frag_obj):
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 
@@ -939,7 +940,10 @@ def calculate_frag_phys_inertia_limits(phys_children: list[PhysChild]) -> tuple[
 
 
 def does_bone_have_collision(bone_name: str, frag_obj: Object):
-    col_objs = [obj for obj in frag_obj.children_recursive if obj.sollum_type in BOUND_TYPES]
+    col_objs = [
+        obj for obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(frag_obj)
+        if obj.sollum_type in BOUND_TYPES
+    ]
 
     for obj in col_objs:
         bone = get_child_of_bone(obj)
@@ -1055,7 +1059,7 @@ def find_frag_phys_children_collisions(frag_objs: FragmentObjects, damaged: bool
     assert composite_obj is not None, "Caller must ensure that there is a composite"
 
     child_cols_by_bone: dict[str, list[Object]] = defaultdict(list)
-    for bound_obj in composite_obj.children:
+    for bound_obj in ObjectHierarchySnapshot.for_scene().get_children(composite_obj):
         if bound_obj.sollum_type not in BOUND_TYPES:
             continue
         if (bound_obj.type == "MESH" and not has_collision_materials(bound_obj)) or (bound_obj.type == "EMPTY" and not has_bvh_collision_materials(bound_obj)):
@@ -1075,7 +1079,7 @@ def find_frag_phys_children_meshes(frag_objs: FragmentObjects) -> dict[str, list
     """Get meshes that are linked to a child. Returns a dict mapping child meshes to bone name."""
     drawable_obj = frag_objs.drawable
     child_meshes_by_bone: dict[str, list[Object]] = defaultdict(list)
-    for model_obj in drawable_obj.children:
+    for model_obj in ObjectHierarchySnapshot.for_scene().get_children(drawable_obj):
         if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
             continue
 
@@ -1174,7 +1178,7 @@ def create_frag_vehicle_windows(frag: AssetFragment, frag_objs: FragmentObjects)
     generated_vehicle_windows = None
 
     vehicle_windows = []
-    for obj in frag_objs.composite.children_recursive:
+    for obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(frag_objs.composite):
         mode = obj.child_properties.shattermap_mode
         if mode == "NO":
             continue
@@ -1315,7 +1319,7 @@ def calculate_frag_vehicle_shattermap_basis(obj: Object, img: Image) -> Matrix:
 
 
 def find_frag_vehicle_window_shattermap_obj(col_obj: Object) -> Object | None:
-    for child in col_obj.children:
+    for child in ObjectHierarchySnapshot.for_scene().get_children(col_obj):
         if child.sollum_type == SollumType.SHATTERMAP:
             return child
 
@@ -1463,7 +1467,7 @@ def find_frag_glass_window_mesh_and_col(
     """
     mesh_obj = None
     col_obj = None
-    for obj in frag_obj.children_recursive:
+    for obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(frag_obj):
         if obj.sollum_type != SollumType.DRAWABLE_MODEL and obj.sollum_type not in BOUND_TYPES:
             continue
 

@@ -77,6 +77,7 @@ from .cable_vertex_buffer_builder import CableVertexBufferBuilder
 from .cable import is_cable_mesh
 from .cloth_diagnostics import cloth_export_context
 from .lights import export_lights
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 from ..iecontext import export_context, ExportBundle
 from .. import logger
@@ -201,7 +202,11 @@ def create_models(
 def get_model_objs(drawable_obj: Object) -> list[Object]:
     """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
     from .cloth import is_cloth_mesh_object
-    return [obj for obj in drawable_obj.children if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh and not is_cloth_mesh_object(obj)]
+    return [
+        obj for obj in ObjectHierarchySnapshot.for_scene().get_children(drawable_obj)
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh
+        and not is_cloth_mesh_object(obj)
+    ]
 
 
 def sort_skinned_models_by_bone(model_objs: list[Object], bones: list[Bone]) -> list[Object]:
@@ -943,7 +948,7 @@ def get_bone_rotation_limit(pose_bone: PoseBone) -> Optional[SkelBoneRotationLim
 
 def create_embedded_bounds_asset(drawable_obj: Object) -> Optional[AssetBound]:
     bound_objs = [
-        child for child in drawable_obj.children
+        child for child in ObjectHierarchySnapshot.for_scene().get_children(drawable_obj)
         if child.sollum_type == SollumType.BOUND_COMPOSITE or child.sollum_type in BOUND_TYPES
     ]
     if not bound_objs:

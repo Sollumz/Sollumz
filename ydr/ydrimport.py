@@ -52,6 +52,7 @@ from .lights import create_light_objs, serialize_lights_to_asset
 from .properties import DrawableModelProperties
 from ..iecontext import import_context, ImportTexturesMode
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def find_ydr_external_dependencies(asset: AssetDrawable, name: str) -> AssetWithDependencies:
@@ -650,7 +651,7 @@ def convert_object_to_asset(name: str, obj: Object) -> Object:
     model_objs = []
     other_objs = []
 
-    for child in obj.children_recursive:
+    for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(obj):
         if child.sollum_type == SollumType.DRAWABLE_MODEL:
             model_objs.append(child)
         else:

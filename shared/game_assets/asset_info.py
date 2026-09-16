@@ -10,6 +10,7 @@ from mathutils import Quaternion, Vector
 
 from ...sollumz_properties import ArchetypeType, SollumType
 from ...tools.blenderhelper import remove_number_suffix
+from ..object_hierarchy import ObjectHierarchySnapshot
 
 
 @dataclass(slots=True)
@@ -194,7 +195,7 @@ def _resolve_lights(obj: Object, cache: AssetInfoCache | None) -> list | None:
     # Local import to avoid pulling format-specific code into shared/ at module load time.
     from ...ydr.lights import export_lights, serialize_lights
 
-    lights = export_lights(canonical)
+    lights = export_lights(canonical, ObjectHierarchySnapshot.for_object(canonical))
     if not lights:
         return None
 
@@ -210,8 +211,13 @@ def _resolve_collisions(obj: Object, cache: AssetInfoCache | None) -> dict | Non
     if canonical is None:
         return None
 
+    hierarchy = ObjectHierarchySnapshot.for_object(canonical)
     composite = next(
-        (c for c in (canonical, *canonical.children_recursive) if c.sollum_type == SollumType.BOUND_COMPOSITE),
+        (
+            c
+            for c in hierarchy.get_object_with_children_recursive(canonical)
+            if c.sollum_type == SollumType.BOUND_COMPOSITE
+        ),
         None,
     )
     if composite is None:
@@ -219,7 +225,7 @@ def _resolve_collisions(obj: Object, cache: AssetInfoCache | None) -> dict | Non
 
     from ...tools.meshhelper import get_combined_bound_box
 
-    bb_min, bb_max = get_combined_bound_box(composite)
+    bb_min, bb_max = get_combined_bound_box(composite, hierarchy=hierarchy)
     return {"bb_min": tuple(bb_min), "bb_max": tuple(bb_max)}
 
 

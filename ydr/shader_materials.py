@@ -18,6 +18,7 @@ from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from ..shared.shader_expr import expr, compile_expr
 from .render_bucket import RenderBucket
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class ShaderBuilder(NamedTuple):
@@ -224,7 +225,7 @@ def find_tint_modifiers(obj: bpy.types.Object) -> list[bpy.types.NodesModifier]:
 def apply_tint_preview_index(obj: bpy.types.Object, tint_value: int):
     if obj.sollum_type in {SollumType.DRAWABLE, SollumType.FRAGMENT}:
         objs = (
-            child for child in obj.children_recursive
+            child for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(obj)
             if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL
         )
     elif obj.type == "MESH":

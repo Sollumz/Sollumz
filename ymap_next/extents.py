@@ -27,6 +27,7 @@ from .properties.map import (
     MapOccluder,
     MapTimecycleModifier,
 )
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def resolve_entity_lod_dist(entity: MapEntity, map_group: MapGroup, cache: AssetInfoCache) -> float:
@@ -110,7 +111,12 @@ def _transform_aabb(matrix: Matrix, bb_min: Vector, bb_max: Vector) -> tuple[Vec
     return center_world - extent_world, center_world + extent_world
 
 
-def entity_world_aabb(entity: MapEntity, map_group: MapGroup, cache: AssetInfoCache) -> tuple[Vector, Vector, float]:
+def entity_world_aabb(
+    entity: MapEntity,
+    map_group: MapGroup,
+    cache: AssetInfoCache,
+    hierarchy: ObjectHierarchySnapshot | None = None,
+) -> tuple[Vector, Vector, float]:
     """Return the entity's world AABB and its streaming distance (the AABB grown by it is the entity's
     streaming extents contribution).
 
@@ -118,6 +124,8 @@ def entity_world_aabb(entity: MapEntity, map_group: MapGroup, cache: AssetInfoCa
     the linked object's meshes, point at the entity position.
     """
     obj = entity.linked_object
+    if hierarchy is None:
+        hierarchy = ObjectHierarchySnapshot.for_scene()
     if obj is not None:
         world_matrix = obj.matrix_world
     else:
@@ -135,8 +143,8 @@ def entity_world_aabb(entity: MapEntity, map_group: MapGroup, cache: AssetInfoCa
     )
     if archetype_info is not None and archetype_info.bb_min != archetype_info.bb_max:
         bb_min, bb_max = _transform_aabb(world_matrix, archetype_info.bb_min, archetype_info.bb_max)
-    elif obj is not None and any(c.type == "MESH" for c in (obj, *obj.children_recursive)):
-        bb_min, bb_max = get_combined_bound_box(obj, use_world=True)
+    elif obj is not None and any(c.type == "MESH" for c in hierarchy.get_object_with_children_recursive(obj)):
+        bb_min, bb_max = get_combined_bound_box(obj, use_world=True, hierarchy=hierarchy)
     else:
         pos = world_matrix.translation
         bb_min, bb_max = Vector(pos), Vector(pos)
@@ -220,8 +228,9 @@ def calc_map_data_extents(
     cache = asset_info_cache if asset_info_cache is not None else AssetInfoCache()
     acc = ExtentsAccumulator()
 
+    hierarchy = ObjectHierarchySnapshot.for_scene()
     for entity in entities:
-        bb_min, bb_max, streaming_dist = entity_world_aabb(entity, map_group, cache)
+        bb_min, bb_max, streaming_dist = entity_world_aabb(entity, map_group, cache, hierarchy)
         acc.add(bb_min, bb_max, streaming_dist)
 
     for obj in cargen_objects:

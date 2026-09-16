@@ -3,6 +3,7 @@ from ...sollumz_helper import SOLLUMZ_OT_base
 from ..utils import get_selected_ytyp, get_selected_archetype, get_selected_entity, get_selected_entity_set, validate_dynamic_enums, validate_dynamic_enum
 from ...sollumz_operators import SearchEnumHelper
 from ..properties.mlo import get_entityset_items_for_selected_archetype
+from ...shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class SOLLUMZ_OT_search_entityset(SearchEnumHelper, bpy.types.Operator):
@@ -87,13 +88,15 @@ class SOLLUMZ_OT_entityset_toggle_visibility(bpy.types.Operator):
 
         visibility = entity_set.visible
         entity_set.visible = not visibility
+        hierarchy = ObjectHierarchySnapshot.for_scene()
+        view_layer_objects = context.view_layer.objects
         for entity in entities:
             if not entity.linked_object or entity.attached_entity_set_id != entity_set_id:
                 continue
 
             obj = entity.linked_object
-            obj.hide_set(visibility)
-            for child_obj in obj.children_recursive:
-                child_obj.hide_set(visibility)
+            for o in hierarchy.get_object_with_children_recursive(obj):
+                if o.name in view_layer_objects:
+                    o.hide_set(visibility)
 
         return {"FINISHED"}

@@ -45,6 +45,7 @@ from .cloth_diagnostics import (
 )
 from ..iecontext import export_context
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 CLOTH_ENV_MAX_VERTICES = 1000
 
@@ -54,7 +55,7 @@ def cloth_env_find_mesh_objects(frag_obj: Object, silent: bool = False) -> list[
     has a cloth material but also other materials or multiple cloth materials.
     """
     mesh_objs = []
-    for obj in frag_obj.children_recursive:
+    for obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(frag_obj):
         if obj.sollum_type != SollumType.DRAWABLE_MODEL or obj.type != "MESH":
             continue
 
@@ -276,7 +277,7 @@ def _cloth_env_export(frag_obj: Object, cloth_obj: Object, drawable: AssetFragDr
         world_bounds = create_bound_composite_asset(cloth_props.world_bounds, allow_planes=True)
 
         invalid_bounds = [
-            c for c in cloth_props.world_bounds.children
+            c for c in ObjectHierarchySnapshot.for_scene().get_children(cloth_props.world_bounds)
             if c.sollum_type not in {SollumType.BOUND_PLANE, SollumType.BOUND_CAPSULE}
         ]
         if invalid_bounds:

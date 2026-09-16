@@ -25,7 +25,7 @@ class SOLLUMZ_OT_mlo_create_instance(Operator):
             collection = bpy.data.collections.new(f"{archetype.name}.for_instancing")
             archetype.mlo_collection_for_instancing = collection
 
-            h = ObjectHierarchySnapshot()
+            h = ObjectHierarchySnapshot.for_scene()
             objs = []
             seen = set()
             for entity in archetype.entities:
@@ -87,7 +87,7 @@ class SOLLUMZ_OT_mlo_refresh_instances(Operator):
         if not collection:
             return {"CANCELLED"}
 
-        h = ObjectHierarchySnapshot()
+        h = ObjectHierarchySnapshot.for_scene()
         objs = []
         seen = set()
         for entity in archetype.entities:

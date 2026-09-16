@@ -15,6 +15,7 @@ from szio.gta5 import (
 )
 from .properties import LightProperties
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 INTENSITY_SCALE_FACTOR = 500
 
@@ -138,10 +139,11 @@ def set_light_properties(light: Light, light_data: bpy.types.Light):
     light_props.corona_z_bias = light.corona_z_bias
 
 
-def export_lights(parent_obj: Object) -> list[Light]:
+def export_lights(parent_obj: Object, hierarchy: ObjectHierarchySnapshot | None = None) -> list[Light]:
     lights = []
 
-    for child in parent_obj.children_recursive:
+    hierarchy = hierarchy or ObjectHierarchySnapshot.for_scene()
+    for child in hierarchy.get_children_recursive(parent_obj):
         if child.type == "LIGHT" and child.data.sollum_type != LightType.NONE:
             lights.append(export_light(child, parent_obj))
 
@@ -259,7 +261,7 @@ def serialize_lights_to_asset(asset_obj: Object, lights: list[Light]):
 def duplicate_lights_for_light_effect(parent_obj: Object) -> Object:
     lights_parent = create_empty_object(SollumType.NONE, "Lights")
 
-    for child in parent_obj.children_recursive:
+    for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(parent_obj):
         if child.type == "LIGHT" and child.data.sollum_type != LightType.NONE:
             light_copy = child.copy()
             light_copy.data = light_copy.data.copy()

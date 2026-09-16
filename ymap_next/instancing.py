@@ -12,6 +12,7 @@ from szio.gta5 import (
 from .. import logger
 from ..sollumz_helper import duplicate_object_with_children
 from ..sollumz_properties import SollumType
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 from ..tools.blenderhelper import remove_number_suffix
 from .properties.map import (
     MapEntity,
@@ -67,6 +68,8 @@ class InstancingBatch:
         num_missing = 0
         num_instanced = 0
 
+        # Whole .blend, as the source objects may live outside the current scene
+        hierarchy = ObjectHierarchySnapshot.for_blend()
         remaining_instances = {}
         for archetype_name, per_instance_transforms in self.instances.items():
             obj = self._objects_snapshot.get(archetype_name, None) or self._objects_snapshot_by_hash.get(
@@ -94,7 +97,7 @@ class InstancingBatch:
                 )
 
                 if do_instance:
-                    obj_inst = duplicate_object_with_children(obj)
+                    obj_inst = duplicate_object_with_children(obj, hierarchy)
                 else:
                     if obj_already_used:
                         # Without instancing, this object can only be used once

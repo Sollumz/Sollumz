@@ -33,6 +33,7 @@ from ..sollumz_properties import MaterialType, SOLLUMZ_UI_NAMES, SollumType, BOU
 from ..iecontext import export_context, ExportBundle
 from .. import logger
 from .properties import CollisionMatFlags, get_collision_mat_raw_flags, BoundFlags
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 MAX_VERTICES = 32767
 
@@ -48,7 +49,8 @@ def create_bound_composite_asset(
 ) -> AssetBoundComposite:
     assert obj.sollum_type == SollumType.BOUND_COMPOSITE, f"Expected a Bound Composite, got '{obj.sollum_type}'"
 
-    if not obj.children:
+    child_objs = ObjectHierarchySnapshot.for_scene().get_children(obj)
+    if not child_objs:
         # We only do a simple check for children here, if there are any other issues with them it will checked and
         # reported by `create_bound_xml`
         logger.warning(f"Bound composite '{obj.name}' has no children.")
@@ -58,7 +60,7 @@ def create_bound_composite_asset(
     cg = Vector()
     volume = 0.0
     extents_corners: list[Vector] = []
-    for child_obj in obj.children:
+    for child_obj in child_objs:
         child_bound = create_bound_asset(child_obj, allow_planes=allow_planes)
         if child_bound is None:
             continue
@@ -436,7 +438,7 @@ def has_collision_materials(obj: Object) -> bool:
 
 def validate_bvh_collision_materials(geom_obj: Object, verbose: bool = False) -> bool:
     valid = True
-    for child in geom_obj.children:
+    for child in ObjectHierarchySnapshot.for_scene().get_children(geom_obj):
         if child.type != "MESH" or child.sollum_type not in BOUND_POLYGON_TYPES:
             continue
 
@@ -527,7 +529,7 @@ def create_bound_geometry_vertices_and_primitives(
     else:
         # For empty bound objects with children, create the bound polygons from its children
         primitives = []
-        for child in obj.children_recursive:
+        for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(obj):
             if child.sollum_type not in BOUND_POLYGON_TYPES:
                 logger.warning(
                     f"'{child.name}' is being exported as bound poly but has no bound poly Sollumz type! Please, use a "

@@ -35,6 +35,7 @@ from ..ydr.shader_materials import (
 from szio.gta5 import (
     FragmentTemplateAsset,
 )
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class FragArchetypeProperties(bpy.types.PropertyGroup):
@@ -199,7 +200,7 @@ class VehicleRenderPreview(bpy.types.PropertyGroup):
             return
 
         materials_visited = set()
-        for child_obj in obj.children_recursive:
+        for child_obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(obj):
             if child_obj.type != "MESH":
                 continue
 

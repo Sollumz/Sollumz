@@ -5,6 +5,7 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..tools.blenderhelper import find_bsdf_and_material_output, remove_number_suffix
 from ..shared.obj_reader import obj_read_from_file
 from ..tools.meshhelper import get_combined_bound_box, get_sphere_radius
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 # TODO: This is not a real flag calculation, definitely need to do better
 
@@ -143,9 +144,10 @@ def generate_ymap_extents(selected_ymap=None):
     entity_extents_data = {}
 
     # Clone of CodeWalker's ymap extents calculations
-    for child in selected_ymap.children:
+    hierarchy = ObjectHierarchySnapshot.for_scene()
+    for child in hierarchy.get_children(selected_ymap):
         if child.sollum_type == SollumType.DEPRECATED__YMAP_ENTITY_GROUP:
-            for entity_obj in child.children:
+            for entity_obj in hierarchy.get_children(child):
                 if entity_obj.sollum_type == SollumType.DRAWABLE or entity_obj.sollum_type == SollumType.FRAGMENT:
                     position = entity_obj.location
                     orientation = entity_obj.rotation_euler.to_matrix()
@@ -194,7 +196,7 @@ def generate_ymap_extents(selected_ymap=None):
                         smax = Vector(max(smax[i], stream_corner_world[i]) for i in range(3))
 
         elif child.sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP:
-            for box_obj in child.children:
+            for box_obj in hierarchy.get_children(child):
                 if box_obj.sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER:
                     position = box_obj.location
                     size = box_obj.dimensions
@@ -208,9 +210,9 @@ def generate_ymap_extents(selected_ymap=None):
                     smax = Vector(max(smax[i], bbmax[i]) for i in range(3))
 
         elif child.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP:
-            for model_obj in child.children:
+            for model_obj in hierarchy.get_children(child):
                 if model_obj.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER:
-                    bbmin, bbmax = get_combined_bound_box(model_obj, use_world=True)
+                    bbmin, bbmax = get_combined_bound_box(model_obj, use_world=True, hierarchy=hierarchy)
 
                     emin = Vector(min(emin[i], bbmin[i]) for i in range(3))
                     emax = Vector(max(emax[i], bbmax[i]) for i in range(3))
@@ -218,7 +220,7 @@ def generate_ymap_extents(selected_ymap=None):
                     smax = Vector(max(smax[i], bbmax[i]) for i in range(3))
 
         elif child.sollum_type == SollumType.DEPRECATED__YMAP_CAR_GENERATOR_GROUP:
-            for cargen_obj in child.children:
+            for cargen_obj in hierarchy.get_children(child):
                 if cargen_obj.sollum_type == SollumType.DEPRECATED__YMAP_CAR_GENERATOR:
                     position = cargen_obj.location
                     perpendicular_length = Vector((

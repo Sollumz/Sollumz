@@ -28,6 +28,7 @@ from .operators import (
     SOLLUMZ_OT_vehicle_preview_generated_windows,
 )
 from .gta5.presets.bone_fragment_physics import SOLLUMZ_PT_bone_fragment_physics_presets
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class SOLLUMZ_PT_FRAGMENT_TOOL_PANEL(bpy.types.Panel):
@@ -399,7 +400,7 @@ class VehicleRenderPreviewPanelImpl:
             grid.prop(render_preview, f"light_id_{light_id}")
 
     def has_vehicle_shaders(self, obj: Object):
-        for obj in obj.children_recursive:
+        for obj in ObjectHierarchySnapshot.for_scene().get_children_recursive(obj):
             if obj.sollum_type != SollumType.DRAWABLE_MODEL or obj.type != "MESH":
                 continue
 
