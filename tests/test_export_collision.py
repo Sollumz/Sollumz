@@ -7,6 +7,7 @@ from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import create_empty_object
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..ybn.ybnexport import create_bound_asset, export_ybn
+from .shared import log_capture
 
 
 @pytest.mark.parametrize("bound_type, empty_geometry", [
@@ -19,7 +20,7 @@ from ..ybn.ybnexport import create_bound_asset, export_ybn
     (SollumType.BOUND_GEOMETRYBVH, "no_children"),
     (SollumType.BOUND_GEOMETRYBVH, "ignored_child"),
 ])
-def test_export_rejects_empty_collision(cube_object, request, bound_type, empty_geometry):
+def test_export_reports_empty_collision(cube_object, request, bound_type, empty_geometry):
     mesh_obj = cube_object
     mesh_obj.sollum_type = SollumType.BOUND_GEOMETRY
     material = create_collision_material_from_index(0)
@@ -53,17 +54,29 @@ def test_export_rejects_empty_collision(cube_object, request, bound_type, empty_
     bpy.context.view_layer.update()
 
     message = f"'{bound_obj.name}' has no collision primitives"
-    with pytest.raises(ValueError, match=message):
-        create_bound_asset(bound_obj, is_root=True)
+    with log_capture() as logs:
+        bound = create_bound_asset(bound_obj, is_root=True)
+    assert bound is not None
+    assert not bound.geometry_primitives
+    assert len(logs.errors) == 1
+    assert message in logs.errors[0]
 
-    # Asset creation must fail before either XML or native serialization can write this bound.
+    # Report all invalid children instead of stopping at the first empty bound.
+    other_bound_obj = create_empty_object(SollumType.BOUND_GEOMETRYBVH)
+    request.addfinalizer(lambda: bpy.data.objects.remove(other_bound_obj, do_unlink=True))
+    other_bound_obj.parent = composite
+    bpy.context.view_layer.update()
     settings = ExportSettings(targets=(
         AssetTarget(AssetFormat.CWXML, AssetVersion.GEN8),
         AssetTarget(AssetFormat.NATIVE, AssetVersion.GEN8),
     ))
     with export_context_scope(ExportContext("empty_collision", settings)):
-        with pytest.raises(ValueError, match=message):
-            export_ybn(composite)
+        with log_capture() as logs:
+            bundle = export_ybn(composite)
+    assert len(bundle.main_asset.children) == 2
+    assert len(logs.errors) == 2
+    assert any(message in error for error in logs.errors)
+    assert any(f"'{other_bound_obj.name}' has no collision primitives" in error for error in logs.errors)
 
 
 @pytest.mark.parametrize("sollum_type, primitive_type, num_primitives", [
@@ -87,8 +100,10 @@ def test_export_preserves_valid_collision(cube_object, request, sollum_type, pri
         mesh_obj.parent = bound_obj
 
     bpy.context.view_layer.update()
-    bound = create_bound_asset(bound_obj)
+    with log_capture() as logs:
+        bound = create_bound_asset(bound_obj)
 
+    logs.assert_no_warnings_or_errors()
     assert bound is not None
     assert len(bound.geometry_primitives) == num_primitives
     assert all(prim.primitive_type == primitive_type for prim in bound.geometry_primitives)
