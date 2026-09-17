@@ -178,7 +178,19 @@ def get_sollumz_materials(
             continue
 
         lods = child.sz_lods
-        for lod_level in lod_levels:
+        curr_lod_levels = lod_levels
+        if mode == GetSollumzMaterialsMode.HI and lods.get_lod(LODLevel.VERYHIGH).mesh is None:
+            high_mesh = lods.get_lod(LODLevel.HIGH).mesh
+            if high_mesh is not None:
+                for m in high_mesh.materials:
+                    if m and getattr(m, "sollum_type", None) == MaterialType.SHADER and getattr(m, "shader_properties", None):
+                        sh_name = getattr(m.shader_properties, "name", "").lower()
+                        sh_file = getattr(m.shader_properties, "filename", "").lower()
+                        if "cloth" in sh_name or "cloth" in sh_file:
+                            curr_lod_levels = (LODLevel.HIGH,)
+                            break
+
+        for lod_level in curr_lod_levels:
             lod = lods.get_lod(lod_level)
             lod_mesh = lod.mesh
             if lod_mesh is None:
