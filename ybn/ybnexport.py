@@ -463,8 +463,11 @@ def init_bound_geometry_primitives(
 
     num_vertices = len(vertices)
 
-    if num_vertices == 0:
-        logger.warning(f"{SOLLUMZ_UI_NAMES[obj.sollum_type]} '{obj.name}' has no geometry!")
+    if not primitives:
+        logger.error(
+            f"{SOLLUMZ_UI_NAMES[obj.sollum_type]} '{obj.name}' has no collision primitives! "
+            "Empty collision geometry can crash the game. Add collision geometry or remove this bound before exporting."
+        )
 
     if num_vertices > MAX_VERTICES:
         logger.warning(
