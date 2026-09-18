@@ -279,7 +279,14 @@ def create_fragment_asset_core(
 
         frag.cloths = [env_cloth]  # cloths is an array but game only supports 1 cloth
         if hi_frag:
-            hi_frag.cloths = frag.cloths
+            hi_env_cloth = cloth_env_export(frag_obj, hi_drawable, hi_materials) if (hi_drawable and hi_materials) else None
+            if hi_env_cloth is not None:
+                hi_env_cloth.controller.name = f"{remove_number_suffix(frag_obj.name)}_hi_cloth"
+                hi_frag.cloths = [hi_env_cloth]
+                if all(not v for v in hi_drawable.models.values()):
+                    hi_frag.drawable = None
+            else:
+                hi_frag.cloths = frag.cloths
 
         if frag.physics is None:
             # No collisions, create some dummy physics data for the cloth to work
