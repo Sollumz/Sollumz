@@ -9,19 +9,18 @@ from ..sollumz_properties import MaterialType
 from .render_bucket import RenderBucket
 from ..shared.shader_expr.builtins import (
     vec,
+    f2v,
     bsdf_principled,
     uv,
     tex,
-    map_range,
-    param,
     float_param,
     mix_color,
     emission,
     mix_shader,
     color_attribute,
-    normal_map
 )
 from ..shared.shader_expr import expr, compile_to_material
+from .shader_materials import gta_decode_normal_expr, gta_detail_expr, gta_normal_expr, gta_specular_expr
 
 
 class LegacyShaderConfig(NamedTuple):
@@ -184,6 +183,7 @@ def basic_shader(
     alpha = 1.0
     spec = 0.0
     roughness = 0.5
+    ior = None
     normal = None
     metallic = None
     coat_weight = None
@@ -197,31 +197,20 @@ def basic_shader(
         diffuse_uv_map_index = None
         diffuse_uv = None
 
-    if cfg.use_spec:
-        spec_uv_map_index = shader.uv_maps.get(cfg.spectex, 0)
-        spec_uv = diffuse_uv if diffuse_uv_map_index == spec_uv_map_index else uv(spec_uv_map_index)
-        spec = tex(cfg.spectex, spec_uv).color
-        spec = spec.x  # TODO: original takes the average of R,G,B channels, why?
+    detail_intensity = None
+    if cfg.use_detl:
+        bump_offset, detail_intensity = gta_detail_expr(shader, cfg.detltex, "Extra", cfg.spectex)
+    else:
+        bump_offset = None
 
-    if "specularIntensityMult" in shader.parameter_map:
-        specular_intensity_mult = float_param("specularIntensityMult")
-        spec *= map_range(specular_intensity_mult, 0.0, 1.0, 0.0, 1.0, clamp=True)
-
-    if "specularFalloffMult" in shader.parameter_map:
-        specular_falloff_mult = float_param("specularFalloffMult")
-        roughness = map_range(specular_falloff_mult, 0.0, 512.0, 1.0, 0.0, clamp=True)
+    spec_expr, roughness_expr, ior_expr = gta_specular_expr(shader, cfg.spectex)
+    if spec_expr is not None:
+        spec, roughness, ior = spec_expr, roughness_expr, ior_expr
+        if detail_intensity is not None:
+            spec = spec * detail_intensity
 
     if cfg.use_bump:
-        normal_uv_map_index = shader.uv_maps.get(cfg.spectex, 0)
-        normal_uv = diffuse_uv if diffuse_uv_map_index == normal_uv_map_index else uv(normal_uv_map_index)
-        normal = tex(cfg.bumptex, normal_uv).color
-
-        # invert green channel of normal map
-        normal = vec(normal.x, 1.0 - normal.y, normal.z)
-
-        bumpiness = _float_param_or_default("bumpiness", 1.0)
-
-        normal = normal_map(normal, bumpiness, normal_uv_map_index)
+        normal = gta_normal_expr(shader, cfg.bumptex, bump_offset)
 
     if cfg.use_diff:
         diffuse = tex(cfg.diffuse, diffuse_uv)
@@ -234,6 +223,9 @@ def basic_shader(
         diffuse2 = tex(cfg.diffuse2, diffuse2_uv)
 
         base_color = mix_color(base_color, diffuse2.color, diffuse2.alpha)
+
+    if detail_intensity is not None:
+        base_color = base_color * f2v(detail_intensity)
 
     em_shader = None
     if cfg.is_emissive:
@@ -249,6 +241,7 @@ def basic_shader(
         alpha=alpha,
         roughness=roughness,
         specular_ior_level=spec,
+        ior=ior,
         normal=normal,
         metallic=metallic,
         coat_weight=coat_weight,
@@ -261,12 +254,6 @@ def basic_shader(
 
 
 def terrain_shader(shader: ShaderDef) -> expr.ShaderExpr:
-    def _float_param_or_default(name: str, default_value: expr.Floaty) -> expr.Floaty:
-        if name in shader.parameter_map:
-            return float_param(name)
-        else:
-            return default_value
-
     tex_names = ("TextureSampler_layer0", "TextureSampler_layer1", "TextureSampler_layer2", "TextureSampler_layer3")
     bump_names = ("BumpSampler_layer0", "BumpSampler_layer1", "BumpSampler_layer2", "BumpSampler_layer3")
     lookup_name = "lookupSampler"
@@ -296,35 +283,23 @@ def terrain_shader(shader: ShaderDef) -> expr.ShaderExpr:
 
     normal = None
     if bump0.texture_name in shader.parameter_map:
-        bumpiness = _float_param_or_default("bumpiness", 1.0)
+        packed01 = mix_color(bump0.color, bump1.color, lookup.b)
+        packed23 = mix_color(bump2.color, bump3.color, lookup.b)
+        packed = mix_color(packed01, packed23, lookup.g)
 
-        normal0 = normal_map(bump0.color, bumpiness, bump_uvs[0].uv_map_index)
-        normal1 = normal_map(bump1.color, bumpiness, bump_uvs[1].uv_map_index)
-        normal2 = normal_map(bump2.color, bumpiness, bump_uvs[2].uv_map_index)
-        normal3 = normal_map(bump3.color, bumpiness, bump_uvs[3].uv_map_index)
+        normal = gta_decode_normal_expr(shader, packed, bump_uvs[0].uv_map_index)
 
-        normal01 = mix_color(normal0, normal1, lookup.b)
-        normal23 = mix_color(normal2, normal3, lookup.b)
-        normal = mix_color(normal01, normal23, lookup.g)
-
-        # TODO: original doesn't invert the normal in terrain shaders? why? bug?
-        normal = vec(normal.x, 1.0 - normal.y, normal.z)  # invert green channel of normal map
-
-    spec = 0.0
-    if "specularIntensityMult" in shader.parameter_map:
-        specular_intensity_mult = float_param("specularIntensityMult")
-        specular_intensity_mult = map_range(specular_intensity_mult, 0.0, 1.0, 0.0, 1.0, clamp=True)
-        spec = specular_intensity_mult * specular_intensity_mult
-
-    roughness = None
-    if "specularFalloffMult" in shader.parameter_map:
-        specular_falloff_mult = float_param("specularFalloffMult")
-        roughness = map_range(specular_falloff_mult, 0.0, 512.0, 1.0, 0.0, clamp=True)
+    spec, roughness, ior = gta_specular_expr(shader, None)
+    if spec is None:
+        spec, roughness, ior = 0.0, None, None
+    else:
+        spec = spec * spec
 
     return bsdf_principled(
         base_color=color,
         normal=normal,
         specular_ior_level=spec,
+        ior=ior,
         roughness=roughness,
     )
 

@@ -115,13 +115,11 @@ def shader_preset_apply_dict(material, data, apply_textures=True):
                 continue
             img = bpy.data.images.get(tex) or bpy.data.images.get(tex + ".dds")
             if img is None:
-                from ...ydrimport import lookup_texture_file, is_non_color_texture
+                from ...ydrimport import lookup_texture_file
 
                 texture_path = lookup_texture_file(tex, None)
                 if texture_path:
                     img = bpy.data.images.load(str(texture_path), check_existing=True)
-                    if img and is_non_color_texture(shader_def.filename, name):
-                        img.colorspace_settings.is_data = True
             if img:
                 node.image = img
 

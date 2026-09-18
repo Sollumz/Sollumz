@@ -3,6 +3,8 @@ from .expr import (
     Floaty,
     FloatExpr,
     FloatConstantExpr,
+    FloatBinaryExpr,
+    FloatBinaryExprOp,
     FloatMapRangeExpr,
     FloatUnaryExpr,
     FloatUnaryExprOp,
@@ -11,6 +13,9 @@ from .expr import (
     VectorMixColorExpr,
     VectorNormalMapExpr,
     UVMapVectorExpr,
+    GeometryExpr,
+    TangentExpr,
+    FloatSocketExpr,
     ConstructVectorExpr,
     ParameterExpr,
     TextureExpr,
@@ -84,6 +89,41 @@ def dot(a: VectorExpr, b: VectorExpr) -> FloatExpr:
 def cross(a: VectorExpr, b: VectorExpr) -> VectorExpr:
     """Cross product of two vectors."""
     return a.cross(b)
+
+
+def absf(value: Floaty) -> FloatExpr:
+    """Absolute value of a float."""
+    return FloatUnaryExpr(value, FloatUnaryExprOp.ABSOLUTE)
+
+
+def float_socket(node, socket_key) -> FloatExpr:
+    """Reference an output socket of an already-existing node as a float expression."""
+    return FloatSocketExpr(node, socket_key)
+
+
+def geometry(socket_name: str) -> GeometryExpr:
+    """Access a vector output of the Geometry node, e.g. 'Incoming' or 'Normal'."""
+    return GeometryExpr(socket_name)
+
+
+def tangent(uv_map_index: int) -> TangentExpr:
+    """The world-space tangent of a UV map."""
+    return TangentExpr(uv_map_index)
+
+
+def maxf(a: Floaty, b: Floaty) -> FloatExpr:
+    """Maximum of two floats."""
+    return FloatBinaryExpr(a, b, FloatBinaryExprOp.MAXIMUM)
+
+
+def minf(a: Floaty, b: Floaty) -> FloatExpr:
+    """Minimum of two floats."""
+    return FloatBinaryExpr(a, b, FloatBinaryExprOp.MINIMUM)
+
+
+def saturate(v: Floaty) -> FloatExpr:
+    """Clamp a float to [0..1]."""
+    return FloatMapRangeExpr(v, 0.0, 1.0, 0.0, 1.0, clamp=True)
 
 
 def map_range(*args, **kwargs) -> FloatExpr:
