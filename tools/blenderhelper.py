@@ -1,6 +1,7 @@
 import re
 import bpy
 import bmesh
+from contextlib import contextmanager
 from mathutils import Matrix, Vector
 from typing import Optional, Tuple
 
@@ -12,6 +13,41 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 
 def get_all_collections():
     return [bpy.context.scene.collection, *bpy.data.collections]
+
+
+@contextmanager
+def temporarily_unhide_all(context):
+    """Unhide and enable all collections and objects in the scene, restoring their visibility afterwards."""
+    layer_colls = []
+
+    def _unhide_layer_coll(layer_coll):
+        layer_colls.append((layer_coll, layer_coll.exclude, layer_coll.hide_viewport, layer_coll.collection.hide_viewport))
+        layer_coll.exclude = False
+        layer_coll.hide_viewport = False
+        layer_coll.collection.hide_viewport = False
+        for child in layer_coll.children:
+            _unhide_layer_coll(child)
+
+    objs = []
+    try:
+        for layer_coll in context.view_layer.layer_collection.children:
+            _unhide_layer_coll(layer_coll)
+
+        for obj in context.scene.objects:
+            objs.append((obj, obj.hide_get(), obj.hide_viewport))
+            obj.hide_viewport = False
+            obj.hide_set(False)
+
+        yield
+    finally:
+        for obj, hidden, disabled in objs:
+            obj.hide_set(hidden)
+            obj.hide_viewport = disabled
+
+        for layer_coll, exclude, hidden, disabled in reversed(layer_colls):
+            layer_coll.collection.hide_viewport = disabled
+            layer_coll.hide_viewport = hidden
+            layer_coll.exclude = exclude
 
 
 def remove_number_suffix(string: str):
