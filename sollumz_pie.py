@@ -3,8 +3,7 @@ from bpy.types import Menu
 
 
 def find_missing_files(filepath):
-    bpy.ops.file.find_missing_files(directory=filepath)
-    return {'FINISHED'}
+    return bpy.ops.sollumz.find_missing_textures(directory=filepath)
 
 
 class SOLLUMZ_MT_pie_menu(Menu):
@@ -29,7 +28,7 @@ class SOLLUMZ_MT_pie_menu(Menu):
         col.emboss = "PIE_MENU" if bpy.app.version >= (5, 0, 0) else "RADIAL_MENU"
         col.scale_x = 1.1
         col.scale_y = 1.4
-        col.operator("file.find_missing_files", text="Find Missing Textures", icon='VIEWZOOM')
+        col.operator("sollumz.find_missing_textures", icon='VIEWZOOM')
         col.operator("sollumz.txd_find_missing", icon="BLANK1")
         # Top-left
         pie.operator("sollumz.import_assets", icon="IMPORT")
