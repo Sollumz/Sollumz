@@ -443,7 +443,7 @@ def add_global_anim_uv_nodes(material: bpy.types.Materia):
 
     assert base_tex_node is not None
 
-    uv_map_index = shader.uv_maps[base_tex_node.name]
+    uv_map_index = shader.get_parameter(base_tex_node.name).uv
     uv_map_node = nodes.get(get_uv_map_name(uv_map_index), None)
 
     # operation to perform:

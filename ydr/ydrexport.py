@@ -45,8 +45,6 @@ from szio.gta5 import (
 from szio.gta5.shader import (
     ShaderManager,
     ShaderDef,
-    ShaderParameterFloatVectorDef,
-    ShaderParameterType,
 )
 from ..tools.meshhelper import (
     get_mesh_used_colors_indices,
@@ -692,19 +690,18 @@ def create_shader(material: Material) -> ShaderInst:
         param = None
 
         if isinstance(node, bpy.types.ShaderNodeTexImage):
-            param_def = shader_def.parameter_map.get(node.name, None)
+            param_def = shader_def.get_parameter(node.name)
             if not param_def:
                 continue
 
             texture_name = node.sollumz_texture_name or None
             param = ShaderParameter(name=param_def.name, value=texture_name)
         elif isinstance(node, SzShaderNodeParameter):
-            param_def = shader_def.parameter_map.get(node.name, None)
+            param_def = shader_def.get_parameter(node.name)
             if not param_def:
                 continue
 
-            is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
-            if is_vector:
+            if param_def.is_vector:
                 x = node.get(0)
                 y = node.get(1) if node.num_cols > 1 else 0.0
                 z = node.get(2) if node.num_cols > 2 else 0.0
@@ -749,21 +746,13 @@ def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> l
 
     parameters = []
     for param_def in shader_def.parameters:
-        match param_def.type:
-            case ShaderParameterType.TEXTURE:
-                param_value = None
-            case (ShaderParameterType.FLOAT |
-                  ShaderParameterType.FLOAT2 |
-                  ShaderParameterType.FLOAT3 |
-                  ShaderParameterType.FLOAT4):
-                if param_def.is_array:
-                    param_value = [Vector((0.0, 0.0, 0.0, 0.0)) for _ in range(param_def.count)]
-                else:
-                    param_value = Vector((0.0, 0.0, 0.0, 0.0))
-            case ShaderParameterType.FLOAT4X4:
-                param_value = [Vector((0.0, 0.0, 0.0, 0.0)) for _ in range(4)]
-            case _:
-                raise Exception(f"Unknown shader parameter! {param_def.type=} {param_def.name=}")
+        if param_def.is_texture:
+            param_value = None
+        elif param_def.is_vector:
+            param_value = Vector((0.0, 0.0, 0.0, 0.0))
+        else:
+            # An array or a matrix: one Vector4 per row.
+            param_value = [Vector((0.0, 0.0, 0.0, 0.0)) for _ in range(param_def.row_count)]
 
         parameters.append(ShaderParameter(
             name=param_def.name,

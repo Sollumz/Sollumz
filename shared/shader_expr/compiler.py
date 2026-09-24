@@ -7,16 +7,10 @@ from bpy.types import (
 )
 from typing import NamedTuple, Optional
 from . import expr
-from szio.gta5.shader import (
+from szio.shader import (
     ShaderDef,
-    ShaderParameterType,
-    ShaderParameterSubtype,
-    ShaderParameterFloatDef,
-    ShaderParameterFloat2Def,
-    ShaderParameterFloat3Def,
-    ShaderParameterFloat4Def,
-    ShaderParameterFloat4x4Def,
-    ShaderParameterTextureDef,
+    ShaderParameterDef,
+    ShaderParameterUiHint,
 )
 from ..shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from ...tools.meshhelper import get_uv_map_name
@@ -365,8 +359,7 @@ class Compiler:
         raise NotImplementedError(f"Visit not implemented for '{e.__class__.__name__}'!")
 
 
-# TODO: a bit ugly to have this stuff to create parameters here and depend on cwxml.shader
-def create_shader_texture_node(node_tree: bpy.types.NodeTree, param: ShaderParameterTextureDef) -> bpy.types.ShaderNodeTexImage:
+def create_shader_texture_node(node_tree: bpy.types.NodeTree, param: ShaderParameterDef) -> bpy.types.ShaderNodeTexImage:
     tex_node = node_tree.nodes.new("ShaderNodeTexImage")
     tex_node.name = param.name
     tex_node.label = param.name
@@ -378,35 +371,22 @@ def create_shader_texture_node(node_tree: bpy.types.NodeTree, param: ShaderParam
     return tex_node
 
 
-def create_shader_parameter_node(
-    node_tree: bpy.types.NodeTree,
-    param: (
-        ShaderParameterFloatDef | ShaderParameterFloat2Def | ShaderParameterFloat3Def | ShaderParameterFloat4Def |
-        ShaderParameterFloat4x4Def
-    )
-) -> SzShaderNodeParameter:
+_UI_HINT_DISPLAY_TYPES = {
+    ShaderParameterUiHint.BOOL: SzShaderNodeParameterDisplayType.BOOL,
+    ShaderParameterUiHint.RGB: SzShaderNodeParameterDisplayType.RGB,
+    ShaderParameterUiHint.RGBA: SzShaderNodeParameterDisplayType.RGBA,
+}
+
+
+def create_shader_parameter_node(node_tree: bpy.types.NodeTree, param: ShaderParameterDef) -> SzShaderNodeParameter:
     node: SzShaderNodeParameter = node_tree.nodes.new(SzShaderNodeParameter.bl_idname)
     node.name = param.name
     node.label = node.name
 
+    cols, rows = param.component_count, param.row_count
     display_type = SzShaderNodeParameterDisplayType.DEFAULT
-    match param.type:
-        case ShaderParameterType.FLOAT:
-            cols, rows = 1, max(1, param.count)
-            if param.count == 0 and param.subtype == ShaderParameterSubtype.BOOL:
-                display_type = SzShaderNodeParameterDisplayType.BOOL
-        case ShaderParameterType.FLOAT2:
-            cols, rows = 2, max(1, param.count)
-        case ShaderParameterType.FLOAT3:
-            cols, rows = 3, max(1, param.count)
-            if param.count == 0 and param.subtype == ShaderParameterSubtype.RGB:
-                display_type = SzShaderNodeParameterDisplayType.RGB
-        case ShaderParameterType.FLOAT4:
-            cols, rows = 4, max(1, param.count)
-            if param.count == 0 and param.subtype == ShaderParameterSubtype.RGBA:
-                display_type = SzShaderNodeParameterDisplayType.RGBA
-        case ShaderParameterType.FLOAT4X4:
-            cols, rows = 4, 4
+    if param.is_vector:
+        display_type = _UI_HINT_DISPLAY_TYPES.get(param.ui_hint, display_type)
 
     if param.hidden:
         display_type = SzShaderNodeParameterDisplayType.HIDDEN_IN_UI
@@ -414,38 +394,25 @@ def create_shader_parameter_node(
     node.set_size(cols, rows)
     node.set_display_type(display_type)
 
-    if rows == 1 and param.type in {ShaderParameterType.FLOAT, ShaderParameterType.FLOAT2,
-                                    ShaderParameterType.FLOAT3, ShaderParameterType.FLOAT4}:
-        node.set("X", param.x)
-        if cols > 1:
-            node.set("Y", param.y)
-        if cols > 2:
-            node.set("Z", param.z)
-        if cols > 3:
-            node.set("W", param.w)
+    if param.is_vector and param.default is not None:
+        for i, component in enumerate("XYZW"[:cols]):
+            node.set(component, param.default[i])
 
     return node
 
 
 def create_shader_parameters(dest_node_tree: ShaderNodeTree, shader_def: ShaderDef):
     for param in shader_def.parameters:
-        match param.type:
-            case ShaderParameterType.TEXTURE:
-                create_shader_texture_node(dest_node_tree, param)
-            case (ShaderParameterType.FLOAT |
-                  ShaderParameterType.FLOAT2 |
-                  ShaderParameterType.FLOAT3 |
-                  ShaderParameterType.FLOAT4 |
-                  ShaderParameterType.FLOAT4X4):
-                create_shader_parameter_node(dest_node_tree, param)
-            case _:
-                raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+        if param.is_texture:
+            create_shader_texture_node(dest_node_tree, param)
+        else:
+            create_shader_parameter_node(dest_node_tree, param)
 
 
 def create_shader_uv_maps(dest_node_tree: ShaderNodeTree, shader_def: ShaderDef):
     """Creates a ``ShaderNodeUVMap`` node for each UV map used in the shader."""
 
-    used_uv_maps = set(shader_def.uv_maps.values())
+    used_uv_maps = {p.uv for p in shader_def.parameters if p.uv is not None}
     for uv_map_index in used_uv_maps:
         uv_map = get_uv_map_name(uv_map_index)
         node = dest_node_tree.nodes.new("ShaderNodeUVMap")

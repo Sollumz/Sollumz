@@ -15,7 +15,7 @@ JSON schema:
     }
 
 Float-vector params and texture params are stored as separate dict shapes.
-The applier matches the shader's `parameter_map` so applying a preset saved
+The applier matches the shader's own parameters so applying a preset saved
 for one shader to a material of a different shader silently skips fields
 that don't exist on the target.
 """
@@ -26,8 +26,6 @@ from bpy.types import Material, ShaderNodeTexImage
 from pathlib import Path
 
 from szio.gta5.shader import (
-    ShaderParameterFloatVectorDef,
-    ShaderParameterTextureDef,
     ShaderManager,
 )
 from ....shared.presets import (
@@ -54,15 +52,11 @@ def shader_preset_capture_dict(material):
 
     params = []
     for node in material.node_tree.nodes:
-        param_def = shader_def.parameter_map.get(node.name, None)
+        param_def = shader_def.get_parameter(node.name)
         if param_def is None:
             continue
 
-        if (
-            isinstance(node, SzShaderNodeParameter)
-            and isinstance(param_def, ShaderParameterFloatVectorDef)
-            and not param_def.is_array
-        ):
+        if isinstance(node, SzShaderNodeParameter) and param_def.is_vector:
             entry = {"name": node.name}
             entry["x"] = node.get(0)
             if node.num_cols > 1:
@@ -72,7 +66,7 @@ def shader_preset_capture_dict(material):
             if node.num_cols > 3:
                 entry["w"] = node.get(3)
             params.append(entry)
-        elif isinstance(node, ShaderNodeTexImage) and isinstance(param_def, ShaderParameterTextureDef):
+        elif isinstance(node, ShaderNodeTexImage) and param_def.is_texture:
             params.append({"name": node.name, "texture": node.sollumz_texture_name})
     return {"params": params}
 
@@ -87,18 +81,14 @@ def shader_preset_apply_dict(material, data, apply_textures=True):
         name = param.get("name")
         if not name:
             continue
-        param_def = shader_def.parameter_map.get(name)
+        param_def = shader_def.get_parameter(name)
         if param_def is None:
             continue
         node = material.node_tree.nodes.get(name)
         if node is None:
             continue
 
-        if (
-            isinstance(node, SzShaderNodeParameter)
-            and isinstance(param_def, ShaderParameterFloatVectorDef)
-            and not param_def.is_array
-        ):
+        if isinstance(node, SzShaderNodeParameter) and param_def.is_vector:
             if node.num_cols > 0 and param.get("x") is not None:
                 node.set(0, param["x"])
             if node.num_cols > 1 and param.get("y") is not None:
@@ -107,9 +97,7 @@ def shader_preset_apply_dict(material, data, apply_textures=True):
                 node.set(2, param["z"])
             if node.num_cols > 3 and param.get("w") is not None:
                 node.set(3, param["w"])
-        elif (
-            apply_textures and isinstance(node, ShaderNodeTexImage) and isinstance(param_def, ShaderParameterTextureDef)
-        ):
+        elif apply_textures and isinstance(node, ShaderNodeTexImage) and param_def.is_texture:
             tex = param.get("texture")
             if not tex:
                 continue
@@ -120,7 +108,7 @@ def shader_preset_apply_dict(material, data, apply_textures=True):
                 texture_path = lookup_texture_file(tex, None)
                 if texture_path:
                     img = bpy.data.images.load(str(texture_path), check_existing=True)
-                    if img and is_non_color_texture(shader_def.filename, name):
+                    if img and is_non_color_texture(shader_def.preset_name, name):
                         img.colorspace_settings.is_data = True
             if img:
                 node.image = img
