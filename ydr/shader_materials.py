@@ -539,9 +539,11 @@ def create_parameter_node(node_tree: bpy.types.NodeTree, param: ShaderParameterD
     node.set_size(cols, rows)
     node.set_display_type(display_type)
 
-    if param.is_vector and param.default is not None:
-        for i, component in enumerate("XYZW"[:cols]):
-            node.set(component, param.default[i])
+    if param.is_vector:
+        node.set_range(param.min, param.max)
+        if param.default is not None:
+            for i, component in enumerate("XYZW"[:cols]):
+                node.set(component, param.default[i])
 
     return node
 

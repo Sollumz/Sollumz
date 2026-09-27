@@ -1,4 +1,5 @@
 import bpy
+import math
 from enum import IntEnum
 
 
@@ -17,6 +18,12 @@ class SzShaderNodeParameter(bpy.types.ShaderNode):
     num_cols: bpy.props.IntProperty(default=0, min=1, max=4)
     num_rows: bpy.props.IntProperty(default=0, min=1)
     display_type: bpy.props.IntProperty(default=SzShaderNodeParameterDisplayType.DEFAULT)
+    value_min: bpy.props.FloatProperty(default=-math.inf)
+    value_max: bpy.props.FloatProperty(default=math.inf)
+
+    def set_range(self, value_min: float | None, value_max: float | None):
+        self.value_min = -math.inf if value_min is None else value_min
+        self.value_max = math.inf if value_max is None else value_max
 
     def set_display_type(self, display_type: SzShaderNodeParameterDisplayType):
         self.display_type = display_type
@@ -45,35 +52,33 @@ class SzShaderNodeParameter(bpy.types.ShaderNode):
     def set(self, i: int | str, value: float):
         self.outputs[i].default_value = value
 
+    def _set_clamped(self, values):
+        for i, v in enumerate(values):
+            self.set(i, min(max(v, self.value_min), self.value_max))
+
     def get_float(self) -> float:
         return self.get(0)
 
     def set_float(self, value: float):
-        self.set(0, value)
+        self._set_clamped((value,))
 
     def get_vec2(self) -> tuple[float, float]:
         return self.get(0), self.get(1)
 
     def set_vec2(self, value: tuple[float, float]):
-        self.set(0, value[0])
-        self.set(1, value[1])
+        self._set_clamped(value)
 
     def get_vec3(self) -> tuple[float, float, float]:
         return self.get(0), self.get(1), self.get(2)
 
     def set_vec3(self, value: tuple[float, float, float]):
-        self.set(0, value[0])
-        self.set(1, value[1])
-        self.set(2, value[2])
+        self._set_clamped(value)
 
     def get_vec4(self) -> tuple[float, float, float, float]:
         return self.get(0), self.get(1), self.get(2), self.get(3)
 
     def set_vec4(self, value: tuple[float, float, float, float]):
-        self.set(0, value[0])
-        self.set(1, value[1])
-        self.set(2, value[2])
-        self.set(3, value[3])
+        self._set_clamped(value)
 
     def get_bool(self) -> bool:
         return self.get(0) != 0.0
