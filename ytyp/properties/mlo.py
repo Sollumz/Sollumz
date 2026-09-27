@@ -377,39 +377,6 @@ class MloEntityProperties(bpy.types.PropertyGroup, MloArchetypeChild, Extensions
             return room.name
         return ""
 
-    def update_attached_room_id(self, context):
-        attached_room_id = self.attached_room_id
-        if not attached_room_id or attached_room_id == "-1":
-            return
-
-        archetype = self.get_mlo_archetype()
-        if archetype is None:
-            return
-
-        room = None
-        for r in archetype.rooms:
-            if r.id == int(attached_room_id):
-                room = r
-                break
-
-        if room is None or room.name != "limbo":
-            return
-
-        # Self is already assigned to the room at this point, so it is included in the count
-        num_in_room = 0
-        for entity in archetype.entities:
-            if entity.attached_room_id == attached_room_id:
-                num_in_room += 1
-
-        if num_in_room > MAX_LIMBO_ROOM_ENTITIES:
-            self.attached_room_id = "-1"
-            wm = context.window_manager if context else bpy.context.window_manager
-            if wm:
-                wm.popup_menu(
-                    lambda menu, _: menu.layout.label(
-                        text=f"Room '{room.name}' can only have {MAX_LIMBO_ROOM_ENTITIES} entities attached."),
-                    title="Room Full", icon="ERROR")
-
     def is_filtered(self) -> bool:
         """Returns true if this entity should be shown on UI list; false, otherwise."""
         scene = bpy.context.scene
@@ -450,7 +417,7 @@ class MloEntityProperties(bpy.types.PropertyGroup, MloArchetypeChild, Extensions
         name="Attached Portal Name", get=get_portal_name)
 
     attached_room_id: bpy.props.EnumProperty(
-        name="Room", items=MloArchetypeChild.get_room_items, update=update_attached_room_id, default=-1)
+        name="Room", items=MloArchetypeChild.get_room_items, default=-1)
     room_index: bpy.props.IntProperty(
         name="Attached Room Index", get=get_room_index)
     room_name: bpy.props.StringProperty(
