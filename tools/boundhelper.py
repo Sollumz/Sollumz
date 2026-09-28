@@ -13,6 +13,7 @@ from ..ybn.properties import BoundFlags
 from .blenderhelper import create_blender_object, create_empty_object, remove_number_suffix
 from mathutils import Vector, Matrix
 from math import radians
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def create_bound_shape(bound_type: SollumType):
@@ -124,7 +125,9 @@ def convert_objs_to_single_composite(objs: list[bpy.types.Object], bound_child_t
 
 def center_composite_to_children(composite_obj: bpy.types.Object):
     child_objs = [
-        child for child in composite_obj.children if child.sollum_type in BOUND_TYPES]
+        child for child in ObjectHierarchySnapshot.for_scene().get_children(composite_obj)
+        if child.sollum_type in BOUND_TYPES
+    ]
 
     center = Vector()
 

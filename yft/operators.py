@@ -14,6 +14,7 @@ from ..sollumz_properties import BOUND_POLYGON_TYPES, BOUND_TYPES, MaterialType,
 from ..tools.blenderhelper import add_child_of_bone_constraint, create_blender_object, create_empty_object, get_child_of_bone
 from ..ybn.collision_materials import collisionmats
 from ..dependencies import IS_SZIO_NATIVE_AVAILABLE
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class SOLLUMZ_OT_CREATE_FRAGMENT(bpy.types.Operator):
@@ -298,7 +299,10 @@ class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
         obj = context.active_object
         frag_obj = find_sollumz_parent(obj, SollumType.FRAGMENT)
 
-        drawable_obj = next((obj for obj in frag_obj.children if obj.sollum_type == SollumType.DRAWABLE), None)
+        hierarchy = ObjectHierarchySnapshot.for_scene()
+        drawable_obj = next(
+            (obj for obj in hierarchy.get_children(frag_obj) if obj.sollum_type == SollumType.DRAWABLE), None
+        )
         if drawable_obj is None:
             self.report({"WARNING"}, "This fragment object is missing the drawable object!")
             return {"CANCELLED"}
@@ -313,7 +317,7 @@ class SOLLUMZ_OT_GENERATE_WHEEL_INSTANCES(bpy.types.Operator):
 
         wheel_front_obj = None
         wheel_rear_obj = None
-        for model_obj in drawable_obj.children:
+        for model_obj in hierarchy.get_children(drawable_obj):
             if model_obj.sollum_type != SollumType.DRAWABLE_MODEL or not model_obj.sollumz_is_physics_child_mesh:
                 continue
 
@@ -405,7 +409,7 @@ class SOLLUMZ_OT_CALCULATE_MASS(bpy.types.Operator):
     def calculate_bvh_mass(self, obj: bpy.types.Object) -> float:
         mass = 0.0
 
-        for child in obj.children:
+        for child in ObjectHierarchySnapshot.for_scene().get_children(obj):
             if child.sollum_type not in BOUND_POLYGON_TYPES or child.type != "MESH":
                 continue
 

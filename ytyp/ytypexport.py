@@ -26,6 +26,8 @@ from ..tools.meshhelper import (
 )
 from ..iecontext import export_context, ExportBundle
 from .. import sollumz_properties as sz_props
+from .. import logger
+from .properties.mlo import MAX_LIMBO_ROOM_ENTITIES
 from .properties.ytyp import (
     CMapTypesProperties,
     ArchetypeProperties,
@@ -174,6 +176,15 @@ def calc_mlo_entity_transforms(entity: MloEntityProperties, archetype: Archetype
 
 def create_mlo_room(room: RoomProperties, archetype: ArchetypeProperties) -> MloRoom:
     """Create MLO room definition from a room data-block."""
+    if room.name == "limbo":
+        room_id = str(room.id)
+        num_in_room = sum(1 for e in archetype.entities if e.attached_room_id == room_id)
+        if num_in_room > MAX_LIMBO_ROOM_ENTITIES:
+            logger.warning(
+                f"Room 'limbo' in archetype '{archetype.name}' has {num_in_room} entities attached, "
+                f"but should have at most {MAX_LIMBO_ROOM_ENTITIES}."
+            )
+
     return MloRoom(
         name=room.name,
         bb_min=room.bb_min,

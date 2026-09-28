@@ -10,6 +10,7 @@ from gpu_extras.batch import batch_for_shader
 
 from ...sollumz_preferences import get_theme_settings
 from ..context import active_group
+from ...shared.object_hierarchy import ObjectHierarchySnapshot
 
 TOOL_IDNAME = "sollumz.map_lod_hierarchy"
 
@@ -356,7 +357,10 @@ class LodHierarchyOverlayDrawHandler:
                     shader, "LINES", {"pos": hl_line_coords, "color": hl_line_colors}
                 )
 
-    def _outline_entries(self, e, color, seen_uids: "set[int] | None" = None) -> list[tuple]:
+    def _outline_entries(
+        self, e, color, seen_uids: "set[int] | None" = None,
+        hierarchy: ObjectHierarchySnapshot | None = None,
+    ) -> list[tuple]:
         """(mesh_obj, batch, color) outline entries for one entity's object (and mesh children),
         using the shared per-mesh batch cache."""
         obj = e[E_LINKED]
@@ -364,7 +368,8 @@ class LodHierarchyOverlayDrawHandler:
             return []
 
         entries = []
-        for mesh_obj in (o for o in (obj, *obj.children_recursive) if o.type == "MESH"):
+        hierarchy = hierarchy or ObjectHierarchySnapshot.for_scene()
+        for mesh_obj in (o for o in hierarchy.get_object_with_children_recursive(obj) if o.type == "MESH"):
             uid = mesh_obj.data.session_uid
             if uid not in self._outline_mesh_batches:
                 self._outline_mesh_batches[uid] = _build_outline_mesh_batch(mesh_obj.data)
@@ -389,12 +394,13 @@ class LodHierarchyOverlayDrawHandler:
             alpha = theme.map_lod_overlay_outline_alpha
             chain = self._chain_uuids
             visible = self.visible_levels
+            hierarchy = ObjectHierarchySnapshot.for_scene()
 
             for e in self.entities:
                 if e[E_UUID] not in chain or e[E_VISUAL] not in visible:
                     continue
                 color = (*self.lod_colors_bright[e[E_VISUAL]], alpha)
-                draw_list.extend(self._outline_entries(e, color, seen_uids))
+                draw_list.extend(self._outline_entries(e, color, seen_uids, hierarchy))
 
         for uid in [uid for uid in self._outline_mesh_batches if uid not in seen_uids]:
             del self._outline_mesh_batches[uid]

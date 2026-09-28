@@ -24,6 +24,7 @@ from ..tools.animationhelper import (
 from .properties import ClipAttribute, ClipTag, calculate_final_uv_transform_matrix
 
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def parse_uv_transform_data_path(data_path: str) -> tuple[int, str]:
@@ -539,14 +540,15 @@ def clip_dictionary_from_object(obj: bpy.types.Object) -> Optional[ycdxml.ClipDi
     animations_obj = None
     clips_obj = None
 
-    for child_obj in obj.children:
+    hierarchy = ObjectHierarchySnapshot.for_scene()
+    for child_obj in hierarchy.get_children(obj):
         if child_obj.sollum_type == SollumType.ANIMATIONS:
             animations_obj = child_obj
         elif child_obj.sollum_type == SollumType.CLIPS:
             clips_obj = child_obj
 
     any_animation_export_failed = False
-    for animation_obj in animations_obj.children:
+    for animation_obj in hierarchy.get_children(animations_obj):
         animation = animation_from_object(animation_obj)
         if animation is None:
             any_animation_export_failed = True
@@ -558,7 +560,7 @@ def clip_dictionary_from_object(obj: bpy.types.Object) -> Optional[ycdxml.ClipDi
         # If any animation had some error, it's not safe to continue exporting the clips
         return None
 
-    for clip_obj in clips_obj.children:
+    for clip_obj in hierarchy.get_children(clips_obj):
         clip = clip_from_object(clip_obj)
 
         clip_dictionary.clips.append(clip)

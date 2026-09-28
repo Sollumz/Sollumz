@@ -686,20 +686,24 @@ class SOLLUMZ_PT_change_shader(bpy.types.Panel):
 
 
 def collect_parameter_nodes(mat: bpy.types.Material, filter_func) -> list[bpy.types.Node]:
-    """Filters nodes from ``mat`` and sorts them based on ``ShaderDef.parameter_ui_order``."""
+    """Filters nodes from ``mat`` and sorts them based on ``ShaderParameterDef.ui_order``."""
     shader = ShaderManager.find_shader(mat.shader_properties.filename)
 
     def _valid(n: bpy.types.Node) -> bool:
         if filter_func(n):
-            p = shader.parameter_map.get(n.name, None)
+            p = shader.get_parameter(n.name)
             return p and not p.hidden
 
         return False
 
+    def _ui_order(n: bpy.types.Node) -> int:
+        p = shader.get_parameter(n.name)
+        return -1 if p is None else p.ui_order
+
     nodes = [n for n in mat.node_tree.nodes if _valid(n)]
     if shader is not None:
         # order changes when the active node changes, sort so the UI stays stable
-        nodes = sorted(nodes, key=lambda n: shader.parameter_ui_order.get(n.name, -1))
+        nodes = sorted(nodes, key=_ui_order)
 
     return nodes
 

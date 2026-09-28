@@ -27,6 +27,7 @@ from .sollumz_properties import (
 from .tools.blenderhelper import lod_level_enum_flag_prop_factory
 from .sollumz_helper import find_sollumz_parent
 from .icons import icon_manager
+from .shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class LODLevelProps(PropertyGroup):
@@ -215,16 +216,19 @@ class SOLLUMZ_OT_hide_object(Operator):
             if obj := find_sollumz_parent(selected_obj):
                 objs.add(obj)
 
+        hierarchy = ObjectHierarchySnapshot.for_scene()
+        view_layer_objects = context.view_layer.objects
         for obj in objs:
             do_hide = not obj.hide_get()
             obj.hide_set(do_hide)
 
-            for child in obj.children_recursive:
+            for child in hierarchy.get_children_recursive(obj):
                 active_lod = child.sz_lods.active_lod
                 if child.sollum_type != SollumType.DRAWABLE_MODEL or active_lod.mesh is None:
                     continue
 
-                child.hide_set(do_hide)
+                if child.name in view_layer_objects:
+                    child.hide_set(do_hide)
 
         return {"FINISHED"}
 
@@ -375,7 +379,7 @@ def set_all_lods(obj: bpy.types.Object, lod_level: LODLevel):
     """Set LOD levels of all of children of ``obj``"""
     obj.hide_set(False)
 
-    for child in obj.children_recursive:
+    for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(obj):
         if child.type == "MESH" and child.mode == "OBJECT" and child.sollum_type == SollumType.DRAWABLE_MODEL:
             child.sz_lods.active_lod_level = lod_level
             continue

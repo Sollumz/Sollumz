@@ -3,13 +3,8 @@ import bpy
 from szio.gta5.shader import (
     ShaderManager,
     ShaderDef,
-    ShaderParameterType,
-    ShaderParameterSubtype,
-    ShaderParameterFloatDef,
-    ShaderParameterFloat2Def,
-    ShaderParameterFloat3Def,
-    ShaderParameterFloat4Def,
-    ShaderParameterFloat4x4Def,
+    ShaderParameterDef,
+    ShaderParameterUiHint,
 )
 from ..sollumz_properties import MaterialType, SollumType, MIN_VEHICLE_LIGHT_ID, MAX_VEHICLE_LIGHT_ID
 from ..tools.blenderhelper import find_bsdf_and_material_output, remove_number_suffix
@@ -18,6 +13,7 @@ from ..tools.meshhelper import get_uv_map_name, get_color_attr_name
 from ..shared.shader_nodes import SzShaderNodeParameter, SzShaderNodeParameterDisplayType
 from ..shared.shader_expr import expr, compile_expr
 from .render_bucket import RenderBucket
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class ShaderBuilder(NamedTuple):
@@ -37,10 +33,10 @@ class ShaderMaterial(NamedTuple):
 
 shadermats = []
 
-for shader in ShaderManager._shaders.values():
-    name = shader.filename.replace(".sps", "").upper()
+for shader in ShaderManager.shaders():
+    name = shader.preset_name.replace(".sps", "").upper()
 
-    shadermats.append(ShaderMaterial(name, name.replace("_", " "), shader.filename))
+    shadermats.append(ShaderMaterial(name, name.replace("_", " "), shader.preset_name))
 
 shadermats_by_filename = {s.value: s for s in shadermats}
 
@@ -224,7 +220,7 @@ def find_tint_modifiers(obj: bpy.types.Object) -> list[bpy.types.NodesModifier]:
 def apply_tint_preview_index(obj: bpy.types.Object, tint_value: int):
     if obj.sollum_type in {SollumType.DRAWABLE, SollumType.FRAGMENT}:
         objs = (
-            child for child in obj.children_recursive
+            child for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(obj)
             if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL
         )
     elif obj.type == "MESH":
@@ -520,35 +516,22 @@ def create_image_node(node_tree, param) -> bpy.types.ShaderNodeTexImage:
     return imgnode
 
 
-def create_parameter_node(
-    node_tree: bpy.types.NodeTree,
-    param: (
-        ShaderParameterFloatDef | ShaderParameterFloat2Def | ShaderParameterFloat3Def | ShaderParameterFloat4Def |
-        ShaderParameterFloat4x4Def
-    )
-) -> SzShaderNodeParameter:
+_UI_HINT_DISPLAY_TYPES = {
+    ShaderParameterUiHint.BOOL: SzShaderNodeParameterDisplayType.BOOL,
+    ShaderParameterUiHint.RGB: SzShaderNodeParameterDisplayType.RGB,
+    ShaderParameterUiHint.RGBA: SzShaderNodeParameterDisplayType.RGBA,
+}
+
+
+def create_parameter_node(node_tree: bpy.types.NodeTree, param: ShaderParameterDef) -> SzShaderNodeParameter:
     node: SzShaderNodeParameter = node_tree.nodes.new(SzShaderNodeParameter.bl_idname)
     node.name = param.name
     node.label = node.name
 
+    cols, rows = param.component_count, param.row_count
     display_type = SzShaderNodeParameterDisplayType.DEFAULT
-    match param.type:
-        case ShaderParameterType.FLOAT:
-            cols, rows = 1, max(1, param.count)
-            if param.count == 0 and param.subtype == ShaderParameterSubtype.BOOL:
-                display_type = SzShaderNodeParameterDisplayType.BOOL
-        case ShaderParameterType.FLOAT2:
-            cols, rows = 2, max(1, param.count)
-        case ShaderParameterType.FLOAT3:
-            cols, rows = 3, max(1, param.count)
-            if param.count == 0 and param.subtype == ShaderParameterSubtype.RGB:
-                display_type = SzShaderNodeParameterDisplayType.RGB
-        case ShaderParameterType.FLOAT4:
-            cols, rows = 4, max(1, param.count)
-            if param.count == 0 and param.subtype == ShaderParameterSubtype.RGBA:
-                display_type = SzShaderNodeParameterDisplayType.RGBA
-        case ShaderParameterType.FLOAT4X4:
-            cols, rows = 4, 4
+    if param.is_vector:
+        display_type = _UI_HINT_DISPLAY_TYPES.get(param.ui_hint, display_type)
 
     if param.hidden:
         display_type = SzShaderNodeParameterDisplayType.HIDDEN_IN_UI
@@ -556,15 +539,11 @@ def create_parameter_node(
     node.set_size(cols, rows)
     node.set_display_type(display_type)
 
-    if rows == 1 and param.type in {ShaderParameterType.FLOAT, ShaderParameterType.FLOAT2,
-                                    ShaderParameterType.FLOAT3, ShaderParameterType.FLOAT4}:
-        node.set("X", param.x)
-        if cols > 1:
-            node.set("Y", param.y)
-        if cols > 2:
-            node.set("Z", param.z)
-        if cols > 3:
-            node.set("W", param.w)
+    if param.is_vector:
+        node.set_range(param.min, param.max)
+        if param.default is not None:
+            for i, component in enumerate("XYZW"[:cols]):
+                node.set(component, param.default[i])
 
     return node
 
@@ -1055,37 +1034,31 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     is_distance_map = False
 
     for param in shader.parameters:
-        match param.type:
-            case ShaderParameterType.TEXTURE:
-                imgnode = create_image_node(node_tree, param)
-                if param.name in ("DiffuseSampler", "PlateBgSampler"):
-                    texture = imgnode
-                elif param.name in ("BumpSampler", "PlateBgBumpSampler"):
-                    bumptex = imgnode
-                elif param.name == "SpecSampler":
-                    spectex = imgnode
-                elif param.name == "DetailSampler":
-                    detltex = imgnode
-                elif param.name == "TintPaletteSampler":
-                    tintpal = imgnode
-                elif param.name == "TextureSamplerDiffPal":
-                    diffpal = imgnode
-                elif param.name == "distanceMapSampler":
-                    texture = imgnode
-                    is_distance_map = True
-                elif param.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
-                    texture2 = imgnode
-                else:
-                    if not texture:
-                        texture = imgnode
-            case (ShaderParameterType.FLOAT |
-                  ShaderParameterType.FLOAT2 |
-                  ShaderParameterType.FLOAT3 |
-                  ShaderParameterType.FLOAT4 |
-                  ShaderParameterType.FLOAT4X4):
-                create_parameter_node(node_tree, param)
-            case _:
-                raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+        if not param.is_texture:
+            create_parameter_node(node_tree, param)
+            continue
+
+        imgnode = create_image_node(node_tree, param)
+        if param.name in ("DiffuseSampler", "PlateBgSampler"):
+            texture = imgnode
+        elif param.name in ("BumpSampler", "PlateBgBumpSampler"):
+            bumptex = imgnode
+        elif param.name == "SpecSampler":
+            spectex = imgnode
+        elif param.name == "DetailSampler":
+            detltex = imgnode
+        elif param.name == "TintPaletteSampler":
+            tintpal = imgnode
+        elif param.name == "TextureSamplerDiffPal":
+            diffpal = imgnode
+        elif param.name == "distanceMapSampler":
+            texture = imgnode
+            is_distance_map = True
+        elif param.name in ("DiffuseSampler2", "DiffuseExtraSampler"):
+            texture2 = imgnode
+        else:
+            if not texture:
+                texture = imgnode
 
     use_diff = True if texture else False
     use_diff2 = True if texture2 else False
@@ -1194,35 +1167,29 @@ def create_terrain_shader(b: ShaderBuilder):
     tm = None
 
     for param in shader.parameters:
-        match param.type:
-            case ShaderParameterType.TEXTURE:
-                imgnode = create_image_node(node_tree, param)
-                if param.name == "TextureSampler_layer0":
-                    ts1 = imgnode
-                elif param.name == "TextureSampler_layer1":
-                    ts2 = imgnode
-                elif param.name == "TextureSampler_layer2":
-                    ts3 = imgnode
-                elif param.name == "TextureSampler_layer3":
-                    ts4 = imgnode
-                elif param.name == "BumpSampler_layer0":
-                    bs1 = imgnode
-                elif param.name == "BumpSampler_layer1":
-                    bs2 = imgnode
-                elif param.name == "BumpSampler_layer2":
-                    bs3 = imgnode
-                elif param.name == "BumpSampler_layer3":
-                    bs4 = imgnode
-                elif param.name == "lookupSampler":
-                    tm = imgnode
-            case (ShaderParameterType.FLOAT |
-                  ShaderParameterType.FLOAT2 |
-                  ShaderParameterType.FLOAT3 |
-                  ShaderParameterType.FLOAT4 |
-                  ShaderParameterType.FLOAT4X4):
-                create_parameter_node(node_tree, param)
-            case _:
-                raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+        if not param.is_texture:
+            create_parameter_node(node_tree, param)
+            continue
+
+        imgnode = create_image_node(node_tree, param)
+        if param.name == "TextureSampler_layer0":
+            ts1 = imgnode
+        elif param.name == "TextureSampler_layer1":
+            ts2 = imgnode
+        elif param.name == "TextureSampler_layer2":
+            ts3 = imgnode
+        elif param.name == "TextureSampler_layer3":
+            ts4 = imgnode
+        elif param.name == "BumpSampler_layer0":
+            bs1 = imgnode
+        elif param.name == "BumpSampler_layer1":
+            bs2 = imgnode
+        elif param.name == "BumpSampler_layer2":
+            bs3 = imgnode
+        elif param.name == "BumpSampler_layer3":
+            bs4 = imgnode
+        elif param.name == "lookupSampler":
+            tm = imgnode
 
     mixns = []
     for _ in range(8 if tm else 7):
@@ -1293,7 +1260,7 @@ def create_uv_map_nodes(b: ShaderBuilder):
     shader = b.shader
     node_tree = b.node_tree
 
-    used_uv_maps = set(shader.uv_maps.values())
+    used_uv_maps = {p.uv for p in shader.parameters if p.uv is not None}
     for uv_map_index in used_uv_maps:
         uv_map = get_uv_map_name(uv_map_index)
         node = node_tree.nodes.new("ShaderNodeUVMap")
@@ -1307,9 +1274,12 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
     shader = b.shader
     node_tree = b.node_tree
 
-    for tex_name, uv_map_index in shader.uv_maps.items():
-        tex_node = node_tree.nodes[tex_name]
-        uv_map_node = node_tree.nodes[get_uv_map_name(uv_map_index)]
+    for param in shader.parameters:
+        if param.uv is None:
+            continue
+
+        tex_node = node_tree.nodes[param.name]
+        uv_map_node = node_tree.nodes[get_uv_map_name(param.uv)]
 
         if tex_node.inputs[0].is_linked:
             # texture already linked when creating the node tree, skip it
@@ -1319,17 +1289,11 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
 
 
 def create_shader(filename: str, in_place_material: Optional[bpy.types.Material] = None) -> bpy.types.Material:
-    # from ..sollumz_preferences import get_addon_preferences
-    # preferences = get_addon_preferences(bpy.context)
-    # if preferences.experimental_shader_expressions:
-    #     from .shader_materials_v2 import create_shader
-    #     return create_shader(filename)
-
     shader = ShaderManager.find_shader(filename)
     if shader is None:
         raise AttributeError(f"Shader '{filename}' does not exist!")
 
-    filename = shader.filename  # in case `filename` was hashed initially
+    filename = shader.preset_name  # in case `filename` was hashed initially
     base_name = shader.base_name
     material_name = filename.replace(".sps", "")
 
@@ -1380,18 +1344,18 @@ def create_shader(filename: str, in_place_material: Optional[bpy.types.Material]
     if shader.is_uv_animation_supported:
         add_global_anim_uv_nodes(mat)
 
-    if shader.filename.startswith("vehicle_"):
+    if shader.preset_name.startswith("vehicle_"):
         # Add additionals node to support vehicle render preview features
-        if shader.filename == "vehicle_lightsemissive.sps":
+        if shader.preset_name == "vehicle_lightsemissive.sps":
             add_vehicle_lights_emissive_toggle_nodes(builder)
 
-        if "matDiffuseColor" in shader.parameter_map:
+        if shader.has_parameter("matDiffuseColor"):
             add_vehicle_body_color_nodes(builder)
 
-        if "DirtSampler" in shader.parameter_map:
+        if shader.has_parameter("DirtSampler"):
             add_vehicle_dirt_nodes(builder)
 
-    if shader.filename == "grass_batch.sps":
+    if shader.preset_name == "grass_batch.sps":
         add_grass_batch_color_nodes(builder)
 
     link_uv_map_nodes_to_textures(builder)

@@ -11,8 +11,9 @@ from .tools.blenderhelper import get_bone_pose_matrix
 
 
 from .sollumz_preferences import get_export_settings
-from .tools.blenderhelper import get_children_recursive, get_object_with_children
+from .tools.blenderhelper import get_children_recursive, get_object_with_children_recursive
 from .sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
+from .shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class SOLLUMZ_OT_base:
@@ -63,23 +64,12 @@ class SOLLUMZ_OT_base:
 
 def set_object_collection(obj):
     target = bpy.context.view_layer.active_layer_collection.collection
-    objs = get_object_with_children(obj)
+    objs = get_object_with_children_recursive(obj)
     for obj in objs:
         if len(obj.users_collection) > 0:
             collection = obj.users_collection[0]
             collection.objects.unlink(obj)
         target.objects.link(obj)
-
-
-def get_sollumz_objects_from_objects(objs, sollum_type):
-    robjs = []
-    for obj in objs:
-        if obj.sollum_type in sollum_type:
-            robjs.append(obj)
-        for child in obj.children:
-            if child.sollum_type in sollum_type:
-                robjs.append(child)
-    return robjs
 
 
 def has_embedded_textures(obj):
@@ -99,8 +89,11 @@ def has_collision(obj):
     return False
 
 
-def duplicate_object_with_children(obj):
-    objs = get_object_with_children(obj)
+def duplicate_object_with_children(obj, hierarchy: ObjectHierarchySnapshot | None = None):
+    """Duplicates `obj` and its whole hierarchy, linking the copies to the current scene. Pass `hierarchy` when
+    duplicating many objects to avoid rebuilding it for each one.
+    """
+    objs = get_object_with_children_recursive(obj, hierarchy)
     new_objs = []
     for o in objs:
         new_obj = o.copy()
@@ -172,7 +165,7 @@ def get_sollumz_materials(
         case _:
             raise ValueError(f"Invalid mode '{mode}'")
 
-    children = get_object_with_children(obj) if include_root_obj else get_children_recursive(obj)
+    children = get_object_with_children_recursive(obj) if include_root_obj else get_children_recursive(obj)
     for child in children:
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
             continue

@@ -19,6 +19,7 @@ from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, SpecialAt
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer, EXTENSION_DEF_CLASS_TO_TYPE
 
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def import_ytyp(asset: AssetMapTypes, name: str):
@@ -79,9 +80,11 @@ def create_mlo_archetype_children(archetype: Archetype, archetype_props: Archety
     """Create entities, rooms, portals, and timecylce modifiers for an MLO archetype."""
 
     entities_to_batch_instance = defaultdict(list)
+    # Whole .blend, as the entity objects may live outside the current scene
+    hierarchy = ObjectHierarchySnapshot.for_blend()
 
     for entity in archetype.entities:
-        create_mlo_entity(entity, archetype_props, entities_to_batch_instance)
+        create_mlo_entity(entity, archetype_props, entities_to_batch_instance, hierarchy)
 
     for room in archetype.rooms:
         create_mlo_room(room, archetype_props)
@@ -90,7 +93,7 @@ def create_mlo_archetype_children(archetype: Archetype, archetype_props: Archety
         create_mlo_portal(portal, archetype_props)
 
     for entity_set in archetype.entity_sets:
-        create_mlo_entity_set(entity_set, archetype_props, entities_to_batch_instance)
+        create_mlo_entity_set(entity_set, archetype_props, entities_to_batch_instance, hierarchy)
 
     for tcm in archetype.timecycle_modifiers:
         create_mlo_tcm(tcm, archetype_props)
@@ -101,7 +104,12 @@ def create_mlo_archetype_children(archetype: Archetype, archetype_props: Archety
         organize_mlo_entities_in_collections(archetype_props)
 
 
-def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties, entities_to_instance: dict[str, list[tuple[int, Vector, Euler, Vector]]]) -> MloEntityProperties:
+def create_mlo_entity(
+    entity: MloEntity,
+    archetype: ArchetypeProperties,
+    entities_to_instance: dict[str, list[tuple[int, Vector, Euler, Vector]]],
+    hierarchy: ObjectHierarchySnapshot,
+) -> MloEntityProperties:
     """Create an MLO entity from a definition for the provided archetype data-block."""
     e = archetype.new_entity()
     e.archetype_name = entity.archetype_name
@@ -116,7 +124,7 @@ def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties, entitie
     e.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
     e.tint_value = entity.tint_value
 
-    find_and_link_entity_object(e)
+    find_and_link_entity_object(e, hierarchy)
     if e.linked_object is None:
         entity_data_idx = len(archetype.entities) - 1
         entities_to_instance[entity.archetype_name].append(
@@ -135,7 +143,7 @@ def create_mlo_entity(entity: MloEntity, archetype: ArchetypeProperties, entitie
     return e
 
 
-def find_and_link_entity_object(entity: MloEntityProperties):
+def find_and_link_entity_object(entity: MloEntityProperties, hierarchy: ObjectHierarchySnapshot):
     """Attempt to find an existing entity object in the scene and link it to the entity data-block.
 
     If the import setting ``ImportSettings.mlo_instance_entities`` is set, a copy of the found object is
@@ -162,7 +170,7 @@ def find_and_link_entity_object(entity: MloEntityProperties):
         should_instance = obj.location != origin
 
     if should_instance:
-        obj = duplicate_object_with_children(obj)
+        obj = duplicate_object_with_children(obj, hierarchy)
 
     entity.linked_object = obj
     obj.location = entity.position
@@ -233,7 +241,12 @@ def create_mlo_portal(portal: MloPortal, archetype: ArchetypeProperties) -> Port
     return p
 
 
-def create_mlo_entity_set(entity_set: MloEntitySet, archetype: ArchetypeProperties, entities_to_instance: dict[str, list[tuple[int, Vector, Euler, Vector]]]) -> EntitySetProperties:
+def create_mlo_entity_set(
+    entity_set: MloEntitySet,
+    archetype: ArchetypeProperties,
+    entities_to_instance: dict[str, list[tuple[int, Vector, Euler, Vector]]],
+    hierarchy: ObjectHierarchySnapshot,
+) -> EntitySetProperties:
     """Create an MLO entity set from a definition for the provided archetype data-block."""
     s = archetype.new_entity_set()
     s.name = entity_set.name
@@ -241,7 +254,7 @@ def create_mlo_entity_set(entity_set: MloEntitySet, archetype: ArchetypeProperti
     entity_set_id = str(s.id)
     assert len(entity_set.entities) == len(entity_set.locations)
     for entity, location in zip(entity_set.entities, entity_set.locations):
-        e = create_mlo_entity(entity, archetype, entities_to_instance)
+        e = create_mlo_entity(entity, archetype, entities_to_instance, hierarchy)
         e.attached_entity_set_id = entity_set_id
 
         if (location & (1 << 31)) != 0:
@@ -283,9 +296,11 @@ def organize_mlo_entities_in_collections(archetype: ArchetypeProperties):
             c.objects.unlink(obj)
         coll.objects.link(obj)
 
+    hierarchy = ObjectHierarchySnapshot.for_scene()
+
     def _link_to_collection_recursive(obj, coll):
         _link_to_collection(obj, coll)
-        for child_obj in obj.children_recursive:  # could be slow with lots of entities, O(len(bpy.data.objects)) time
+        for child_obj in hierarchy.get_children_recursive(obj):
             _link_to_collection(child_obj, coll)
 
     light_effect_objs = []

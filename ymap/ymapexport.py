@@ -12,6 +12,7 @@ from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
 from ..sollumz_preferences import get_export_settings
 from .. import logger
 from ..tools.ymaphelper import generate_ymap_extents
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def box_from_obj(obj):
@@ -138,17 +139,18 @@ def ymap_from_object(obj):
 
     export_settings = get_export_settings()
 
-    for child in obj.children:
+    hierarchy = ObjectHierarchySnapshot.for_scene()
+    for child in hierarchy.get_children(obj):
         # Entities
         if export_settings.ymap_exclude_entities == False and child.sollum_type == SollumType.DEPRECATED__YMAP_ENTITY_GROUP:
-            for entity_obj in child.children:
+            for entity_obj in hierarchy.get_children(child):
                 ymap.entities.append(entity_from_obj(entity_obj))
 
         # Box occluders
         if export_settings.ymap_box_occluders == False and child.sollum_type == SollumType.DEPRECATED__YMAP_BOX_OCCLUDER_GROUP:
             obj.ymap_properties.content_flags_toggle.has_occl = True
 
-            for box_obj in child.children:
+            for box_obj in hierarchy.get_children(child):
                 rotation = box_obj.rotation_euler
                 if abs(rotation.x) > 0.01 or abs(rotation.y) > 0.01:
                     logger.error(
@@ -165,7 +167,7 @@ def ymap_from_object(obj):
         if export_settings.ymap_model_occluders == False and child.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER_GROUP:
             obj.ymap_properties.content_flags_toggle.has_occl = True
 
-            for model_obj in child.children:
+            for model_obj in hierarchy.get_children(child):
                 if model_obj.sollum_type == SollumType.DEPRECATED__YMAP_MODEL_OCCLUDER:
                     if len(model_obj.data.vertices) > 256:
                         logger.warning(
@@ -184,7 +186,7 @@ def ymap_from_object(obj):
 
         # Car generators
         if export_settings.ymap_car_generators == False and child.sollum_type == SollumType.DEPRECATED__YMAP_CAR_GENERATOR_GROUP:
-            for cargen_obj in child.children:
+            for cargen_obj in hierarchy.get_children(child):
                 rotation = cargen_obj.rotation_euler
                 if abs(rotation.x) > 0.01 or abs(rotation.y) > 0.01:
                     logger.error(

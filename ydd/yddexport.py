@@ -17,6 +17,7 @@ from ..ydr.cloth_diagnostics import (
 from ..tools.blenderhelper import remove_number_suffix
 from ..sollumz_properties import SollumType
 from ..iecontext import export_context, ExportBundle
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def export_ydd(dwd_obj: Object) -> ExportBundle:
@@ -49,7 +50,7 @@ def create_drawable_dictionary_asset(
     cloths = cloth_dictionary.cloths if cloth_dictionary else {}
 
     drawables = {}
-    for child in dwd_obj.children:
+    for child in ObjectHierarchySnapshot.for_scene().get_children(dwd_obj):
         if child.sollum_type != SollumType.DRAWABLE:
             continue
 
@@ -81,6 +82,6 @@ def create_drawable_dictionary_asset(
 
 def find_ydd_armature(ydd_obj: bpy.types.Object):
     """Find first drawable with an armature in ``ydd_obj``."""
-    for child in ydd_obj.children:
+    for child in ObjectHierarchySnapshot.for_scene().get_children(ydd_obj):
         if child.type == "ARMATURE":
             return child

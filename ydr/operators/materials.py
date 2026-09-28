@@ -10,8 +10,6 @@ from bpy.props import (
 )
 from szio.gta5.shader import (
     ShaderParameterDef,
-    ShaderParameterTextureDef,
-    ShaderParameterType,
     ShaderManager,
 )
 from ...sollumz_helper import SOLLUMZ_OT_base
@@ -45,7 +43,7 @@ class MaterialConverter:
         self.specular_node: ShaderNodeTexImage | None = None
         self.normal_node: ShaderNodeTexImage | None = None
 
-    def _convert_texture_node(self, param: ShaderParameterTextureDef):
+    def _convert_texture_node(self, param: ShaderParameterDef):
         src_node: bpy.types.ShaderNodeTexImage = try_get_node(self.material.node_tree, param.name)
         if not src_node or not isinstance(src_node, ShaderNodeTexImage):
             return
@@ -76,17 +74,10 @@ class MaterialConverter:
         assert shader is not None
 
         for param in shader.parameters:
-            match param.type:
-                case ShaderParameterType.TEXTURE:
-                    self._convert_texture_node(param)
-                case (ShaderParameterType.FLOAT |
-                      ShaderParameterType.FLOAT2 |
-                      ShaderParameterType.FLOAT3 |
-                      ShaderParameterType.FLOAT4 |
-                      ShaderParameterType.FLOAT4X4):
-                    self._convert_parameter_node(param)
-                case _:
-                    raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
+            if param.is_texture:
+                self._convert_texture_node(param)
+            else:
+                self._convert_parameter_node(param)
 
     def _get_diffuse_node(self):
         diffuse_input = self.bsdf.inputs["Base Color"]

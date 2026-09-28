@@ -54,6 +54,7 @@ from .properties.map import (
     MapTimecycleModifier,
     get_maps,
 )
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 _import_maps = []
 _import_instance_entities = None
@@ -934,9 +935,11 @@ def _organize_map_in_collections(map_group: MapGroup):
             c.objects.unlink(obj)
         coll.objects.link(obj)
 
+    hierarchy = ObjectHierarchySnapshot.for_scene()
+
     def _link_to_collection_recursive(obj, coll):
         _link_to_collection(obj, coll)
-        for child_obj in obj.children_recursive:  # could be slow with lots of entities, O(len(bpy.data.objects)) time
+        for child_obj in hierarchy.get_children_recursive(obj):
             _link_to_collection(child_obj, coll)
 
     light_effect_objs = []

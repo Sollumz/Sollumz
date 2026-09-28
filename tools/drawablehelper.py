@@ -3,6 +3,7 @@ import bpy
 from mathutils import Vector
 from ..sollumz_properties import SollumType, LODLevel
 from ..tools.blenderhelper import create_empty_object
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 from szio.gta5.cwxml import (
     Drawable,
     DrawableModel,
@@ -88,7 +89,10 @@ def convert_obj_to_model(obj: bpy.types.Object):
 
 
 def center_drawable_to_models(drawable_obj: bpy.types.Object):
-    model_objs = [child for child in drawable_obj.children if child.sollum_type == SollumType.DRAWABLE_MODEL]
+    model_objs = [
+        child for child in ObjectHierarchySnapshot.for_scene().get_children(drawable_obj)
+        if child.sollum_type == SollumType.DRAWABLE_MODEL
+    ]
 
     center = Vector()
 

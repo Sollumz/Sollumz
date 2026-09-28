@@ -9,6 +9,7 @@ from math import radians
 from ..sollumz_properties import SollumType, MaterialType
 from .utils import get_min_vector_list, get_max_vector_list
 from .blenderhelper import get_children_recursive
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 from szio.gta5 import ShaderManager
 
 
@@ -452,11 +453,16 @@ def get_total_bounds(obj):
     return corners
 
 
-def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()):
+def get_combined_bound_box(
+    obj: bpy.types.Object,
+    use_world: bool = False,
+    matrix: Matrix = Matrix(),
+    hierarchy: ObjectHierarchySnapshot | None = None,
+):
     """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returns bbmin, bbmax"""
     total_bounds: list[Vector] = []
 
-    for child in [obj, *obj.children_recursive]:
+    for child in [obj, *get_children_recursive(obj, hierarchy)]:
         if child.type != "MESH":
             continue
 
@@ -477,7 +483,12 @@ def get_combined_bound_box(obj: bpy.types.Object, use_world: bool = False, matri
     return get_min_vector_list(total_bounds), get_max_vector_list(total_bounds)
 
 
-def get_combined_bound_box_tight(obj: bpy.types.Object, use_world: bool = False, matrix: Matrix = Matrix()):
+def get_combined_bound_box_tight(
+    obj: bpy.types.Object,
+    use_world: bool = False,
+    matrix: Matrix = Matrix(),
+    hierarchy: ObjectHierarchySnapshot | None = None,
+):
     """Adds the ``bound_box`` of ``obj`` and all of it's child mesh objects. Returns bbmin, bbmax.
     This applies the transforms to the mesh vertices instead of the local AABB corners. Slower but produces smaller
     world AABBs, specially when the transforms include rotation.
@@ -487,7 +498,7 @@ def get_combined_bound_box_tight(obj: bpy.types.Object, use_world: bool = False,
     bbmin = None
     bbmax = None
 
-    for child in [obj, *obj.children_recursive]:
+    for child in [obj, *get_children_recursive(obj, hierarchy)]:
         if child.type != "MESH":
             continue
 

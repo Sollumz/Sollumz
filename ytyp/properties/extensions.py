@@ -715,9 +715,9 @@ class ExplosionExtensionProperties(ExtensionWithBoneTagMixin, BaseExtensionPrope
 class LadderExtensionProperties(BaseExtensionProperties, PropertyGroup):
     __sz_preset_capture__ = ("material_type", "template", "can_get_off_at_top", "can_get_off_at_bottom")
 
-    bottom: FloatVectorProperty(name="Bottom", subtype="TRANSLATION")
-    top: FloatVectorProperty(name="Top", subtype="TRANSLATION")
-    normal: FloatVectorProperty(name="Normal", subtype="TRANSLATION")
+    bottom: FloatVectorProperty(name="Bottom", subtype="TRANSLATION", default=(0.0, 0.0, -2.5))
+    top: FloatVectorProperty(name="Top", subtype="TRANSLATION", default=(0.0, 0.0, 0.0))
+    normal: FloatVectorProperty(name="Normal", subtype="TRANSLATION", default=(0.0, 1.0, 0.0))
     material_type: StringProperty(name="Material Type", default="METAL_SOLID_LADDER")
     template: StringProperty(name="Template", default="default")
     can_get_off_at_top: BoolProperty(name="Can Get Off At Top", default=True)
@@ -759,7 +759,7 @@ class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
     volume_type: EnumProperty(items=LightShaftVolumeTypeEnumItems, name="Volume Type")
     scale_by_sun_intensity: BoolProperty(name="Scale by Sun Intensity")
     direction_amount: FloatProperty(name="Direction Amount")
-    length: FloatProperty(name="Length")
+    length: FloatProperty(name="Length", default=1.0)
     color: FloatVectorProperty(
         name="Color", subtype="COLOR", min=0, max=1, size=4, default=(1, 1, 1, 1))
     intensity: FloatProperty(name="Intensity")
@@ -773,16 +773,11 @@ class LightShaftExtensionProperties(BaseExtensionProperties, PropertyGroup):
     fade_distance_start: FloatProperty(name="Fade Distance Start")
     fade_distance_end: FloatProperty(name="Fade Distance End")
     softness: FloatProperty(name="Softness")
-    cornerA: FloatVectorProperty(
-        name="Corner A", subtype="TRANSLATION")
-    cornerB: FloatVectorProperty(
-        name="Corner B", subtype="TRANSLATION")
-    cornerC: FloatVectorProperty(
-        name="Corner C", subtype="TRANSLATION")
-    cornerD: FloatVectorProperty(
-        name="Corner D", subtype="TRANSLATION")
-    direction: FloatVectorProperty(
-        name="Direction", subtype="XYZ")
+    cornerA: FloatVectorProperty(name="Corner A", subtype="TRANSLATION", default=(-0.1, 0.0, 0.1))
+    cornerB: FloatVectorProperty(name="Corner B", subtype="TRANSLATION", default=(0.1, 0.0, 0.1))
+    cornerC: FloatVectorProperty(name="Corner C", subtype="TRANSLATION", default=(0.1, 0.0, -0.1))
+    cornerD: FloatVectorProperty(name="Corner D", subtype="TRANSLATION", default=(-0.1, 0.0, -0.1))
+    direction: FloatVectorProperty(name="Direction", subtype="XYZ", default=(0.0, 1.0, 0.0))
 
     # HACK: import/export iterates the annotations matching properties here with properties in the XML class,
     # if they don't match it prints a warning. This is not really flexible when we need a different layout
@@ -1060,20 +1055,6 @@ class ExtensionsContainer:
 
         item: ExtensionProperties = self.extensions.add()
         item.extension_type = ext_type
-
-        # assign some sane defaults to light shaft and ladder so the gizmos are shown properly
-        light_shaft_props = item.light_shaft_extension_properties
-        s = 0.1  # half size
-        light_shaft_props.cornerA = -s, 0.0, s
-        light_shaft_props.cornerB = s, 0.0, s
-        light_shaft_props.cornerC = s, 0.0, -s
-        light_shaft_props.cornerD = -s, 0.0, -s
-        light_shaft_props.length = s * 4.0
-        light_shaft_props.direction = 0.0, 1.0, 0.0
-
-        ladder_props = item.ladder_extension_properties
-        ladder_props.bottom = 0.0, 0.0, -2.5
-
         return item
 
     def delete_selected_extension(self):

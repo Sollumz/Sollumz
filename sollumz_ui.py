@@ -24,6 +24,7 @@ from .lods import (
     SOLLUMZ_OT_SHOW_SHATTERMAPS
 )
 from .icons import icon_manager
+from .shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 def draw_list_with_add_remove(layout: bpy.types.UILayout, add_operator: str, remove_operator: str, *temp_list_args, **temp_list_kwargs):
@@ -540,7 +541,7 @@ class SOLLUMZ_PT_VIEW_PANEL(GeneralToolChildPanel, bpy.types.Panel):
         if parent_obj.hide_get():
             active_lod_level = "hidden"
         else:
-            for child in parent_obj.children_recursive:
+            for child in ObjectHierarchySnapshot.for_scene().get_children_recursive(parent_obj):
                 if child.type == "MESH" and child.sollum_type == SollumType.DRAWABLE_MODEL:
                     # Simply use the LOD level of the first model we find. Might not be accurate if the user
                     # manually changes LODs of the models separately instead of using the buttons in the tools

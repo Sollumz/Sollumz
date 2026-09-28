@@ -101,7 +101,7 @@ def upgrade_material_old_shader_parameters(material: Material):
     node_tree = material.node_tree
     # Convert value parameters
     for param_name, param_old_nodes in params.items():
-        param_def = shader_def.parameter_map[param_name]
+        param_def = shader_def.get_parameter(param_name)
 
         param_node = create_parameter_node(node_tree, param_def)
         param_node.location = param_old_nodes[0].location
@@ -126,7 +126,7 @@ def upgrade_material_old_shader_parameters(material: Material):
     # Convert array parameters
     for param_name, param_old_nodes in array_params.items():
         old_nodes = param_old_nodes.nodes
-        param_def = shader_def.parameter_map[param_name]
+        param_def = shader_def.get_parameter(param_name)
 
         param_node = create_parameter_node(node_tree, param_def)
         param_node.location = old_nodes[0].location

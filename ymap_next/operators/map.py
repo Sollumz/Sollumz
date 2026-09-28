@@ -837,7 +837,7 @@ def _apply_entities_visibility(context, groups, lod_categories: set[str], hide: 
     def _entity_lod_category(entity) -> str:
         return "ORPHAN_HD" if entity.is_orphan_hd else entity.lod_level
 
-    h = ObjectHierarchySnapshot()
+    h = ObjectHierarchySnapshot.for_scene()
     view_layer_objects = set(o.name for o in context.view_layer.objects)
     num_affected = 0
     for group in groups:

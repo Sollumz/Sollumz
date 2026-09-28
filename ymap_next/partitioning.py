@@ -22,6 +22,7 @@ from .properties.map import (
     MapPartitionMode,
     MapTimecycleModifier,
 )
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 # Bucket key for items that stay in the logical (AUTO) map data itself
 SELF = "SELF"
@@ -248,10 +249,11 @@ def _partition_strm_cargen_objects(
     """
     # XY entities extents per chunk, from the same per-entity AABBs as container extents
     chunk_extents = []
+    hierarchy = ObjectHierarchySnapshot.for_scene()
     for chunk in entity_chunks:
         acc = ExtentsAccumulator()
         for entity in chunk:
-            bb_min, bb_max, _ = entity_world_aabb(entity, map_group, cache)
+            bb_min, bb_max, _ = entity_world_aabb(entity, map_group, cache, hierarchy)
             acc.add(bb_min, bb_max)
         chunk_extents.append(acc.entities_extents)
 

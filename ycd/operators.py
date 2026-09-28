@@ -13,6 +13,7 @@ from ..tools.animationhelper import (
 )
 from .ycdimport import create_clip_dictionary_template, create_anim_obj
 from .. import logger
+from ..shared.object_hierarchy import ObjectHierarchySnapshot
 
 
 class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
@@ -32,8 +33,9 @@ class SOLLUMZ_OT_animations_set_target(SOLLUMZ_OT_base, bpy.types.Operator):
         target_id = scene.sollumz_animations_target_id
         target_id_type = scene.sollumz_animations_target_id_type
 
+        hierarchy = ObjectHierarchySnapshot.for_scene()
         for animations_obj in animations_objects:
-            for animation_obj in animations_obj.children:
+            for animation_obj in hierarchy.get_children(animations_obj):
                 if animation_obj.sollum_type != SollumType.ANIMATION:
                     continue
 
