@@ -38,11 +38,12 @@ from ...shared.multiselection import (
 from ...tools.blenderhelper import tag_redraw
 from ...ytyp.properties.extensions import ExtensionsContainer, ExtensionType
 from ...ytyp.properties.flags import EntityFlags
+from ..data_revision import notify_entities_changed
 from ..lod_lights.bake import LodLightBakeSettings
 
 
-def UUIDProperty(*, name: str = "UUID", description: str = ""):
-    return StringProperty(name=name, description=description, maxlen=16, subtype="BYTE_STRING")
+def UUIDProperty(*, name: str = "UUID", description: str = "", update=None):
+    return StringProperty(name=name, description=description, maxlen=16, subtype="BYTE_STRING", update=update)
 
 
 class MapLodLevel(Enum):
@@ -927,16 +928,26 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
         "mlo_short_fade_distance",
     )
 
+    def _on_overlay_data_update(self, _context):
+        # The LOD hierarchy overlay caches a snapshot of the entity data it draws (position, LOD
+        # level, LOD parent, name). Nothing else notifies it when an entity is edited, so any
+        # property it reads must invalidate that snapshot.
+        notify_entities_changed()
+
     # Transforms unused if linked object
-    position: FloatVectorProperty(name="Position", subtype="XYZ", size=3, default=(0, 0, 0))
+    position: FloatVectorProperty(
+        name="Position", subtype="XYZ", size=3, default=(0, 0, 0), update=_on_overlay_data_update
+    )
     rotation: FloatVectorProperty(name="Rotation", subtype="QUATERNION", size=4, default=(1, 0, 0, 0))
     scale_xy: FloatProperty(name="Scale XY", default=1.0)
     scale_z: FloatProperty(name="Scale Z", default=1.0)
 
-    archetype_name: StringProperty(name="Archetype Name")
+    archetype_name: StringProperty(name="Archetype Name", update=_on_overlay_data_update)
     lod_dist: FloatProperty(name="LOD Distance", default=-1.0)
     child_lod_dist: FloatProperty(name="Child LOD Distance", default=0)
-    lod_level: EnumProperty(items=MapLodLevelEnumItems, name="LOD Level", default=MapLodLevel.HD.name)
+    lod_level: EnumProperty(
+        items=MapLodLevelEnumItems, name="LOD Level", default=MapLodLevel.HD.name, update=_on_overlay_data_update
+    )
     priority_level: EnumProperty(
         items=MapPriorityLevelEnumItems, name="Priority Level", default=MapPriorityLevel.REQUIRED.name
     )
@@ -971,7 +982,9 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
 
     is_critical: BoolProperty(name="Critical", default=False)
 
-    parent_uuid: UUIDProperty(name="LOD Parent UUID", description="LOD parent of this entity")
+    parent_uuid: UUIDProperty(
+        name="LOD Parent UUID", description="LOD parent of this entity", update=_on_overlay_data_update
+    )
     # Only used with incomplete LOD hierarchies, otherwise, recalculated on export
     parent_index: IntProperty(name="LOD Parent Index", default=-1)
     # Number of LOD children living in .ymap files that were not imported (incomplete hierarchy).
@@ -1001,6 +1014,7 @@ class MapEntity(MapItemMixin, PropertyGroup, ExtensionsContainer):
         from ..map_index import MAP_INDEX
 
         MAP_INDEX.invalidate_and_rebuild()
+        notify_entities_changed()
 
     linked_object: PointerProperty(type=Object, name="Linked Object", update=_on_linked_object_update)
 
@@ -1222,6 +1236,7 @@ class MapGroup(PropertyGroup):
         e.uuid = uuid4().bytes
         e.map_group_uuid = self.uuid
         MAP_INDEX.store_entity(self.uuid, e.uuid, len(self.entities) - 1)
+        notify_entities_changed()
         return e
 
     def find_entity(self, uuid: bytes) -> MapEntity | None:

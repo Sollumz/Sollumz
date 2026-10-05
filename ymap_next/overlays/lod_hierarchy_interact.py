@@ -91,6 +91,11 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
     def invoke(self, context, event):
         self._handler = lod_hierarchy._active_handler
 
+        # The overlay cache is rebuilt from scratch when the entity data changes (e.g. undo while
+        # dragging), which makes the indices we collect here meaningless. Entity count changes with
+        # every rebuild that matters, so it is enough to detect it and bail out.
+        self._entity_cache_len = len(self._handler.entities)
+
         mx, my = event.mouse_region_x, event.mouse_region_y
         self._press_mx = mx
         self._press_my = my
@@ -134,6 +139,11 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
         return {"RUNNING_MODAL"}
 
     def modal(self, context, event):
+        if len(self._handler.entities) != self._entity_cache_len:
+            # Entity data changed under us, the cached indices no longer point to the same entities
+            self._cleanup(context)
+            return {"CANCELLED"}
+
         mx, my = event.mouse_region_x, event.mouse_region_y
 
         # Scroll wheel: cycle drag target
@@ -245,6 +255,9 @@ class SOLLUMZ_OT_map_lod_overlay_interact(Operator):
             return
 
         handler = self._handler
+        if len(handler.entities) != self._entity_cache_len:
+            return  # cache rebuilt, indices are stale (the modal cancels on the next event)
+
         context = bpy.context
         region = context.region
         rv3d = context.region_data
