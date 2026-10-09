@@ -31,6 +31,7 @@ def create_txd_asset(
 ) -> tuple[AssetTextureDictionary, AssetTextureDictionary | None]:
     textures: dict[str, EmbeddedTexture] = {}
     hi_textures: dict[str, EmbeddedTexture] = {}
+    textures_images: dict[str, Image] = {}
 
     txd.refresh_from_sources(bpy.context)
 
@@ -40,8 +41,23 @@ def create_txd_asset(
             continue
 
         texture_name = slot.name
-        if not texture_name or texture_name in textures:
+        if not texture_name:
             continue
+
+        if (existing := textures_images.get(texture_name)) is not None:
+            if existing == img:
+                logger.warning(
+                    f"Texture '{texture_name}' is duplicated in texture dictionary '{txd.name}'. "
+                    f"Only one copy will be exported."
+                )
+            else:
+                logger.warning(
+                    f"Images '{existing.name}' and '{img.name}' have the same texture name '{texture_name}' "
+                    f"in texture dictionary '{txd.name}'. Only '{existing.name}' will be exported."
+                )
+            continue
+
+        textures_images[texture_name] = img
 
         texture, hi_texture = split_embedded_texture(img, texture_name)
         textures[texture_name] = texture

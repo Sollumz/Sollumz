@@ -13,6 +13,7 @@ from .shared import (
     assert_logs_no_warnings_or_errors,
     dropped_mip,
     load_blend_data,
+    log_capture,
     make_bc1_dds,
     new_packed_dds_image,
     requires_szio_native,
@@ -419,3 +420,46 @@ def test_txd_find_missing_never_replaces_txd_images(context, tmp_path):
 
     assert "tex_missing" in bpy.data.images
     assert txd.textures[1].image == missing_txd_img
+
+
+def test_txd_export_warns_duplicated_texture(context):
+    from ..ytd.ytdexport import create_txd_asset
+
+    bpy.ops.wm.read_homefile()
+    txd, img = _new_txd_with_packed_texture(context, "tex.dds")
+    txd.new_texture(img)
+
+    with log_capture() as logs:
+        asset, _ = create_txd_asset(txd)
+
+    logs.assert_warning(match="Texture 'tex' is duplicated in texture dictionary 'test_txd'")
+    assert list(asset.textures.keys()) == ["tex"]
+
+
+def test_txd_export_warns_different_images_with_same_texture_name(context):
+    from ..ytd.ytdexport import create_txd_asset
+
+    bpy.ops.wm.read_homefile()
+    txd, img = _new_txd_with_packed_texture(context, "tex.dds")
+    other_img = new_packed_dds_image("tex_other", make_bc1_dds(8, 8, 1), filename="tex.dds")
+    txd.new_texture(other_img)
+
+    with log_capture() as logs:
+        asset, _ = create_txd_asset(txd)
+
+    logs.assert_warning(match="Images 'tex.dds' and 'tex_other' have the same texture name 'tex'")
+    assert list(asset.textures.keys()) == ["tex"]
+    assert asset.textures["tex"].width == 4
+
+
+@assert_logs_no_warnings_or_errors
+def test_txd_export_no_warning_without_duplicated_textures(context):
+    from ..ytd.ytdexport import create_txd_asset
+
+    bpy.ops.wm.read_homefile()
+    txd, _ = _new_txd_with_packed_texture(context, "tex_a.dds")
+    txd.new_texture(new_packed_dds_image("tex_b.dds", make_bc1_dds(4, 4, 1)))
+
+    asset, _ = create_txd_asset(txd)
+
+    assert sorted(asset.textures.keys()) == ["tex_a", "tex_b"]
