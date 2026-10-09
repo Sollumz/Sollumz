@@ -742,7 +742,7 @@ def _on_depsgraph_update_post(scene, depsgraph):
     evicted = False
     moved_object_uids: set[int] = set()
     for update in depsgraph.updates:
-        id_data = update.id
+        id_data = update.id.original
         if update.is_updated_transform and isinstance(id_data, bpy.types.Object):
             moved_object_uids.add(_id_uid(id_data))
 
