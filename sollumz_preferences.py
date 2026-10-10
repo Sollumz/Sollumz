@@ -1084,11 +1084,6 @@ class SollumzAddonPreferences(AddonPreferences):
         type=SzFavoriteEntry,
     )
 
-    # TODO: operator to create JSON from procedural.meta
-    # tree = ET.parse("procedural.meta")
-    # procids = [elem.text for elem in tree.getroot().findall("./procTagTable/Item/name")]
-    # with open("procids.json", "w") as f:
-    #     json.dump(procids, f, separators=(',', ':'))
     def _on_custom_procids_path_update(self, context):
         _save_preferences_on_update(self, context)
         from .ybn.properties import ProceduralIdEnumItems
@@ -1097,7 +1092,8 @@ class SollumzAddonPreferences(AddonPreferences):
     custom_procids_path: StringProperty(
         name="Custom Procedural IDs",
         description=(
-            "Path to a JSON file with a custom list of procedural IDs names (a JSON array of strings with 255 entries). "
+            "Path to procedural.meta XML file or a JSON file with a custom list of procedural IDs names (a JSON array "
+            "of strings with 255 entries). "
             "Useful if you are using a modified procedural.meta file"
         ),
         subtype="FILE_PATH",

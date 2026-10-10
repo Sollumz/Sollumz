@@ -93,10 +93,15 @@ def ProceduralIdEnumItems(_self=None, context=None, *, full=False) -> tuple[tupl
     try:
         return ProceduralIdEnumItems._full if full else ProceduralIdEnumItems._formatted
     except AttributeError:
-        def _load_json(path: str) -> list:
-            import json
-            with open(path, "rb") as f:
-                contents = json.load(f)
+        def _load_procids(path: str) -> list:
+            if path.lower().endswith((".meta", ".xml")):
+                from xml.etree import ElementTree as ET
+                tree = ET.parse(path)
+                contents = [elem.text or "null" for elem in tree.getroot().findall("./procTagTable/Item/name")]
+            else:
+                import json
+                with open(path, "rb") as f:
+                    contents = json.load(f)
 
             contents = [str(procid) for procid in contents]
             if len(contents) >= MAX_NUM_PROCEDURAL_IDS:
@@ -113,14 +118,14 @@ def ProceduralIdEnumItems(_self=None, context=None, *, full=False) -> tuple[tupl
         procids = None
         if procids_path and os.path.isfile(procids_path):
             try:
-                procids = _load_json(procids_path)
+                procids = _load_procids(procids_path)
             except Exception:
                 procids = None
 
         if not procids:
             # No custom procedural IDs, load the default JSON
             default_procids_path = os.path.join(os.path.dirname(__file__), "procids.json")
-            procids = _load_json(default_procids_path)
+            procids = _load_procids(default_procids_path)
 
         if procids:
             procids_full = [
