@@ -20,7 +20,7 @@ from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, LODLevel, SollumType, LightType, MaterialType, FlagPropertyGroup, TimeFlagsMixin
 from ..ydr.shader_materials import shadermats, shadermats_by_filename
-from .render_bucket import RenderBucket, RenderBucketEnumItems
+from .render_bucket import RenderBucket, RenderBucketEnumItems, RenderMask, RenderMaskEnumFlagItems
 from .light_flashiness import LightFlashiness, LightFlashinessEnumItems
 from bpy.app.handlers import persistent
 from bpy.path import basename
@@ -121,12 +121,20 @@ class DrawableProperties(bpy.types.PropertyGroup):
 
 
 class DrawableModelProperties(bpy.types.PropertyGroup):
-    render_mask: bpy.props.IntProperty(name="Render Mask", default=255)
-    sollum_lod: bpy.props.EnumProperty(
-        items=items_from_enums(
-            [LODLevel.HIGH, LODLevel.MEDIUM, LODLevel.LOW, LODLevel.VERYLOW]),
-        name="LOD Level",
-        default="sollumz_high"
+    render_mask: IntProperty(name="Render Mask", default=RenderMask.ALL.value, min=0, max=0xFF)
+
+    def _get_render_mask_flags(self) -> int:
+        return self.render_mask & RenderMask.ALL_VIEWS.value
+
+    def _set_render_mask_flags(self, value: int):
+        self.render_mask = (self.render_mask & ~RenderMask.ALL_VIEWS.value) | value
+
+    render_mask_flags: EnumProperty(
+        name="Render Mask",
+        items=RenderMaskEnumFlagItems,
+        options={"ENUM_FLAG"},
+        get=_get_render_mask_flags,
+        set=_set_render_mask_flags,
     )
 
 

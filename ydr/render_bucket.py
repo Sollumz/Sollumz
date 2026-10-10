@@ -1,4 +1,4 @@
-from szio.gta5 import RenderBucket
+from szio.gta5 import RenderBucket, RenderMask
 
 
 RenderBucketEnumItems = tuple((enum.name, f"{label} ({enum.value})", desc, enum.value) for enum, label, desc in (
@@ -12,4 +12,13 @@ RenderBucketEnumItems = tuple((enum.name, f"{label} ({enum.value})", desc, enum.
     (RenderBucket.DISPLACEMENT_ALPHA, "Displacement Alpha",
      "Rendered last to apply displacement effect on all objects in the scene. "
      "Used only with shader 'glass_displacement'"),
+))
+
+
+RenderMaskEnumFlagItems = tuple((enum.name, label, desc, enum.value) for enum, label, desc in (
+    (RenderMask.DEFAULT, "Default", "Rendered in the main view"),
+    (RenderMask.SHADOW, "Shadow", "Casts shadows"),
+    (RenderMask.REFLECTION, "Reflection", "Rendered in reflections"),
+    (RenderMask.MIRROR, "Mirror", "Rendered in mirrors"),
+    (RenderMask.WATER, "Water", "Rendered in water reflections"),
 ))

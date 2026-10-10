@@ -249,7 +249,7 @@ def set_skinned_model_properties(drawable_obj: Object, drawable: AssetDrawable):
 
 
 def set_drawable_model_properties(model_props: DrawableModelProperties, model: Model):
-    model_props.render_mask = model.render_bucket_mask
+    model_props.render_mask = int(model.mask)
 
 
 def create_drawable_root_armature(drawable: AssetDrawable, name: str) -> Object:

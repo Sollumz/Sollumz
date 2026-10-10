@@ -33,6 +33,7 @@ from szio.gta5 import (
     ShaderInst,
     ShaderParameter,
     Model,
+    RenderMask,
     VertexDataType,
     Geometry,
     Skeleton,
@@ -275,7 +276,7 @@ def create_model(
     return Model(
         bone_index=bone_index,
         geometries=geometries,
-        render_bucket_mask=render_mask,
+        mask=RenderMask(render_mask),
         has_skin=has_skin,
         matrix_count=matrix_count,
         flags=flags,
@@ -531,7 +532,7 @@ def join_skinned_models(models: list[Model]) -> list[Model]:
     joined_skinned_model = Model(
         bone_index=0,
         geometries=joined_skinned_geoms,
-        render_bucket_mask=skinned_models[0].render_bucket_mask,
+        mask=skinned_models[0].mask,
         has_skin=True,
         matrix_count=skinned_models[0].matrix_count,
         flags=skinned_models[0].flags,

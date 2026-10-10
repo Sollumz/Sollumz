@@ -15,6 +15,7 @@ from .operators import (
 )
 from .gta5.presets.light import SOLLUMZ_PT_light_presets
 from .shader_materials import shadermats
+from .render_bucket import RenderMaskEnumFlagItems
 from .cable import CableAttr, is_cable_mesh
 from .cloth import ClothAttr
 from .cloth_char import cloth_char_find_mesh_objects
@@ -219,7 +220,14 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
 
         col.separator()
 
-        layout.prop(model_props, "render_mask")
+        col = layout.column(align=True)
+        col.prop(model_props, "render_mask")
+        split = col.split(factor=0.4, align=True)
+        split.label(text="")
+        row = split.row(align=True)
+        row.use_property_split = False
+        for e in RenderMaskEnumFlagItems:
+            row.prop_enum(model_props, "render_mask_flags", e[0])
 
 
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
