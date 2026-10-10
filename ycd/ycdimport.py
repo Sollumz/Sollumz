@@ -12,6 +12,8 @@ from ..tools.animationhelper import (
     get_scene_fps
 )
 from ..tools.utils import color_hash
+from ..sollumz_helper import get_sollumz_materials
+from ..tools.blenderhelper import remove_number_suffix
 
 
 def create_anim_obj(sollum_type: SollumType) -> bpy.types.Object:
@@ -151,6 +153,31 @@ def combine_sequences_and_build_action_data(animation: ycdxml.Animation) -> Acti
     return action_data
 
 
+def is_uv_animation(action_data: ActionData) -> bool:
+    uv_bone_data = action_data.get(0, {})
+    return Track.UV0 in uv_bone_data or Track.UV1 in uv_bone_data
+
+
+def find_uv_animation_material(animation_hash: str) -> bpy.types.Material | None:
+    """UV animations are named '<drawable name>_uv_<material index>'. Look up that material in the scene."""
+    model_name, sep, index_str = animation_hash.rpartition("_uv_")
+    if not sep or not index_str.isdigit():
+        return None
+
+    material_index = int(index_str)
+    for obj in bpy.data.objects:
+        if obj.sollum_type not in (SollumType.DRAWABLE, SollumType.FRAGMENT):
+            continue
+        if remove_number_suffix(obj.name).lower() != model_name.lower():
+            continue
+
+        materials = get_sollumz_materials(obj)
+        if material_index < len(materials):
+            return materials[material_index]
+
+    return None
+
+
 def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Action, frame_count: int, duration_secs: float):
     # Scale frame IDs to match the animation duration specified in the XML in Blender
     # -1 because the anim finishes when it reaches the last frame
@@ -166,9 +193,7 @@ def apply_action_data_to_action(action_data: ActionData, action: bpy.types.Actio
     if bpy.app.version >= (5, 0, 0):
         from bpy_extras import anim_utils
 
-        action_idtype = "OBJECT"
-        if (uv_bone_data := action_data.get(0, {})) and (Track.UV0 in uv_bone_data or Track.UV1 in uv_bone_data):
-            action_idtype = "MATERIAL"
+        action_idtype = "MATERIAL" if is_uv_animation(action_data) else "OBJECT"
         action_slot = action.slots.new(action_idtype, "Slot")
         channelbag = anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
         def _new_fcurve(data_path: str, index: int, group: str):
@@ -252,6 +277,13 @@ def animation_to_obj(animation: ycdxml.Animation) -> bpy.types.Object:
     action_data = combine_sequences_and_build_action_data(animation)
     animation_obj.animation_properties.action = action_data_to_action(animation.hash, action_data,
                                                                       animation.frame_count, animation.duration)
+
+    if is_uv_animation(action_data):
+        # target must be set after the action, setting it retargets the action's data paths
+        animation_obj.animation_properties.target_id_type = "MATERIAL"
+        material = find_uv_animation_material(animation.hash)
+        if material is not None:
+            animation_obj.animation_properties.target_id = material
 
     return animation_obj
 
