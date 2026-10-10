@@ -26,6 +26,7 @@ from ..context import (
     active_group,
     active_map,
 )
+from ..data_revision import notify_entities_changed
 from ..map_index import (
     MAP_INDEX,
     CacheObjectData,
@@ -290,6 +291,7 @@ class SOLLUMZ_OT_map_group_delete_entity(Operator):
         # TODO(ymap): delete entity should delete linked objects
         group.entities.remove_selected()
         MAP_INDEX.invalidate_and_rebuild()
+        notify_entities_changed()
         return {"FINISHED"}
 
 

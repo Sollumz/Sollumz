@@ -10,6 +10,7 @@ from gpu_extras.batch import batch_for_shader
 
 from ...sollumz_preferences import get_theme_settings
 from ..context import active_group
+from ..data_revision import entities_revision, notify_entities_changed
 from ...shared.object_hierarchy import ObjectHierarchySnapshot
 
 TOOL_IDNAME = "sollumz.map_lod_hierarchy"
@@ -20,6 +21,18 @@ if bpy.app.version >= (4, 5, 0):
 else:
     POINT_SHADER_NAME = "UNIFORM_COLOR"
     POLYLINE_SMOOTH_COLOR_NAME = "SMOOTH_COLOR"
+
+if bpy.app.version >= (4, 1, 0):
+
+    def _id_uid(id_data) -> int:
+        return id_data.session_uid
+
+else:  # 4.0
+
+    def _id_uid(id_data) -> int:
+        # Not the same semantics, but close enough to key session caches on
+        return id_data.as_pointer()
+
 
 # Visual category for each entity (HD split into ORPHAN_HD vs HD)
 LOD_LEVELS = ("ORPHAN_HD", "HD", "LOD", "SLOD1", "SLOD2", "SLOD3", "SLOD4")
@@ -147,6 +160,10 @@ def _is_tool_active(context) -> bool:
 # Module-level reference so the interactive modal can access cached data
 _active_handler: "LodHierarchyOverlayDrawHandler | None" = None
 
+# Number of objects at the last depsgraph update, to detect object deletions (which leave dangling
+# references in the entity cache and are not reported in `depsgraph.updates`)
+_last_object_count: int = -1
+
 
 class LodHierarchyOverlayDrawHandler:
     """Draws LOD hierarchy markers, connection lines, and labels in the 3D viewport.
@@ -166,6 +183,7 @@ class LodHierarchyOverlayDrawHandler:
         # cache keys
         self._cache_group_uuid: bytes = b""
         self._cache_entity_count: int = -1
+        self._cache_revision: int = -1
         self._cache_vis_key = None
         self._cache_selection_key: tuple = ()
         self._cache_outline_key: tuple = ()
@@ -174,6 +192,8 @@ class LodHierarchyOverlayDrawHandler:
         self.entities: list[tuple] = []
         self.uuid_to_idx: dict[bytes, int] = {}
         self._children_by_parent: dict[bytes, list[int]] = {}
+        # linked object session_uid -> entity indices, to refresh positions when objects move
+        self._object_uid_to_indices: dict[int, list[int]] = {}
 
         # Visual categories currently enabled in the overlay settings (refreshed each draw)
         self.visible_levels: frozenset[str] = frozenset()
@@ -219,6 +239,7 @@ class LodHierarchyOverlayDrawHandler:
         entities = []
         uuid_to_idx = {}
         children_by_parent: dict[bytes, list[int]] = {}
+        object_uid_to_indices: dict[int, list[int]] = {}
 
         for col_idx, entity in enumerate(group.entities):
             idx = len(entities)
@@ -235,9 +256,41 @@ class LodHierarchyOverlayDrawHandler:
             if parent_uuid:
                 children_by_parent.setdefault(parent_uuid, []).append(idx)
 
+            if obj is not None:
+                object_uid_to_indices.setdefault(_id_uid(obj), []).append(idx)
+
         self.entities = entities
         self.uuid_to_idx = uuid_to_idx
         self._children_by_parent = children_by_parent
+        self._object_uid_to_indices = object_uid_to_indices
+
+    def refresh_positions(self, object_uids: "set[int] | None" = None) -> bool:
+        """Re-read the cached marker positions from the linked objects. Returns True if any changed.
+
+        `object_uids` limits the refresh to the entities linked to those objects (session UIDs).
+        """
+        if object_uids is None:
+            indices = range(len(self.entities))
+        else:
+            indices = [i for uid in object_uids for i in self._object_uid_to_indices.get(uid, ())]
+
+        changed = False
+        for idx in indices:
+            e = self.entities[idx]
+            obj = e[E_LINKED]
+            if obj is None:
+                continue
+            try:
+                pos = tuple(obj.matrix_world.translation)
+            except ReferenceError:
+                # The object was freed (deleted, undo): the whole cache references stale data
+                self.invalidate_cache()
+                return False
+            if pos != e[E_POS]:
+                self.entities[idx] = (e[0], pos, *e[2:])
+                changed = True
+
+        return changed
 
     def _rebuild_chain(self, group):
         """Build the union of ancestor/descendant chains for all selected entities."""
@@ -370,7 +423,7 @@ class LodHierarchyOverlayDrawHandler:
         entries = []
         hierarchy = hierarchy or ObjectHierarchySnapshot.for_scene()
         for mesh_obj in (o for o in hierarchy.get_object_with_children_recursive(obj) if o.type == "MESH"):
-            uid = mesh_obj.data.session_uid
+            uid = _id_uid(mesh_obj.data)
             if uid not in self._outline_mesh_batches:
                 self._outline_mesh_batches[uid] = _build_outline_mesh_batch(mesh_obj.data)
             if seen_uids is not None:
@@ -415,9 +468,33 @@ class LodHierarchyOverlayDrawHandler:
             self._hover_outline_draw_list = self._outline_entries(self.entities[cache_idx], color)
 
     def invalidate_cache(self):
-        """Force full rebuild on next draw. Called when entity data changes structurally."""
+        """Force a full rebuild on next draw and drop every reference to Blender data.
+
+        Called when entity data changes structurally and after undo/redo/file load, where the
+        cached `Object`/`Mesh` references may have been freed by Blender.
+        """
         self._cache_group_uuid = b""
         self._cache_entity_count = -1
+        self._cache_revision = -1
+        self._cache_selection_key = ()
+        self._cache_vis_key = None
+        self._cache_outline_key = ()
+
+        self.entities = []
+        self.uuid_to_idx = {}
+        self._children_by_parent = {}
+        self._object_uid_to_indices = {}
+        self._chain_uuids = set()
+
+        self.cycle_hits = []
+        self.cycle_index = 0
+
+        self._marker_batches = []
+        self._line_batch = None
+        self._highlight_line_batch = None
+        self._outline_mesh_batches.clear()
+        self._outline_draw_list = []
+        self._hover_outline_draw_list = []
 
     def patch_link(self, child_cache_idx: int, new_parent_uuid: bytes):
         """Incrementally update cache after a link/unlink operation.
@@ -453,7 +530,9 @@ class LodHierarchyOverlayDrawHandler:
         if new_parent_uuid:
             self._children_by_parent.setdefault(new_parent_uuid, []).append(child_cache_idx)
 
-        # Force chain + batch rebuild on next draw (entity cache stays valid)
+        # The caller already applied this change to the entity, so absorb the revision bump it
+        # caused: the cached data is up to date and only the chain + batches need a rebuild.
+        self._cache_revision = entities_revision()
         self._cache_selection_key = ()
         self._cache_vis_key = None
 
@@ -471,6 +550,7 @@ class LodHierarchyOverlayDrawHandler:
         wm = context.window_manager
         entity_count = len(group.entities)
         group_uuid = group.uuid
+        revision = entities_revision()
 
         visible_levels = frozenset(lvl for lvl, prop in LOD_LEVEL_VIS_PROPS.items() if getattr(wm, prop))
         self.visible_levels = visible_levels
@@ -495,11 +575,16 @@ class LodHierarchyOverlayDrawHandler:
         active_uuid = active_entity.uuid if active_entity else b""
         selection_key = (active_uuid, tuple(sorted(group.entities.selected_items_indices)))
 
-        data_stale = group_uuid != self._cache_group_uuid or entity_count != self._cache_entity_count
+        data_stale = (
+            group_uuid != self._cache_group_uuid
+            or entity_count != self._cache_entity_count
+            or revision != self._cache_revision
+        )
         if data_stale:
             self._rebuild_entity_cache(group)
             self._cache_group_uuid = group_uuid
             self._cache_entity_count = entity_count
+            self._cache_revision = revision
 
         chain_stale = data_stale or (selection_key != self._cache_selection_key)
         if chain_stale:
@@ -633,27 +718,68 @@ class LodHierarchyOverlayDrawHandler:
 
 @bpy.app.handlers.persistent
 def _on_depsgraph_update_post(scene, depsgraph):
-    """Evict cached outline batches for meshes whose geometry changed (edits, undo, applied
-    transforms), so the outline is rebuilt from the current geometry on the next draw.
+    """Keep the overlay in sync with changes Blender does not report through property updates.
+
+    * Linked objects that moved: their cached marker position is refreshed.
+    * Objects that were deleted: the cache holds references to them, so it is dropped entirely.
+    * Meshes whose geometry changed (edits, undo, applied transforms): their cached outline batch
+      is evicted so the outline is rebuilt from the current geometry on the next draw.
     """
     handler = _active_handler
-    if handler is None or not handler._outline_mesh_batches:
+    if handler is None:
         return
 
+    global _last_object_count
+    object_count = len(bpy.data.objects)
+    if object_count != _last_object_count:
+        _last_object_count = object_count
+        if handler.entities:
+            # An object was added or removed. A removed object leaves dangling references in the
+            # entity cache (and clears `linked_object`), so rebuild everything from scratch.
+            handler.invalidate_cache()
+            return
+
     evicted = False
+    moved_object_uids: set[int] = set()
     for update in depsgraph.updates:
+        id_data = update.id.original
+        if update.is_updated_transform and isinstance(id_data, bpy.types.Object):
+            moved_object_uids.add(_id_uid(id_data))
+
         if not update.is_updated_geometry:
             continue
         # Geometry updates may be reported on the Mesh itself or on an Object using it
-        id_data = update.id
         data = getattr(id_data, "data", None)
-        uid = data.session_uid if data is not None else id_data.session_uid
+        uid = _id_uid(data) if data is not None else _id_uid(id_data)
         if uid in handler._outline_mesh_batches:
             del handler._outline_mesh_batches[uid]
             evicted = True
 
     if evicted:
         handler._cache_outline_key = ()  # rebuild the outline draw list on next draw
+
+    if moved_object_uids and handler.refresh_positions(moved_object_uids):
+        handler._cache_vis_key = None  # rebuild the marker/line batches with the new positions
+
+
+@bpy.app.handlers.persistent
+def _on_undo_redo_post(_scene):
+    # Undo/redo restores the entity data behind our back and may free the objects and meshes the
+    # cache references, so everything derived from them must be dropped.
+    global _last_object_count
+    _last_object_count = len(bpy.data.objects)
+    notify_entities_changed()
+    if _active_handler is not None:
+        _active_handler.invalidate_cache()
+
+
+@bpy.app.handlers.persistent
+def _on_load_post(_file_path):
+    global _last_object_count
+    _last_object_count = len(bpy.data.objects)
+    notify_entities_changed()
+    if _active_handler is not None:
+        _active_handler.invalidate_cache()
 
 
 def register():
@@ -713,11 +839,17 @@ def register():
     _active_handler = handler
 
     bpy.app.handlers.depsgraph_update_post.append(_on_depsgraph_update_post)
+    bpy.app.handlers.undo_post.append(_on_undo_redo_post)
+    bpy.app.handlers.redo_post.append(_on_undo_redo_post)
+    bpy.app.handlers.load_post.append(_on_load_post)
 
 
 def unregister():
     global _active_handler
 
+    bpy.app.handlers.load_post.remove(_on_load_post)
+    bpy.app.handlers.redo_post.remove(_on_undo_redo_post)
+    bpy.app.handlers.undo_post.remove(_on_undo_redo_post)
     bpy.app.handlers.depsgraph_update_post.remove(_on_depsgraph_update_post)
 
     if _active_handler is not None:
