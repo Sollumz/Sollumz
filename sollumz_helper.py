@@ -8,6 +8,7 @@ from mathutils import Matrix
 
 from .sollumz_properties import SollumType
 from .tools.blenderhelper import get_bone_pose_matrix
+from . import logger
 
 
 from .sollumz_preferences import get_export_settings
@@ -200,10 +201,28 @@ def get_sollumz_materials(
 def get_export_transforms_to_apply(obj: bpy.types.Object):
     """Get final transforms for a mesh object that should be directly applied to vertices upon export."""
     parent_inverse = get_parent_inverse(obj)
-    bone_inverse = get_bone_pose_matrix(obj).inverted()
+    bone_inverse = get_safe_bone_pose_inverse(obj)
 
     # Apply all transforms except any transforms from the current pose, and any parent transforms (depends on "Apply Parent Transforms" option)
     return parent_inverse @ bone_inverse @ obj.matrix_world
+
+
+def get_safe_bone_pose_inverse(obj: bpy.types.Object) -> Matrix:
+    """Get the inverse of the bone pose matrix from the object's Child Of constraint.
+
+    Returns identity if the pose matrix is singular (e.g. the bone is scaled to 0, which
+    commonly happens when animating a bone's scale from 0), since a singular matrix has
+    no inverse. In that case the pose transforms cannot be un-applied, so they are kept
+    as-is instead of crashing the export.
+    """
+    bone_matrix = get_bone_pose_matrix(obj)
+    if bone_matrix.determinant() == 0.0:
+        logger.warning(
+            f"Object '{obj.name}' has a singular bone pose matrix (e.g. a bone scaled to 0). "
+            "Cannot un-apply the bone pose transforms, exporting the mesh as-is."
+        )
+        return Matrix()
+    return bone_matrix.inverted()
 
 
 def get_parent_inverse(obj: bpy.types.Object) -> Matrix:
