@@ -377,6 +377,42 @@ def test_export_drawable_ignores_model_removed_from_scene(tmp_path: Path):
     assert shader_names == ["default"]
 
 
+@pytest.mark.parametrize("frame", (0, 10, 20))
+@pytest.mark.parametrize("drawable_moved", (False, True), ids=("origin", "moved"))
+@assert_logs_no_warnings_or_errors
+def test_export_drawable_with_animated_bones(tmp_path: Path, frame: int, drawable_moved: bool):
+    # The bone of the first exported model is animated from scale 0 at frame 0 (#1135), and the bone of the second
+    # model moves and rotates
+    data = load_blend_data("drawable_bone_scaled_to_zero.blend")
+    drawable_obj = data.objects["repro_1135"]
+    if drawable_moved:
+        drawable_obj.location = (5.0, 3.0, 0.0)
+        drawable_obj.rotation_euler = (0.0, 0.0, 0.7)
+    bpy.context.scene.frame_set(frame)
+
+    res = bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS | {
+            "target_formats": {"CWXML"},
+            "target_versions": {"GEN8"},
+        },
+    )
+    assert res == {"FINISHED"}
+    assert drawable_obj.data.pose_position == "POSE"
+
+    # both models are 1x1x1 cubes, the bone pose and drawable transform must not be baked into the vertices
+    drawable = ET.parse(tmp_path / "repro_1135.ydr.xml").getroot()
+    geometries = drawable.findall("./DrawableModelsHigh/Item/Geometries/Item")
+    assert len(geometries) == 2
+    for geom in geometries:
+        bb_min = geom.find("BoundingBoxMin").attrib
+        bb_max = geom.find("BoundingBoxMax").attrib
+        assert [float(bb_min[c]) for c in "xyz"] == pytest.approx([-0.5] * 3, abs=1e-5)
+        assert [float(bb_max[c]) for c in "xyz"] == pytest.approx([0.5] * 3, abs=1e-5)
+
+
 @requires_szio_native
 @pytest.mark.parametrize("version_dir", ("gen8", "gen9"))
 @pytest.mark.parametrize("textures_mode", ("PACK", "IMPORT_DIR", "CUSTOM_DIR", "CUSTOM_DIR_NOT_SET"))

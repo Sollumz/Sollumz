@@ -137,6 +137,8 @@ def create_drawable_asset(
 
         original_pose = armature_obj.data.pose_position
         armature_obj.data.pose_position = "REST"
+        # Update so pose bone matrices / model world matrices are at rest before get_export_transforms_to_apply reads them
+        bpy.context.view_layer.update()
     else:
         drawable.skeleton = None
 
