@@ -236,3 +236,33 @@ def test_mlo_archetype_child_lookup_when_context_scene_is_another_scene():
         assert bpy.context.scene == other_scene
         assert portal.get_mlo_archetype().uuid == archetype.uuid
         assert (portal.room_from_index, portal.room_to_index) == (0, 1)
+
+
+@assert_logs_no_warnings_or_errors
+def test_mlo_calc_num_exit_portals():
+    bpy.ops.wm.read_homefile()
+    scene = bpy.context.scene
+
+    archetype = _new_mlo_archetype()
+    for name in ("limbo", "kitchen", "hall"):
+        archetype.new_room().name = name
+    limbo_id, kitchen_id, hall_id = (str(r.id) for r in archetype.rooms)
+
+    def _new_portal(room_from_id: str, room_to_id: str, link_interiors: bool = False):
+        portal = archetype.new_portal()
+        portal.room_from_id = room_from_id
+        portal.room_to_id = room_to_id
+        portal.flags.flag2 = link_interiors
+
+    _new_portal(kitchen_id, limbo_id)
+    _new_portal(limbo_id, hall_id)
+    _new_portal(kitchen_id, hall_id)
+    _new_portal(hall_id, limbo_id, link_interiors=True)
+
+    # Select a different ytyp, this is called from the maps UI where any ytyp may be selected
+    other_ytyp = scene.ytyps.add()
+    scene.ytyp_index = len(scene.ytyps) - 1
+    other_ytyp.new_archetype(ArchetypeType.MLO)
+    archetype = scene.ytyps[0].archetypes[0]
+
+    assert archetype.calc_num_exit_portals() == 2

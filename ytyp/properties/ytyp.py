@@ -573,15 +573,14 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         if self.type != ArchetypeType.MLO:
             return None
 
+        limbo_room_id = next((str(room.id) for room in self.rooms if room.name == "limbo"), None)
+        if limbo_room_id is None:
+            return 0
+
         num_exit_portals = 0
         for p in self.portals:
             link_interiors = p.flags.flag2
-            # Note, cannot use `room_to/from_index/id` properties here because their getters depend on having the
-            # correct context such that this archetype is the currently selected one, which may not be the case when
-            # this function is called (e.g. it is used from maps UI, so archetypes UI may be in whatever random state
-            # with something else selected).
-            # The name properties store the names themselves and should be in sync with the other properties
-            if (not link_interiors and (p.room_to_name == "limbo" or p.room_from_name == "limbo")):
+            if not link_interiors and (p.room_to_id == limbo_room_id or p.room_from_id == limbo_room_id):
                 num_exit_portals += 1
 
         return num_exit_portals
