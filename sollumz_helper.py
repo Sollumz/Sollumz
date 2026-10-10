@@ -10,7 +10,7 @@ from .sollumz_properties import SollumType
 from .tools.blenderhelper import get_bone_pose_matrix
 
 
-from .sollumz_preferences import get_export_settings
+from .iecontext import export_context
 from .tools.blenderhelper import get_children_recursive, get_object_with_children_recursive
 from .sollumz_properties import BOUND_TYPES, SollumType, MaterialType, LODLevel
 from .shared.object_hierarchy import ObjectHierarchySnapshot
@@ -217,7 +217,7 @@ def get_parent_inverse(obj: bpy.types.Object) -> Matrix:
         # Drawables in a dictionary are independent assets, each one is its own origin, not the dictionary
         parent_obj = find_sollumz_parent(obj, SollumType.DRAWABLE) or parent_obj
 
-    if get_export_settings().apply_transforms:
+    if export_context().settings.apply_transforms:
         if parent_obj.sollum_type == SollumType.BOUND_COMPOSITE:
             return Matrix()
         # Even when apply transforms is enabled, we still don't want to apply location, as Drawables/Fragments should always start from 0,0,0

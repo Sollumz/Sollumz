@@ -1,8 +1,10 @@
 """Tests for Sollumz parent lookup and the parent transforms unapplied on export (sollumz_helper)."""
 
 import bpy
+import pytest
 from mathutils import Vector
 
+from ..iecontext import ExportContext, ExportSettings, export_context_scope
 from ..sollumz_helper import find_sollumz_parent, get_parent_inverse
 from ..sollumz_properties import SollumType
 from ..tools.blenderhelper import create_blender_object, create_empty_object
@@ -14,6 +16,10 @@ def _drawable_with_model(parent=None):
     model = create_blender_object(SollumType.DRAWABLE_MODEL, "model")
     model.parent = drawable
     return drawable, model
+
+
+def _export_scope(apply_transforms: bool = False):
+    return export_context_scope(ExportContext("test", ExportSettings(targets=(), apply_transforms=apply_transforms)))
 
 
 def test_find_sollumz_parent_untyped_returns_root():
@@ -39,7 +45,8 @@ def test_drawable_location_is_unapplied():
 
     bpy.context.view_layer.update()
 
-    assert (get_parent_inverse(model) @ model.matrix_world).translation == Vector()
+    with _export_scope():
+        assert (get_parent_inverse(model) @ model.matrix_world).translation == Vector()
 
 
 def test_drawable_in_dictionary_location_is_unapplied():
@@ -50,4 +57,18 @@ def test_drawable_in_dictionary_location_is_unapplied():
 
     bpy.context.view_layer.update()
 
-    assert (get_parent_inverse(model) @ model.matrix_world).translation == Vector()
+    with _export_scope():
+        assert (get_parent_inverse(model) @ model.matrix_world).translation == Vector()
+
+
+@pytest.mark.parametrize("apply_transforms", (False, True))
+def test_drawable_rotation_is_unapplied_based_on_export_settings(apply_transforms: bool):
+    drawable, model = _drawable_with_model()
+    drawable.rotation_euler = (0.0, 0.0, 0.7)
+
+    bpy.context.view_layer.update()
+
+    with _export_scope(apply_transforms):
+        transforms = get_parent_inverse(model) @ model.matrix_world
+
+    assert transforms.to_euler().z == pytest.approx(0.7 if apply_transforms else 0.0)
