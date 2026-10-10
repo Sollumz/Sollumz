@@ -3,7 +3,10 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from ..editor_tools.vertex_paint.utils import vertex_paint_unified_settings
+from ..editor_tools.vertex_paint.utils import (
+    vertex_paint_unified_settings,
+    vertex_paint_unified_toggles,
+)
 
 
 @pytest.mark.parametrize(
@@ -23,12 +26,13 @@ def test_ops_terrain_paint_texture(
     bpy.ops.object.mode_set(mode="VERTEX_PAINT")
 
     us = vertex_paint_unified_settings(context)
-    us.use_unified_color = unified_color
-    us.use_unified_strength = unified_strength
+    brush = context.tool_settings.vertex_paint.brush
+    toggles = vertex_paint_unified_toggles(context, brush)
+    toggles.use_unified_color = unified_color
+    toggles.use_unified_strength = unified_strength
 
     bpy.ops.sollumz.vertex_paint_terrain_texture(texture=texture_index)
 
-    brush = context.tool_settings.vertex_paint.brush
     color = us.color if unified_color else brush.color
     strength = us.strength if unified_strength else brush.strength
     assert_allclose(color, expected_color)
@@ -45,12 +49,13 @@ def test_ops_terrain_paint_alpha_add(alpha, unified_color, unified_strength, con
     bpy.ops.object.mode_set(mode="VERTEX_PAINT")
 
     us = vertex_paint_unified_settings(context)
-    us.use_unified_color = unified_color
-    us.use_unified_strength = unified_strength
+    brush = context.tool_settings.vertex_paint.brush
+    toggles = vertex_paint_unified_toggles(context, brush)
+    toggles.use_unified_color = unified_color
+    toggles.use_unified_strength = unified_strength
 
     bpy.ops.sollumz.vertex_paint_terrain_alpha(alpha=alpha)
 
-    brush = context.tool_settings.vertex_paint.brush
     color = us.color if unified_color else brush.color
     strength = us.strength if unified_strength else brush.strength
     assert_allclose(color, (1.0, 1.0, 1.0))
@@ -67,12 +72,13 @@ def test_ops_terrain_paint_alpha_remove(alpha, unified_color, unified_strength, 
     bpy.ops.object.mode_set(mode="VERTEX_PAINT")
 
     us = vertex_paint_unified_settings(context)
-    us.use_unified_color = unified_color
-    us.use_unified_strength = unified_strength
+    brush = context.tool_settings.vertex_paint.brush
+    toggles = vertex_paint_unified_toggles(context, brush)
+    toggles.use_unified_color = unified_color
+    toggles.use_unified_strength = unified_strength
 
     bpy.ops.sollumz.vertex_paint_terrain_alpha(alpha=-alpha)
 
-    brush = context.tool_settings.vertex_paint.brush
     color = us.color if unified_color else brush.color
     strength = us.strength if unified_strength else brush.strength
     assert_allclose(color, (0.0, 0.0, 0.0))

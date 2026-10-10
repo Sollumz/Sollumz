@@ -64,6 +64,14 @@ def vertex_paint_unified_settings(context) -> UnifiedPaintSettings:
     return ups
 
 
+def vertex_paint_unified_toggles(context, brush: Brush) -> Brush | UnifiedPaintSettings:
+    """Returns the object holding the `use_unified_*` toggles."""
+    if bpy.app.version >= (5, 3, 0):
+        # Since 5.3, the toggles are stored per-brush instead of on the scene-level settings
+        return brush
+    return vertex_paint_unified_settings(context)
+
+
 def vertex_paint_unified_colors(
     context, brush_override: Brush | None = None
 ) -> Brush | UnifiedPaintSettings:
@@ -73,7 +81,7 @@ def vertex_paint_unified_colors(
     ts = context.tool_settings
     brush = brush_override or ts.vertex_paint.brush
     ups = vertex_paint_unified_settings(context)
-    props = ups if ups.use_unified_color else brush
+    props = ups if vertex_paint_unified_toggles(context, brush).use_unified_color else brush
     return props
 
 
@@ -84,5 +92,5 @@ def vertex_paint_unified_strength(
     ts = context.tool_settings
     brush = brush_override or ts.vertex_paint.brush
     ups = vertex_paint_unified_settings(context)
-    props = ups if ups.use_unified_strength else brush
+    props = ups if vertex_paint_unified_toggles(context, brush).use_unified_strength else brush
     return props
