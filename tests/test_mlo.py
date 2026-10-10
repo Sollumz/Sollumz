@@ -189,3 +189,50 @@ def test_mlo_export_when_another_ytyp_is_selected():
     assert (mlo.portals[0].room_from, mlo.portals[0].room_to) == (0, 1)
     assert len(mlo.entity_sets[0].entities) == 1
     assert mlo.entity_sets[0].locations == [1]
+
+
+@assert_logs_no_warnings_or_errors
+def test_mlo_archetype_child_lookup_requires_matching_uuid():
+    bpy.ops.wm.read_homefile()
+    scene = bpy.context.scene
+
+    archetype = _new_mlo_archetype()
+    room = archetype.new_room()
+    ytyp = scene.ytyps[scene.ytyp_index]
+    archetype_id = archetype.id
+    last_archetype_id = ytyp.last_archetype_id
+    assert room.get_mlo_archetype().uuid == archetype.uuid
+
+    # The selected ytyp has an archetype with the same ID, but it should not be used as fallback
+    room.mlo_archetype_uuid = "missing"
+    assert room.get_mlo_archetype() is None
+
+    room.mlo_archetype_uuid = ""
+    assert room.get_mlo_archetype() is None
+
+    # The lookup does not modify the ytyp
+    assert archetype.id == archetype_id
+    assert ytyp.last_archetype_id == last_archetype_id
+
+
+@assert_logs_no_warnings_or_errors
+def test_mlo_archetype_child_lookup_when_context_scene_is_another_scene():
+    bpy.ops.wm.read_homefile()
+
+    archetype = _new_mlo_archetype()
+    archetype.new_room().name = "limbo"
+    archetype.new_room().name = "room1"
+    portal = archetype.new_portal()
+    portal.room_from_id = str(archetype.rooms[0].id)
+    portal.room_to_id = str(archetype.rooms[1].id)
+
+    other_scene = bpy.data.scenes.new("other")
+    other_ytyp = other_scene.ytyps.add()
+    other_ytyp.new_archetype(ArchetypeType.MLO)
+
+    ArchetypeProperties.update_cached_room_enum_items(archetype.uuid)
+
+    with bpy.context.temp_override(scene=other_scene):
+        assert bpy.context.scene == other_scene
+        assert portal.get_mlo_archetype().uuid == archetype.uuid
+        assert (portal.room_from_index, portal.room_to_index) == (0, 1)

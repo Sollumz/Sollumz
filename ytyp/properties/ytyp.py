@@ -312,13 +312,14 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.id = item_id
         item.uuid = str(uuid4())
 
+        # Must be set before the room enums, their items are looked up from the owner archetype
+        item.mlo_archetype_id = self.id
+        item.mlo_archetype_uuid = self.uuid
+
         if len(self.rooms) > 0:
             room_id = self.rooms[0].id
             item.room_to_id = str(room_id)
             item.room_from_id = str(room_id)
-
-        item.mlo_archetype_id = self.id
-        item.mlo_archetype_uuid = self.uuid
 
         preferences = get_addon_preferences(bpy.context)
         if preferences.default_flags_portal:
@@ -694,32 +695,6 @@ class ArchetypeSelectionAccess(MultiSelectAccess):
 
 @define_multiselect_collection("archetypes", {"name": "Archetypes"})
 class CMapTypesProperties(PropertyGroup):
-    def update_mlo_archetype_ids(self):
-        for archetype in self.archetypes:
-            if archetype.type == ArchetypeType.MLO:
-                archetype.id = self.last_archetype_id
-                self.last_archetype_id += 1
-
-                for entity in archetype.entities:
-                    entity.mlo_archetype_id = archetype.id
-                    entity.mlo_archetype_uuid = archetype.uuid
-
-                for portal in archetype.portals:
-                    portal.mlo_archetype_id = archetype.id
-                    portal.mlo_archetype_uuid = archetype.uuid
-
-                for room in archetype.rooms:
-                    room.mlo_archetype_id = archetype.id
-                    room.mlo_archetype_uuid = archetype.uuid
-
-                for tcm in archetype.timecycle_modifiers:
-                    tcm.mlo_archetype_id = archetype.id
-                    tcm.mlo_archetype_uuid = archetype.uuid
-
-                for entity_set in archetype.entity_sets:
-                    entity_set.mlo_archetype_id = archetype.id
-                    entity_set.mlo_archetype_uuid = archetype.uuid
-
     def new_archetype(self, archetype_type: ArchetypeType = ArchetypeType.BASE) -> ArchetypeProperties:
         item = self.archetypes.add()
         index = len(self.archetypes) - 1

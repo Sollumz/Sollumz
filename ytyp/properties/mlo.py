@@ -7,7 +7,7 @@ import bpy
 from mathutils import Vector
 from ...sollumz_properties import EntityPriorityLevel, items_from_enums
 from ...tools.utils import get_list_item
-from ..utils import get_selected_ytyp, get_selected_archetype
+from ..utils import get_selected_archetype
 from .flags import EntityFlags, RoomFlags, PortalFlags
 from .extensions import ExtensionsContainer, ExtensionType
 
@@ -53,25 +53,22 @@ def get_entityset_items_for_selected_archetype(self, context: Optional[bpy.types
 
 
 class MloArchetypeChild:
-    def get_mlo_archetype(self):
-        selected_ytyp = get_selected_ytyp(bpy.context)
+    def get_mlo_archetype(self) -> "ArchetypeProperties" | None:
+        archetype_uuid = self.mlo_archetype_uuid
+        if not archetype_uuid:
+            return None
 
-        if archetype_uuid := self.mlo_archetype_uuid:
-            # The owner is not necessarily in the selected ytyp (e.g. when exporting all ytyps), so look it up by UUID.
-            # The selected ytyp is checked first because it is the common case.
-            ytyps = [selected_ytyp] if selected_ytyp else []
-            ytyps.extend(bpy.context.scene.ytyps)
-            for ytyp in ytyps:
-                for archetype in ytyp.archetypes:
-                    if archetype.uuid == archetype_uuid:
-                        return archetype
-
-        # Fallback for data without UUIDs, only correct if the selected ytyp is the owner of the MLO
-        if self.mlo_archetype_id == -1 or not self.mlo_archetype_uuid:
-            selected_ytyp.update_mlo_archetype_ids()
-        for archetype in selected_ytyp.archetypes:
-            if archetype.id == self.mlo_archetype_id:
-                return archetype
+        # The owner is not necessarily in the selected ytyp (e.g. when exporting all ytyps), so search all ytyps of the
+        # scene that owns this data. The selected ytyp is checked first because it is the common case.
+        scene = self.id_data
+        selected_ytyp_index = scene.ytyp_index
+        selected_ytyp = get_list_item(scene.ytyps, selected_ytyp_index)
+        ytyps = [selected_ytyp] if selected_ytyp else []
+        ytyps.extend(ytyp for i, ytyp in enumerate(scene.ytyps) if i != selected_ytyp_index)
+        for ytyp in ytyps:
+            for archetype in ytyp.archetypes:
+                if archetype.uuid == archetype_uuid:
+                    return archetype
 
         return None
 
@@ -107,9 +104,6 @@ class MloArchetypeChild:
 
     def update_mlo_archetype_caches(self, context: Optional[bpy.types.Context]):
         archetype_uuid = self.mlo_archetype_uuid
-        if not archetype_uuid and (archetype := self.get_mlo_archetype()):
-            archetype_uuid = archetype.uuid
-
         if not archetype_uuid:
             return
 
