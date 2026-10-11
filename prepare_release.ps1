@@ -10,6 +10,15 @@ if ((Get-Command "git" -ErrorAction SilentlyContinue) -eq $null)
   Throw "'git' not available in PATH!"
 }
 
+# Gets the szio version pinned in dependencies.py at the given revision, or $null if there is none
+function Get-SzioVersion([string]$Rev) {
+  $deps = (& git show "${Rev}:dependencies.py" 2>$null) -join "`n"
+  if ($deps -match '(?s)Dependency\(\s*"szio",.*?"(\d+\.\d+\.\d+(?:\.dev\d+)?)"') {
+    return $Matches[1]
+  }
+  return $null
+}
+
 $Version = $Version.TrimStart("v")
 
 $versionComponents = $Version.Split(".") -match "^\d+$"
@@ -50,6 +59,25 @@ if ((Get-Command "git-cliff" -ErrorAction SilentlyContinue) -eq $null)
 else
 {
   & git-cliff --current -c cliff.toml -o RELEASE_NOTES.md
+
+  # Append the szio changes between the versions pinned by the previous release and this one
+  $prevTag = & git describe --tags --abbrev=0 --match "v[0-9]*" "v$Version^"
+  $szioOld = Get-SzioVersion $prevTag
+  $szioNew = Get-SzioVersion "v$Version"
+  if ($szioOld -and $szioNew -and $szioOld -ne $szioNew)
+  {
+    # git-cliff needs a local repo, use a throwaway clone with only the commit history
+    $szioRepo = Join-Path ([IO.Path]::GetTempPath()) "szio-$([guid]::NewGuid()).git"
+    & git clone --quiet --bare --filter=blob:none https://github.com/Sollumz/szio.git $szioRepo
+    $szioNotes = Join-Path $szioRepo "RELEASE_NOTES.md"
+
+    # Only the two pinned versions count as tags, so the whole range ends up in a single section
+    $szioTags = "^v($([regex]::Escape($szioOld))|$([regex]::Escape($szioNew)))$"
+    & git-cliff -c cliff.toml -r $szioRepo --github-repo Sollumz/szio --tag-pattern $szioTags --strip all -o $szioNotes "v$szioOld..v$szioNew"
+    Add-Content -Encoding UTF8 -Path RELEASE_NOTES.md -Value ("`n" + (Get-Content -Raw -Encoding UTF8 $szioNotes))
+
+    Remove-Item -Recurse -Force $szioRepo
+  }
   Write-Host "Release notes written to 'RELEASE_NOTES.md'. Might need some clean up before publishing the GitHub release."
 }
 

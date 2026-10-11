@@ -10,8 +10,16 @@ header = """
 
 body = """\
 {% set maintainers_usernames = "Skylumz|coltfox|alexguirre" %}\
+{# Changes from other repos (szio) need owner/repo-qualified references, GitHub resolves bare ones against Sollumz #}\
+{% if remote.github.repo != "Sollumz" %}\
+    {% set repo_ref = remote.github.owner ~ "/" ~ remote.github.repo %}\
+{% else %}\
+    {% set repo_ref = "" %}\
+{% endif %}\
 \
-{% if version %}\
+{% if repo_ref %}\
+    ## {{ remote.github.repo }} Changelog ({{ previous.version | trim_start_matches(pat="v") }} → {{ version | trim_start_matches(pat="v") }})
+{% elif version %}\
     ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else %}\
     ## [unreleased]
@@ -27,10 +35,10 @@ body = """\
       (\
         {% if commit.links %}\
           {% for link in commit.links | sort(attribute="href") %}\
-            {{ link.href }}, \
+            {{ repo_ref }}{{ link.href }}, \
           {% endfor %}\
         {% endif %}\
-        {{ commit.id  }}\
+        {% if repo_ref %}{{ repo_ref }}@{% endif %}{{ commit.id }}\
       )\
       {% if commit.github.username and not commit.github.username is matching(maintainers_usernames) %}\
         {{ " " }}[@{{ commit.github.username }}]\
