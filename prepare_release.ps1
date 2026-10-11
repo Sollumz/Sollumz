@@ -30,6 +30,9 @@ $major = $versionComponents[0]
 $minor = $versionComponents[1]
 $patch = $versionComponents[2]
 
+# Remember the commit before the release changes, to tell how to revert them
+$originalHead = & git rev-parse --short HEAD
+
 # Update version in __init__.py
 (Get-Content -Raw __init__.py) `
   -replace "`"version`": \(\d+, \d+, \d+\)", "`"version`": ($major, $minor, $patch)" |
@@ -97,3 +100,5 @@ Set-Content -NoNewline blender_manifest.toml
 # Create archive
 & git archive --prefix Sollumz/ -o Sollumz.zip "v$Version"
 Write-Host "Archive created in 'Sollumz.zip'."
+
+Write-Host "To revert the git changes, run ``git tag -d v$Version`` and ``git reset --keep $originalHead``"
