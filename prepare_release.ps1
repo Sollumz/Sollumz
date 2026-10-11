@@ -13,7 +13,7 @@ if ((Get-Command "git" -ErrorAction SilentlyContinue) -eq $null)
 # Gets the szio version pinned in dependencies.py at the given revision, or $null if there is none
 function Get-SzioVersion([string]$Rev) {
   $deps = (& git show "${Rev}:dependencies.py" 2>$null) -join "`n"
-  if ($deps -match '(?s)Dependency\(\s*"szio",.*?"(\d+\.\d+\.\d+(?:\.dev\d+)?)"') {
+  if ($deps -match '(?s)Dependency\(\s*"szio",.*?"(\d+\.\d+\.\d+[^"]*)"') {
     return $Matches[1]
   }
   return $null
@@ -29,6 +29,13 @@ if ($versionComponents.Length -ne 3) {
 $major = $versionComponents[0]
 $minor = $versionComponents[1]
 $patch = $versionComponents[2]
+
+# Releases should depend on a szio release, not a development version
+$szioVersion = Get-SzioVersion "HEAD"
+if ($szioVersion -match "\.dev\d*$")
+{
+  Write-Warning "szio is pinned to development version $szioVersion. Remember to do a szio release first and update the pinned version in 'dependencies.py'."
+}
 
 # Remember the commit before the release changes, to tell how to revert them
 $originalHead = & git rev-parse --short HEAD
