@@ -333,7 +333,9 @@ def shader_to_material(
 ) -> Material:
     ctx = import_context()
     textures_dir = ctx.textures_extract_directory or ctx.textures_import_directory
-    hd_textures_dir = textures_dir.with_name(textures_dir.name + (hd_txd_suffix or ""))
+    hd_textures_dir = (
+        textures_dir.with_name(textures_dir.name + (hd_txd_suffix or "")) if textures_dir is not None else None
+    )
     hd_textures = hd_txd.textures if hd_txd and hd_txd.textures else {}
 
     filename = shader.preset_filename or ShaderManager.find_shader_preset_name(shader.name, shader.render_bucket.value)

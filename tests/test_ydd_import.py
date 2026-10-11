@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from szio import VPath
 from szio.gta5 import AssetFormat, AssetTarget, AssetVersion
 
 from ..iecontext import (
@@ -30,7 +31,7 @@ def _import_scope(
     return import_context_scope(ImportContext(
         asset_name="test_ydd",
         asset_target=AssetTarget(AssetFormat.CWXML, AssetVersion.GEN8),
-        directory=directory if directory is not None else asset_path(),
+        directory=VPath(directory if directory is not None else asset_path()),
         settings=settings,
     ))
 

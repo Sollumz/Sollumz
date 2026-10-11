@@ -199,7 +199,7 @@ def extract_embedded_textures(embedded_textures: dict[str, EmbeddedTexture], dir
         # If no embedded textures data (e.g. importing CWXML), try to lookup external texture files in import directory
         # so we can copy them to the user custom directory
         textures_import_dir = _with_dir_suffix(ctx.textures_import_directory, dir_suffix)
-        if textures_import_dir.is_dir():
+        if textures_import_dir is not None and textures_import_dir.is_dir():
             from szio.types import DataSource
 
             textures = [

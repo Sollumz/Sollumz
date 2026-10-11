@@ -1,3 +1,4 @@
+import os
 import traceback
 import bpy
 from bpy.types import (
@@ -118,7 +119,6 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             filenames, ymap_filenames = self._separate_ymap_filenames(filenames)
             filenames = self._dedupe_hi_yft_filenames(filenames)
 
-            from pathlib import Path
             from szio import VPath
             from szio.gta5 import try_load_asset, AssetType, AssetWithDependencies
             from .ybn.ybnimport import import_ybn as import_ybn_asset
@@ -132,14 +132,14 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
             prefs_import_settings = self if self.use_custom_settings else get_import_settings()
             import_settings = prefs_import_settings.to_import_context_settings(import_as_asset=self.import_as_asset)
 
-            directory = Path(self.directory)
+            directory = VPath(self.directory)
 
             def _import_asset_legacy(filename: str) -> bool:
                 filepath = directory / filename
                 if filename.endswith(YCD.file_extension):
-                    import_ycd(str(filepath))
+                    import_ycd(os.fspath(filepath))
                 elif filename.endswith(YNV.file_extension):
-                    import_ynv(str(filepath))
+                    import_ynv(os.fspath(filepath))
                 elif filepath.suffix in {".ycd", ".ynv"}:
                     logger.warning(
                         f"Binary resource format '{filepath.suffix}' is not supported yet. "
@@ -154,10 +154,10 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                 filepath = directory / filename
 
                 try:
-                    if _import_asset_legacy(str(filepath)):
+                    if _import_asset_legacy(filename):
                         return True
 
-                    if (load_result := try_load_asset(VPath(filepath), return_target=True)) is None:
+                    if (load_result := try_load_asset(filepath, return_target=True)) is None:
                         if not IS_SZIO_NATIVE_AVAILABLE and filepath.suffix in {".ybn", ".ydr", ".ydd", ".yft", ".ytyp", ".ytd", ".ymap"}:
                             logger.warning(f"Could not import '{filepath}'. {PYMATERIA_REQUIRED_MSG}")
                         else:

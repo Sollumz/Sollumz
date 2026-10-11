@@ -3,7 +3,7 @@ from bpy.types import (
     Object
 )
 from typing import Optional
-from pathlib import Path
+from szio import VPath
 from szio.gta5 import (
     AssetFormat,
     AssetWithDependencies,
@@ -98,7 +98,7 @@ def try_load_external_skeleton() -> Optional[AssetFragment]:
     return yft
 
 
-def get_first_yft_path(directory: Path) -> Optional[Path]:
+def get_first_yft_path(directory: VPath) -> Optional[VPath]:
     for file in directory.iterdir():
         if file.is_file() and ((name := file.name).endswith(".yft") or name.endswith(".yft.xml")):
             return file

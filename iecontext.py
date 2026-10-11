@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from enum import Enum, auto
 
+from szio import VPath
 from szio.gta5 import Asset, AssetFormat, AssetTarget, SaveOptions, save_asset
 from szio.types import DataSource
 
@@ -50,7 +51,9 @@ class ImportContext:
 
     asset_name: str
     asset_target: AssetTarget
-    directory: Path
+    directory: VPath
+    """Directory of the imported file, for looking up sibling files (e.g. `_hi.yft` or `+hi.ytd`). It can be inside a
+    game archive."""
     settings: ImportSettings
 
     @property
@@ -67,8 +70,12 @@ class ImportContext:
                 return None
 
     @property
-    def textures_import_directory(self) -> Path:
-        return self.directory / self.asset_name
+    def textures_import_directory(self) -> Path | None:
+        """Directory next to the imported file with this asset's textures, or `None` if the file is inside a game
+        archive."""
+        if self.directory.is_inside_archive() or self.directory.is_archive():
+            return None
+        return Path(self.directory) / self.asset_name
 
 
 @dataclass(slots=True, frozen=True)
