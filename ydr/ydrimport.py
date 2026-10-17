@@ -322,6 +322,18 @@ def shader_group_to_materials_with_hi(
     materials = _build_materials(shader_group)
     hi_materials = _build_materials(hi_shader_group) if hi_shader_group is not None else []
 
+    is_data_by_image = {}
+    for material in materials_cache.values():
+        shader_filename = material.shader_properties.filename
+        for node in material.node_tree.nodes:
+            if isinstance(node, ShaderNodeTexImage) and node.is_sollumz and node.image is not None:
+                is_data = is_non_color_texture(shader_filename, node.name)
+                is_data_by_image[node.image] = is_data_by_image.get(node.image, True) and is_data
+
+    for img, is_data in is_data_by_image.items():
+        if is_data:
+            img.colorspace_settings.is_data = True
+
     return materials, hi_materials
 
 
@@ -403,9 +415,6 @@ def shader_to_material(
             if is_hd:
                 img.sz_is_hd = True
 
-            if is_non_color_texture(filename, param_name):
-                img.colorspace_settings.is_data = True
-
             preferences = get_addon_preferences(bpy.context)
             if preferences.use_text_name_as_mat_name and param_name == "diffusesampler":
                 material.name = tex_name
@@ -455,6 +464,8 @@ def is_non_color_texture(shader_filename: str, param_name: str) -> bool:
     param_name = param_name.lower()
     return (
         "bump" in param_name or  # ...to normal maps
+        param_name == "detailsampler" or
+        "height" in param_name or  # ...to height maps (heightSampler, heightMapSamplerLayer*)
         param_name == "distancemapsampler" or  # ...to distance maps
         (shader_filename in {"decal_dirt.sps", "decal_amb_only.sps"}
          and param_name == "diffusesampler")  # ...to shadow maps

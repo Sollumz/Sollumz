@@ -74,6 +74,20 @@ def test_convert_shader_to_shader(src_shader, dst_shader, plane_object):
     assert plane_object.data.materials[0] == mat
 
 
+@pytest.mark.parametrize("shader", ["ped_palette.sps", "weapon_normal_spec_cutout_palette.sps"])
+def test_diff_palette_tints_diffuse(shader):
+    # The palette must multiply the diffuse, not replace it.
+    mat = create_shader(shader)
+    bsdf, _ = find_bsdf_and_material_output(mat)
+    tint = bsdf.inputs["Base Color"].links[0].from_node
+    assert tint.blend_type == "MULTIPLY"
+    assert tint.inputs["Color1"].links[0].from_node.name == "DiffuseSampler"
+    assert tint.inputs["Color2"].links[0].from_node.name == "TextureSamplerDiffPal"
+
+    # ...and the index range gate must floor, not round, the alpha
+    assert any(n.type == "MATH" and n.operation == "FLOOR" for n in mat.node_tree.nodes)
+
+
 def test_ops_update_tint_shader_correctly_syncs_attribute_names(plane_object):
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.ops.object.select_all(action='DESELECT')

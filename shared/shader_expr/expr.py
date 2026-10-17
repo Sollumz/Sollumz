@@ -134,6 +134,8 @@ class FloatBinaryExprOp(IntEnum):
     POWER = 5
     LESS_THAN = 6
     GREATER_THAN = 7
+    MAXIMUM = 8
+    MINIMUM = 9
 
     def token(self) -> str:
         match self:
@@ -153,6 +155,10 @@ class FloatBinaryExprOp(IntEnum):
                 return "<"
             case FloatBinaryExprOp.GREATER_THAN:
                 return ">"
+            case FloatBinaryExprOp.MAXIMUM:
+                return "max"
+            case FloatBinaryExprOp.MINIMUM:
+                return "min"
             case _:
                 raise NotImplementedError(f"'{self}' not implemented!")
 
@@ -184,13 +190,16 @@ class FloatBinaryExpr(FloatExpr):
 class FloatUnaryExprOp(IntEnum):
     ROUND = 0
     TRUNC = 1
+    ABSOLUTE = 2
 
     def token(self) -> str:
         match self:
             case FloatUnaryExprOp.ROUND:
                 return "roundf"
-            case FloatUnaryExprOp.ROUND:
+            case FloatUnaryExprOp.TRUNC:
                 return "truncf"
+            case FloatUnaryExprOp.ABSOLUTE:
+                return "absf"
             case _:
                 raise NotImplementedError(f"'{self}' not implemented!")
 
@@ -544,6 +553,57 @@ class UVMapVectorExpr(VectorExpr):
         return f"uv({self.uv_map_index})"
 
 
+class FloatSocketExpr(FloatExpr):
+    """An output socket of a node that already exists in the tree.
+
+    Bridges imperatively-built graphs into expressions, so parts of a node tree that were wired by
+    hand can be reused instead of rebuilt.
+    """
+
+    node: object
+    socket_key: object
+
+    def __init__(self, node, socket_key):
+        self.node = node
+        self.socket_key = socket_key
+
+    def __str__(self):
+        return f"socket({self.node.name}.{self.socket_key})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return str(self)
+
+
+class GeometryExpr(VectorExpr):
+    """Access a vector output of the Geometry node, e.g. 'Incoming' or 'Normal'."""
+
+    socket_name: str
+
+    def __init__(self, socket_name: str):
+        self.socket_name = socket_name
+
+    def __str__(self):
+        return f"geometry('{self.socket_name}')"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return f"geometry('{self.socket_name}')"
+
+
+class TangentExpr(VectorExpr):
+    """The world-space tangent derived from a UV map."""
+
+    uv_map_index: int
+
+    def __init__(self, uv_map_index: int):
+        self.uv_map_index = uv_map_index
+
+    def __str__(self):
+        return f"tangent({self.uv_map_index})"
+
+    def dump(self, ctx: ExprDumpContext) -> str:
+        return f"tangent({self.uv_map_index})"
+
+
 class ParameterComponentExpr(FloatExpr):
     """Access a float component of a parameter."""
 
@@ -848,6 +908,7 @@ class BsdfPrincipledExpr(ShaderExpr):
     metallic: Optional[FloatExpr]
     roughness: Optional[FloatExpr]
     specular_ior_level: Optional[FloatExpr]
+    ior: Optional[FloatExpr]
     coat_weight: Optional[FloatExpr]
     normal: Optional[VectorExpr]
 
@@ -858,6 +919,7 @@ class BsdfPrincipledExpr(ShaderExpr):
         metallic: Optional[Floaty] = None,
         roughness: Optional[Floaty] = None,
         specular_ior_level: Optional[Floaty] = None,
+        ior: Optional[Floaty] = None,
         coat_weight: Optional[Floaty] = None,
         normal: Optional[VectorExpr] = None,
     ):
@@ -866,6 +928,7 @@ class BsdfPrincipledExpr(ShaderExpr):
         self.metallic = optional_floaty(metallic)
         self.roughness = optional_floaty(roughness)
         self.specular_ior_level = optional_floaty(specular_ior_level)
+        self.ior = optional_floaty(ior)
         self.coat_weight = optional_floaty(coat_weight)
         self.normal = normal
 
@@ -889,6 +952,7 @@ class BsdfPrincipledExpr(ShaderExpr):
         _arg("metallic")
         _arg("roughness")
         _arg("specular_ior_level")
+        _arg("ior")
         _arg("coat_weight")
         _arg("normal")
 
@@ -917,6 +981,7 @@ class BsdfPrincipledExpr(ShaderExpr):
             _arg("metallic")
             _arg("roughness")
             _arg("specular_ior_level")
+            _arg("ior")
             _arg("coat_weight")
             _arg("normal")
 
