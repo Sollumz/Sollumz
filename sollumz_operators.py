@@ -343,7 +343,27 @@ def _collect_objects_for_export(context, limit_to_selected: bool) -> list[Object
     if limit_to_selected:
         objs = context.view_layer.objects.selected
 
-    return _get_only_parent_objs(objs)
+    objs = _get_only_parent_objs(objs)
+
+    # Cloth world bounds are exported as part of their fragment, don't export them as a separate .ybn
+    cloth_world_bounds = {
+        o.fragment_properties.cloth.world_bounds: o
+        for o in bpy.data.objects
+        if o.sollum_type == SollumType.FRAGMENT and o.fragment_properties.cloth.world_bounds is not None
+    }
+    if cloth_world_bounds:
+        filtered_objs = []
+        for obj in objs:
+            if (frag_obj := cloth_world_bounds.get(obj, None)) is not None:
+                logger.info(
+                    f"Skipping '{obj.name}', it is used as cloth world bounds by fragment '{frag_obj.name}' and is "
+                    "exported as part of it."
+                )
+                continue
+            filtered_objs.append(obj)
+        objs = filtered_objs
+
+    return objs
 
 
 def _get_only_parent_objs(objs: list[Object]) -> list[Object]:

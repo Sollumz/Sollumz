@@ -873,6 +873,34 @@ def test_export_fragment_cloth(frag_obj_name: str, tmp_path: Path):
             assert nbounds_capsules == 1
 
 
+@pytest.mark.parametrize(
+    "frag_obj_name",
+    (
+        "cloth_with_world_bounds_planes",
+        "cloth_with_world_bounds_capsules",
+        "cloth_with_world_bounds_planes_and_capsules",
+    ),
+)
+@assert_logs_no_warnings_or_errors
+def test_export_fragment_cloth_world_bounds_not_exported_as_ybn(frag_obj_name: str, tmp_path: Path):
+    data = load_blend_data("fragment_cloth.blend")
+
+    bpy.ops.object.select_all(action="DESELECT")
+
+    data.objects[frag_obj_name].select_set(True)
+    data.objects[f"{frag_obj_name}.world_bounds"].select_set(True)
+
+    bpy.ops.sollumz.export_assets(
+        directory=str(tmp_path.absolute()),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS,
+    )
+
+    assert (tmp_path / "gen8" / f"{frag_obj_name}.yft.xml").is_file()
+    assert not list(tmp_path.rglob("*.ybn*"))
+
+
 @requires_szio_native
 @pytest.mark.parametrize("version_dir", ("gen8", "gen9", "cwxml"))
 @pytest.mark.parametrize(
