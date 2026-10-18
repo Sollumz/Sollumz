@@ -53,7 +53,7 @@ def get_entityset_items_for_selected_archetype(self, context: Optional[bpy.types
 
 
 class MloArchetypeChild:
-    def get_mlo_archetype(self) -> "ArchetypeProperties" | None:
+    def get_mlo_archetype(self) -> "ArchetypeProperties | None":
         archetype_uuid = self.mlo_archetype_uuid
         if not archetype_uuid:
             return None
