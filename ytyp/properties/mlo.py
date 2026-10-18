@@ -54,9 +54,19 @@ def get_entityset_items_for_selected_archetype(self, context: Optional[bpy.types
 
 class MloArchetypeChild:
     def get_mlo_archetype(self):
-        # TODO: this is incorrect if it gets called when the selected ytyp is not the owner of the MLO
         selected_ytyp = get_selected_ytyp(bpy.context)
 
+        if archetype_uuid := self.mlo_archetype_uuid:
+            # The owner is not necessarily in the selected ytyp (e.g. when exporting all ytyps), so look it up by UUID.
+            # The selected ytyp is checked first because it is the common case.
+            ytyps = [selected_ytyp] if selected_ytyp else []
+            ytyps.extend(bpy.context.scene.ytyps)
+            for ytyp in ytyps:
+                for archetype in ytyp.archetypes:
+                    if archetype.uuid == archetype_uuid:
+                        return archetype
+
+        # Fallback for data without UUIDs, only correct if the selected ytyp is the owner of the MLO
         if self.mlo_archetype_id == -1 or not self.mlo_archetype_uuid:
             selected_ytyp.update_mlo_archetype_ids()
         for archetype in selected_ytyp.archetypes:
