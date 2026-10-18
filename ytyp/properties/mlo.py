@@ -112,7 +112,6 @@ class MloArchetypeChild:
         ArchetypeProperties.update_cached_room_enum_items(archetype_uuid)
         ArchetypeProperties.update_cached_entity_set_enum_items(archetype_uuid)
 
-    mlo_archetype_id: bpy.props.IntProperty(default=-1)
     mlo_archetype_uuid: bpy.props.StringProperty(name="Archetype UUID", maxlen=36)
 
 

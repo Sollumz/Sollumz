@@ -313,7 +313,6 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.uuid = str(uuid4())
 
         # Must be set before the room enums, their items are looked up from the owner archetype
-        item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
         if len(self.rooms) > 0:
@@ -338,7 +337,6 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.id = item_id
         item.uuid = str(uuid4())
 
-        item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
         item.name = f"Room.{item.id}"
@@ -360,7 +358,6 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.id = item_id
         item.uuid = str(uuid4())
 
-        item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
         item.archetype_name = f"Entity.{item_id}"
@@ -375,7 +372,6 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item = self.timecycle_modifiers.add()
         self.timecycle_modifiers.select(len(self.timecycle_modifiers) - 1)
 
-        item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
         return item
@@ -389,7 +385,6 @@ class ArchetypeProperties(bpy.types.PropertyGroup, ExtensionsContainer):
         item.id = item_id
         item.uuid = str(uuid4())
 
-        item.mlo_archetype_id = self.id
         item.mlo_archetype_uuid = self.uuid
 
         item.name = f"EntitySet.{item.id}"
