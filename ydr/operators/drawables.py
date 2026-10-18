@@ -70,6 +70,9 @@ class SOLLUMZ_OT_convert_to_drawable(bpy.types.Operator):
         auto_embed_col = context.scene.auto_create_embedded_col
         do_center = context.scene.center_drawable_to_selection
 
+        if auto_embed_col and context.mode != "OBJECT":
+            bpy.ops.object.mode_set(mode="OBJECT")
+
         if context.scene.create_seperate_drawables or len(selected_meshes) == 1:
             self.convert_separate_drawables(context, selected_meshes, auto_embed_col)
         else:
