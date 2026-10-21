@@ -39,7 +39,11 @@ def import_props_from_ytyp(directory: Path, typ_file: Path, catalog_id: str, cac
     #     file_index[(stem_hash, exts)] = f
 
     def _file_index_lookup(filename_hash: int, ext: str) -> VPath | None:
-        p = (file_index.get((ext,), {}) or file_index.get((ext, ".xml"), {})).get(filename_hash, None)
+        # Prefer the binary file, fall back to the CWXML file with the same name
+        p = (
+            file_index.get((ext,), {}).get(filename_hash, None)
+            or file_index.get((ext, ".xml"), {}).get(filename_hash, None)
+        )
         return VPath(p[-1]) if p else None
 
     files = []

@@ -203,7 +203,10 @@ def build_library(
     interior_cmds = []
 
     gf = GameFiles(source_directory)
-    file_index = gf.read_asset_filelist([(".ytyp",), (".ydr",), (".yft",), (".ydd",), (".ytd",), (".ytyp.xml",), (".ydr.xml",), (".yft.xml",), (".ydd.xml",), (".ytd.xml",)])
+    file_index = gf.read_asset_filelist([
+        (".ytyp",), (".ydr",), (".yft",), (".ydd",), (".ytd",),
+        (".ytyp", ".xml"), (".ydr", ".xml"), (".yft", ".xml"), (".ydd", ".xml"), (".ytd", ".xml"),
+    ])
     file_index_by_hash = GameFiles.index_by_name_hash(file_index)
     from itertools import chain
     import tempfile
