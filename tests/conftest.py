@@ -14,6 +14,35 @@ def context():
 
 
 @pytest.fixture()
+def prefs_temp_file(tmp_path, monkeypatch):
+    """Redirect preferences to an isolated temp .ini and restore the real preferences afterwards. Use it in any test
+    that changes the preferences, directly or through an operator, so nothing touches (or leaks into) the developer's
+    real Sollumz preferences.
+
+    `_save_preferences` / `_load_preferences` resolve the file through the module-global `prefs_file_path` (imported by
+    name at module load), so the patch must be applied on `sollumz_preferences` itself, not on `known_paths`.
+    """
+    from .. import sollumz_preferences as prefs_mod
+    from .. import sollumz_tool
+    from .. import sollumz_ui
+
+    ini_path = tmp_path / "sollumz_prefs.ini"
+    monkeypatch.setattr(prefs_mod, "prefs_file_path", lambda: str(ini_path))
+
+    prefs = prefs_mod.get_addon_preferences()
+    # Snapshot the real preferences so any mutation a test makes is rolled back afterwards.
+    snapshot = prefs_mod._get_bpy_struct_as_dict(prefs)
+    try:
+        yield ini_path
+    finally:
+        prefs_mod._update_bpy_struct_from_dict(prefs, snapshot, eval_strings=True)
+        # `_load_preferences` syncs the REAL panel/tool visibility state; sync it back from the
+        # restored collections so no visibility state leaks into other tests
+        sollumz_ui.panel_visibility().sync(prefs.hidden_panels)
+        sollumz_tool.tool_visibility().sync(prefs.hidden_tools)
+
+
+@pytest.fixture()
 def plane_object(context):
     bpy.ops.mesh.primitive_plane_add()
     obj = context.object

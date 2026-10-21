@@ -5,6 +5,13 @@ from szio.jenkhash import name_to_hash
 from collections.abc import Sequence
 
 
+def is_game_installation(directory: str | os.PathLike | VPath) -> bool:
+    """Whether `directory` is a GTA V installation directory, detected by the presence of the legacy or Enhanced
+    executable."""
+    directory = VPath(directory)
+    return (directory / "GTA5.exe").is_file() or (directory / "GTA5_Enhanced.exe").is_file()
+
+
 class GameFiles:
     """Discovers asset files within a directory tree rooted at `root_dir`, which may be a GTA V installation or any
     folder of extracted assets.
@@ -14,9 +21,8 @@ class GameFiles:
         self.root = VPath(root_dir)
 
     def is_game_installation(self) -> bool:
-        """Whether the root is a GTA V game installation, detected by the presence of the legacy or Enhanced
-        executable."""
-        return (self.root / "GTA5.exe").is_file() or (self.root / "GTA5_Enhanced.exe").is_file()
+        """Whether the root is a GTA V game installation."""
+        return is_game_installation(self.root)
 
     def read_dlclist(
         self, dlclist_subpath: str | os.PathLike | VPath = "update/update.rpf/common/data/dlclist.xml"

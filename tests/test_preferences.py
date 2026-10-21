@@ -1,6 +1,6 @@
 """Tests for the preferences .ini load/save (sollumz_preferences).
 
-The autouse ``prefs_temp_file`` fixture redirects the preferences file into an isolated temp
+The autouse ``prefs_temp_file`` fixture (from conftest.py) redirects the preferences file into an isolated temp
 directory and restores the in-memory preferences after each test, so nothing touches (or leaks into)
 the developer's real Sollumz preferences.
 """
@@ -12,28 +12,7 @@ from .. import sollumz_tool
 from .. import sollumz_ui
 from .shared import log_capture
 
-
-@pytest.fixture(autouse=True)
-def prefs_temp_file(tmp_path, monkeypatch):
-    """Redirect preferences to an isolated temp .ini and restore the real preferences afterwards.
-
-    `_save_preferences` / `_load_preferences` resolve the file through the module-global `prefs_file_path` (imported by
-    name at module load), so the patch must be applied on `sollumz_preferences` itself, not on `known_paths`.
-    """
-    ini_path = tmp_path / "sollumz_prefs.ini"
-    monkeypatch.setattr(prefs_mod, "prefs_file_path", lambda: str(ini_path))
-
-    prefs = prefs_mod.get_addon_preferences()
-    # Snapshot the real preferences so any mutation a test makes is rolled back afterwards.
-    snapshot = prefs_mod._get_bpy_struct_as_dict(prefs)
-    try:
-        yield ini_path
-    finally:
-        prefs_mod._update_bpy_struct_from_dict(prefs, snapshot, eval_strings=True)
-        # `_load_preferences` syncs the REAL panel/tool visibility state; sync it back from the
-        # restored collections so no visibility state leaks into other tests
-        sollumz_ui.panel_visibility().sync(prefs.hidden_panels)
-        sollumz_tool.tool_visibility().sync(prefs.hidden_tools)
+pytestmark = pytest.mark.usefixtures("prefs_temp_file")
 
 
 def test_round_trip(prefs_temp_file):
@@ -143,3 +122,17 @@ def test_save_is_atomic_no_tmp_left(prefs_temp_file):
 
     assert prefs_temp_file.exists()
     assert not (prefs_temp_file.parent / (prefs_temp_file.name + ".tmp")).exists()
+
+
+def test_get_game_directory(tmp_path):
+    prefs = prefs_mod.get_addon_preferences()
+
+    prefs.game_directory = ""
+    assert prefs_mod.get_game_directory() is None
+
+    # Saved, but not a game installation (e.g. the game was moved after saving it)
+    prefs.game_directory = str(tmp_path)
+    assert prefs_mod.get_game_directory() is None
+
+    (tmp_path / "GTA5.exe").touch()
+    assert prefs_mod.get_game_directory() == tmp_path

@@ -878,7 +878,7 @@ class SOLLUMZ_OT_prefs_external_skeleton_path_remove(Operator):
 class SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode(Operator):
     bl_idname = "sollumz.prefs_external_skeleton_path_add_mp_freemode"
     bl_label = "Choose Game Installation"
-    bl_description = "Add MP freemode skeletons from game files"
+    bl_description = "Add MP freemode skeletons from GTA V installation directory"
 
     directory: bpy.props.StringProperty(subtype="DIR_PATH", options={"HIDDEN", "SKIP_SAVE"})
 
@@ -903,12 +903,12 @@ class SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode(Operator):
             if not directory.is_dir():
                 return {"CANCELLED"}
 
-            from .shared.game_assets.game_files import GameFiles
-            gf = GameFiles(directory)
-            if not gf.is_game_installation():
-                logger.warning("The selected directory is not the GTA5 installation directory")
+            from .shared.game_assets.game_files import is_game_installation
+            if not is_game_installation(directory):
+                logger.warning("The selected directory is not the GTA V installation directory")
                 return {"CANCELLED"}
 
+            save_game_directory(directory, context)
 
             prefs = get_addon_preferences(context)
             for subpath in (
@@ -925,6 +925,9 @@ class SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode(Operator):
             return {"FINISHED"}
 
     def invoke(self, context, event):
+        if not self.directory and (game_dir := get_game_directory(context)) is not None:
+            self.directory = str(game_dir)
+
         if self.directory:
             return self.execute(context)
 
@@ -938,7 +941,10 @@ class SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu(Menu):
 
     def draw(self, _context):
         layout = self.layout
-        layout.operator(SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode.bl_idname, text="Add MP Freemode Skeletons from Game Files")
+        layout.operator(
+            SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode.bl_idname,
+            text="Add MP Freemode Skeletons from Game Installation",
+        )
 
 
 class SzFavoriteEntry(PropertyGroup):
@@ -1027,6 +1033,16 @@ class SollumzAddonPreferences(AddonPreferences):
         description="Enable archetype/entity selection sync by default in new scenes. Requires restart to take effect",
         default=True,
         update=_save_preferences_on_update
+    )
+
+    game_directory: StringProperty(
+        name="GTA V Installation",
+        description=(
+            "GTA V installation directory, the one with GTA5.exe or GTA5_Enhanced.exe. Used by the operators that "
+            "read the game files. Saved automatically the first time a game installation directory is selected"
+        ),
+        subtype="DIR_PATH",
+        update=_save_preferences_on_update,
     )
 
     shared_textures_directories: CollectionProperty(
@@ -1249,6 +1265,20 @@ class SollumzAddonPreferences(AddonPreferences):
         col.prop(self, "default_flags_archetype", text="Archetypes")
 
         from .sollumz_ui import draw_list_with_add_remove
+        layout.separator()
+        layout.label(text="Game Installation")
+        row = layout.row()
+        self._draw_help_text(
+            context, row,
+            "Used by operators that read the game files. Saved the first time you select the game directory."
+        )
+        col = layout.column()
+        col.prop(self, "game_directory", text="GTA V")
+        if self.game_directory and get_game_directory(context) is None:
+            row = col.row()
+            row.alert = True
+            row.label(text="Not a GTA V installation directory, you will be asked for it again", icon="ERROR")
+
         layout.separator()
         layout.label(text="Game Asset Libraries")
         row = layout.row()
@@ -1649,6 +1679,29 @@ def get_export_settings(context: Optional[bpy.types.Context] = None) -> SollumzE
 
 def get_theme_settings(context: Optional[bpy.types.Context] = None) -> SollumzThemeSettings:
     return get_addon_preferences(context).theme
+
+
+def get_game_directory(context: Optional[bpy.types.Context] = None) -> Path | None:
+    """Return the GTA V installation directory saved in the preferences, or `None` if not saved or it is no longer a
+    game installation directory (e.g. the game was moved). Operators that need the game files should use it and only
+    ask the user for the directory when this returns `None`, then save the selected one with `save_game_directory`.
+    """
+    from .shared.game_assets.game_files import is_game_installation
+
+    saved_dir = get_addon_preferences(context).game_directory
+    if not saved_dir:
+        return None
+
+    game_dir = Path(bpy.path.abspath(saved_dir))
+    return game_dir if is_game_installation(game_dir) else None
+
+
+def save_game_directory(directory: str | os.PathLike, context: Optional[bpy.types.Context] = None):
+    """Save the GTA V installation directory in the preferences, so the user is not asked for it again."""
+    prefs = get_addon_preferences(context)
+    directory = os.fspath(directory)
+    if prefs.game_directory != directory:
+        prefs.game_directory = directory  # the update callback writes the preferences file
 
 
 def _save_preferences():
