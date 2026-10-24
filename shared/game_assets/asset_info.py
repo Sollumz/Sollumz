@@ -24,6 +24,12 @@ class AssetArchetypeInfo:
     mlo_num_exit_portals: int
 
 
+ASSET_KEY_ARCHETYPE_INFO = "sz_asset_archetype_info"
+ASSET_KEY_LIGHTS = "sz_asset_lights"
+ASSET_KEY_COLLISIONS = "sz_asset_collisions"
+ASSET_KEY_SKELETON = "sz_asset_skeleton"
+
+
 @dataclass(slots=True)
 class AssetInfoCache:
     """Per-operation cache. Pass the same instance to multiple lookups so the YTYP scan and the live
@@ -45,7 +51,7 @@ def try_get_asset_metadata_archetype_info(obj: Object, *, cache: AssetInfoCache 
     shared asset library); if absent, the scene YTYPs are scanned for an archetype matching ``obj`` by name (Blender's
     ``.001`` duplicate suffix is stripped). Returns ``None`` if no archetype information can be resolved.
     """
-    info_str = _try_get_asset_metadata_str(obj, "sz_asset_archetype_info")
+    info_str = _try_get_asset_metadata_str(obj, ASSET_KEY_ARCHETYPE_INFO)
     if info_str:
         return _parse_archetype_info(info_str)
 
@@ -184,7 +190,7 @@ def _resolve_archetype_by_name(
 
 
 def _resolve_lights(obj: Object, cache: AssetInfoCache | None) -> list | None:
-    lights_str = _try_get_asset_metadata_str(obj, "sz_asset_lights")
+    lights_str = _try_get_asset_metadata_str(obj, ASSET_KEY_LIGHTS)
     if lights_str:
         return json.loads(lights_str)
 
@@ -203,7 +209,7 @@ def _resolve_lights(obj: Object, cache: AssetInfoCache | None) -> list | None:
 
 
 def _resolve_collisions(obj: Object, cache: AssetInfoCache | None) -> dict | None:
-    cols_str = _try_get_asset_metadata_str(obj, "sz_asset_collisions")
+    cols_str = _try_get_asset_metadata_str(obj, ASSET_KEY_COLLISIONS)
     if cols_str:
         return json.loads(cols_str)
 
@@ -230,7 +236,7 @@ def _resolve_collisions(obj: Object, cache: AssetInfoCache | None) -> dict | Non
 
 
 def _resolve_skeleton(obj: Object, cache: AssetInfoCache | None) -> dict | None:
-    skel_str = _try_get_asset_metadata_str(obj, "sz_asset_skeleton")
+    skel_str = _try_get_asset_metadata_str(obj, ASSET_KEY_SKELETON)
     if skel_str:
         return json.loads(skel_str)
 

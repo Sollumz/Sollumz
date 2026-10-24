@@ -35,6 +35,7 @@ from ..ytd.ytdimport import try_load_hd_txd
 from ..iecontext import import_context
 from .. import logger
 from ..shared.object_hierarchy import ObjectHierarchySnapshot
+from ..shared.game_assets.asset_info import ASSET_KEY_COLLISIONS, ASSET_KEY_SKELETON
 
 
 def find_yft_external_dependencies(asset: AssetFragment, name: str) -> AssetWithDependencies | None:
@@ -717,8 +718,6 @@ def create_fragment_as_asset(
     if bounds:
         import json
 
-        COLS_KEY = "sz_asset_collisions"
-
         cols_serialized = {
             "bb_min": tuple(bounds.bb_min),
             "bb_max": tuple(bounds.bb_max),
@@ -729,16 +728,15 @@ def create_fragment_as_asset(
             indent=None,
         )
 
-        asset_obj[COLS_KEY] = cols_serialized_str
+        asset_obj[ASSET_KEY_COLLISIONS] = cols_serialized_str
         if data := asset_obj.data:
-                data[COLS_KEY] = cols_serialized_str
+                data[ASSET_KEY_COLLISIONS] = cols_serialized_str
         if asset_data := asset_obj.asset_data:
-                asset_data[COLS_KEY] = cols_serialized_str
+                asset_data[ASSET_KEY_COLLISIONS] = cols_serialized_str
 
     if skel:
         import json
         from dataclasses import asdict
-        SKEL_KEY = "sz_asset_skeleton"
 
         skel_serialized = asdict(skel)
         for bone in skel_serialized["bones"]:
@@ -755,10 +753,10 @@ def create_fragment_as_asset(
             indent=None,
         )
 
-        asset_obj[SKEL_KEY] = skel_serialized_str
+        asset_obj[ASSET_KEY_SKELETON] = skel_serialized_str
         if data := asset_obj.data:
-                data[SKEL_KEY] = skel_serialized_str
+                data[ASSET_KEY_SKELETON] = skel_serialized_str
         if asset_data := asset_obj.asset_data:
-                asset_data[SKEL_KEY] = skel_serialized_str
+                asset_data[ASSET_KEY_SKELETON] = skel_serialized_str
 
     return asset_obj

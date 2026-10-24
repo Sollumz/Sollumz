@@ -23,6 +23,7 @@ from .shader_materials import (
 from ..ybn.ybnimport import create_bound_composite, create_bound_object
 from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES
 from ..sollumz_preferences import get_addon_preferences
+from ..shared.game_assets.asset_info import ASSET_KEY_COLLISIONS, ASSET_KEY_SKELETON
 from szio.gta5 import (
     AssetBound,
     BoundType,
@@ -599,8 +600,6 @@ def create_drawable_as_asset(
     if bounds:
         import json
 
-        COLS_KEY = "sz_asset_collisions"
-
         cols_serialized = {
             "bb_min": tuple(bounds.bb_min),
             "bb_max": tuple(bounds.bb_max),
@@ -611,16 +610,15 @@ def create_drawable_as_asset(
             indent=None,
         )
 
-        asset_obj[COLS_KEY] = cols_serialized_str
+        asset_obj[ASSET_KEY_COLLISIONS] = cols_serialized_str
         if data := asset_obj.data:
-                data[COLS_KEY] = cols_serialized_str
+                data[ASSET_KEY_COLLISIONS] = cols_serialized_str
         if asset_data := asset_obj.asset_data:
-                asset_data[COLS_KEY] = cols_serialized_str
+                asset_data[ASSET_KEY_COLLISIONS] = cols_serialized_str
 
     if skel:
         import json
         from dataclasses import asdict
-        SKEL_KEY = "sz_asset_skeleton"
 
         skel_serialized = asdict(skel)
         for bone in skel_serialized["bones"]:
@@ -637,11 +635,11 @@ def create_drawable_as_asset(
             indent=None,
         )
 
-        asset_obj[SKEL_KEY] = skel_serialized_str
+        asset_obj[ASSET_KEY_SKELETON] = skel_serialized_str
         if data := asset_obj.data:
-                data[SKEL_KEY] = skel_serialized_str
+                data[ASSET_KEY_SKELETON] = skel_serialized_str
         if asset_data := asset_obj.asset_data:
-                asset_data[SKEL_KEY] = skel_serialized_str
+                asset_data[ASSET_KEY_SKELETON] = skel_serialized_str
 
 
     return asset_obj

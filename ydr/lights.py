@@ -16,6 +16,7 @@ from szio.gta5 import (
 from .properties import LightProperties
 from .. import logger
 from ..shared.object_hierarchy import ObjectHierarchySnapshot
+from ..shared.game_assets.asset_info import ASSET_KEY_LIGHTS
 
 INTENSITY_SCALE_FACTOR = 500
 
@@ -242,8 +243,6 @@ def serialize_lights_to_asset(asset_obj: Object, lights: list[Light]):
 
     import json
 
-    LIGHTS_KEY = "sz_asset_lights"
-
     lights_serialized = serialize_lights(lights)
     lights_serialized_str = json.dumps(
         lights_serialized,
@@ -251,11 +250,11 @@ def serialize_lights_to_asset(asset_obj: Object, lights: list[Light]):
         indent=None,
     )
 
-    asset_obj[LIGHTS_KEY] = lights_serialized_str
+    asset_obj[ASSET_KEY_LIGHTS] = lights_serialized_str
     if data := asset_obj.data:
-            data[LIGHTS_KEY] = lights_serialized_str
+            data[ASSET_KEY_LIGHTS] = lights_serialized_str
     if asset_data := asset_obj.asset_data:
-            asset_data[LIGHTS_KEY] = lights_serialized_str
+            asset_data[ASSET_KEY_LIGHTS] = lights_serialized_str
 
 
 def duplicate_lights_for_light_effect(parent_obj: Object) -> Object:

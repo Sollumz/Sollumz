@@ -9,6 +9,7 @@ from szio.gta5 import (
     try_load_asset,
 )
 from szio.jenkhash import name_to_hash
+from ..shared.game_assets.asset_info import ASSET_KEY_ARCHETYPE_INFO
 from ..shared.game_assets.game_files import GameFiles
 
 CMD_ID = "sz_create_asset_library"
@@ -123,9 +124,9 @@ def import_props_from_ytyp(directory: Path, typ_file: Path, catalog_id: str, cac
                 indent=None,
             )
 
-            asset_data["sz_asset_archetype_info"] = arch_info
-            obj["sz_asset_archetype_info"] = arch_info
-            obj.data["sz_asset_archetype_info"] = arch_info
+            asset_data[ASSET_KEY_ARCHETYPE_INFO] = arch_info
+            obj[ASSET_KEY_ARCHETYPE_INFO] = arch_info
+            obj.data[ASSET_KEY_ARCHETYPE_INFO] = arch_info
 
     bpy.data.batch_remove(objs_to_remove)
 
@@ -166,8 +167,8 @@ def import_interiors_from_ytyp(typ_file: Path, catalog_id: str):
         mlo_collection.asset_generate_preview()
         asset_data = mlo_collection.asset_data
         asset_data.catalog_id = catalog_id
-        asset_data["sz_asset_archetype_info"] = arch_info
-        mlo_collection["sz_asset_archetype_info"] = arch_info
+        asset_data[ASSET_KEY_ARCHETYPE_INFO] = arch_info
+        mlo_collection[ASSET_KEY_ARCHETYPE_INFO] = arch_info
 
         # Create an object instancing the collection so the game assets library code doesn't have to deal with both
         # objects and colections, and just use objects always
@@ -179,8 +180,8 @@ def import_interiors_from_ytyp(typ_file: Path, catalog_id: str):
         mlo_collection_instance_obj.asset_generate_preview()
         asset_data = mlo_collection_instance_obj.asset_data
         asset_data.catalog_id = catalog_id
-        asset_data["sz_asset_archetype_info"] = arch_info
-        mlo_collection_instance_obj["sz_asset_archetype_info"] = arch_info
+        asset_data[ASSET_KEY_ARCHETYPE_INFO] = arch_info
+        mlo_collection_instance_obj[ASSET_KEY_ARCHETYPE_INFO] = arch_info
 
 
 def create_library_from_ytyp(
