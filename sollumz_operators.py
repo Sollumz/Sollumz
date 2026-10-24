@@ -165,6 +165,9 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                         return False
 
                     asset, asset_target = load_result
+                    # The file name can include directories, look up files next to it (e.g. `_hi.yft` or `+hi.ytd`) in
+                    # its own directory
+                    file_directory = filepath.parent
 
                     name = filepath.name
                     i = name.find('.')
@@ -172,7 +175,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                         name = name[:i]
 
                     # Search asset external dependencies
-                    with import_context_scope(ImportContext(name, asset_target, directory, import_settings)):
+                    with import_context_scope(ImportContext(name, asset_target, file_directory, import_settings)):
                         match asset.ASSET_TYPE:
                             case AssetType.DRAWABLE:
                                 asset_with_deps = find_ydr_external_dependencies(asset, name)
@@ -196,7 +199,7 @@ class ImportAssetsOperatorImpl(ImportSettingsBase, TimedOperator):
                         return False
 
                     # Import asset into Blender
-                    with import_context_scope(ImportContext(name, asset_target, directory, import_settings)):
+                    with import_context_scope(ImportContext(name, asset_target, file_directory, import_settings)):
                         match asset.ASSET_TYPE:
                             case AssetType.BOUND:
                                 import_ybn_asset(asset, name)
