@@ -1,19 +1,42 @@
 import os
 import functools
+import posixpath
+import time
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import bpy
 from bpy.props import (
+    BoolProperty,
+    CollectionProperty,
     EnumProperty,
     StringProperty,
     IntProperty,
 )
 from bpy.types import (
+    AssetRepresentation,
     Operator,
+    PropertyGroup,
 )
+from szio.jenkhash import name_to_hash
 
-from ...sollumz_preferences import get_addon_preferences
+from ... import logger
+from ...dependencies import IS_SZIO_NATIVE_AVAILABLE, PYMATERIA_REQUIRED_MSG
+from ...sollumz_preferences import (
+    ImportSettingsBase,
+    get_addon_preferences,
+    get_import_settings,
+    invoke_with_game_directory,
+    save_game_directory,
+)
 from ...sollumz_operators import SOLLUMZ_OT_import_assets
+from ...tools.blenderhelper import remove_number_suffix
+from .asset_info import (
+    AssetArchetypeInfo,
+    try_get_asset_representation_archetype_info,
+)
+from .game_files import ArchetypeFiles, find_game_asset_files, is_game_installation
 from .library import (
     asset_cache_path,
     build_library,
@@ -235,4 +258,228 @@ class SOLLUMZ_OT_rebuild_game_asset_cache(Operator):
 
         build_library_cache(directories)
         self.report({"INFO"}, f"Asset cache rebuilt at '{asset_cache_path()}'")
+        return {"FINISHED"}
+
+
+def get_active_game_asset(context) -> AssetArchetypeInfo | None:
+    """Return the archetype information of the active asset in the Asset Browser if it is an asset from a game asset
+    library, otherwise `None`.
+    """
+    return try_get_asset_representation_archetype_info(getattr(context, "asset", None))
+
+
+def iter_selected_game_assets(context) -> Iterator[tuple[AssetRepresentation, AssetArchetypeInfo]]:
+    """Iterate the selected assets in the Asset Browser that are from a game asset library, with their archetype
+    information.
+    """
+    assets = getattr(context, "selected_assets", None) or (getattr(context, "asset", None),)
+    for asset in assets:
+        if (archetype_info := try_get_asset_representation_archetype_info(asset)) is not None:
+            yield asset, archetype_info
+
+
+def _validated_game_directory(operator: Operator, context) -> Path | None:
+    """The GTA V installation directory selected in `operator`, which is saved in the preferences. Logs an error and
+    returns `None` if it is not a game installation.
+    """
+    if not operator.directory:
+        logger.error("No GTA V installation directory selected.")
+        return None
+
+    game_dir = Path(bpy.path.abspath(operator.directory))
+    if not is_game_installation(game_dir):
+        logger.error(f"'{operator.directory}' is not a GTA V installation directory.")
+        return None
+
+    save_game_directory(game_dir, context)
+    return game_dir
+
+
+@contextmanager
+def _wait_cursor(context):
+    window = context.window
+    if window is not None:
+        window.cursor_modal_set("WAIT")
+    try:
+        yield
+    finally:
+        if window is not None:
+            window.cursor_modal_restore()
+
+
+def _find_game_asset_files_batch(
+    context, game_dir: Path, assets: Iterable[tuple[str, str]]
+) -> list[ArchetypeFiles | None]:
+    # Finding the files needs to index the whole game directory the first time, which takes a while
+    with _wait_cursor(context):
+        ytyp_cache = {}
+        found_files = []
+        for asset_name, ytyp_name in assets:
+            files = find_game_asset_files(game_dir, asset_name, ytyp_name, ytyp_cache=ytyp_cache)
+            if files is None:
+                logger.error(f"Could not find the game files of '{asset_name}'.")
+            found_files.append(files)
+        return found_files
+
+
+def _import_game_asset_files(files: Iterable[ArchetypeFiles]) -> list[str]:
+    """Import the game files of assets with the Import RAGE Assets operator and the user import settings. Files shared
+    by multiple assets, such as texture dictionaries, are only imported once, and texture dictionaries already in the
+    scene are not imported again. Returns the errors reported by the import.
+    """
+    import_settings = get_import_settings()
+    import_kwargs = {name: getattr(import_settings, name) for name in ImportSettingsBase.__annotations__}
+    textures_mode = import_kwargs["textures_mode"]
+    has_custom_dir = bool(import_kwargs["textures_extract_custom_directory"])
+    if textures_mode == "IMPORT_DIR" or (textures_mode == "CUSTOM_DIR" and not has_custom_dir):
+        # Cannot extract textures next to the imported files, they are inside the game archives
+        import_kwargs["textures_mode"] = "PACK"
+
+    # Disable external skeleton since drawable dictionaries used in .ytyp don't use external skeletons, only peds do
+    import_kwargs["dwd_import_external_skeleton"] = "NO"
+
+    # Import all files in a single call, from their common directory and with their paths relative to it as names. The
+    # import operator imports .ytds before the models, so their textures are used by the model materials
+    files = list(files)
+    scene_txds = {name_to_hash(txd.name) for txd in bpy.context.scene.sz_txds.texture_dictionaries}
+    txd_paths = [
+        f.txd for f in files if f.txd is not None and name_to_hash(f.txd.name.split(".", 1)[0]) not in scene_txds
+    ]
+    asset_paths = [f.asset for f in files if f.asset is not None]
+    paths = list(dict.fromkeys(str(p) for p in (*txd_paths, *asset_paths)))
+    if not paths:
+        return []
+
+    directory = posixpath.commonpath([posixpath.dirname(p) for p in paths])
+    try:
+        bpy.ops.sollumz.import_assets(
+            directory=directory,
+            files=[{"name": p[len(directory):].lstrip("/")} for p in paths],
+            use_custom_settings=True,
+            **import_kwargs,
+        )
+    except RuntimeError as e:
+        # Errors reported by the operator are raised as exceptions
+        return [str(e).strip()]
+
+    return []
+
+
+class GameDirectoryOperatorMixin:
+    """Operators that read the game files, from the GTA V installation directory saved in the preferences or selected
+    with the file browser."""
+
+    # SKIP_SAVE so a directory remembered from a previous run doesn't take priority over the one in the preferences
+    directory: StringProperty(
+        name="Game Directory",
+        description="GTA V installation directory",
+        subtype="DIR_PATH",
+        options={"HIDDEN", "SKIP_SAVE"},
+    )
+
+    def invoke(self, context, event):
+        return invoke_with_game_directory(self, context)
+
+    def draw(self, context):
+        self.layout.label(text="Select the GTA V installation directory")
+
+
+class GameAssetItem(PropertyGroup):
+    asset_name: StringProperty()
+    ytyp_name: StringProperty()
+    is_interior: BoolProperty()
+
+
+class SOLLUMZ_OT_import_library_asset_from_game_installation(GameDirectoryOperatorMixin, Operator):
+    bl_idname = "sollumz.import_library_asset_from_game_installation"
+    bl_label = "Import from Game Installation"
+    bl_description = (
+        "Search the game installation directory for the files of the selected assets and import them with all their "
+        "data (LODs, collisions, lights, skeleton, etc.), instead of the simplified models stored in the asset "
+        "library"
+    )
+    bl_options = {"UNDO"}
+
+    # Copied from the selected assets on invoke, the assets are no longer in the context after the file browser closes
+    assets: CollectionProperty(
+        type=GameAssetItem,
+        options={"HIDDEN", "SKIP_SAVE"},
+    )
+
+    @classmethod
+    def poll(cls, context):
+        if not IS_SZIO_NATIVE_AVAILABLE:
+            cls.poll_message_set(PYMATERIA_REQUIRED_MSG)
+            return False
+
+        any_game_asset = False
+        for _, archetype_info in iter_selected_game_assets(context):
+            if archetype_info.type != "MLO":
+                return True
+            any_game_asset = True
+
+        if any_game_asset:
+            cls.poll_message_set("Importing interiors from game installation is not supported")
+        else:
+            cls.poll_message_set("No game asset selected")
+        return False
+
+    @classmethod
+    def label(cls, context) -> str:
+        """Label for the operator buttons, includes the number of assets that will be imported when there are
+        multiple."""
+        num_assets = sum(1 for _, archetype_info in iter_selected_game_assets(context) if archetype_info.type != "MLO")
+        if num_assets > 1:
+            return f"Import {num_assets} Assets from Game Installation"
+        return cls.bl_label
+
+    def invoke(self, context, event):
+        self.assets.clear()
+        for asset, archetype_info in iter_selected_game_assets(context):
+            item = self.assets.add()
+            item.asset_name = asset.name
+            item.ytyp_name = archetype_info.ytyp
+            item.is_interior = archetype_info.type == "MLO"
+
+        return invoke_with_game_directory(self, context)
+
+    def execute(self, context):
+        start_time = time.time()
+        with logger.use_operator_logger(self):
+            if (game_dir := _validated_game_directory(self, context)) is None:
+                return {"CANCELLED"}
+
+            if not self.assets:
+                logger.error("No game asset selected.")
+                return {"CANCELLED"}
+
+            assets = []
+            for item in self.assets:
+                asset_name = remove_number_suffix(item.asset_name).lower()
+                if item.is_interior:
+                    logger.warning(
+                        f"Importing interiors from game installation is not supported, skipping '{asset_name}'."
+                    )
+                    continue
+                assets.append((asset_name, item.ytyp_name))
+
+            found_files = [f for f in _find_game_asset_files_batch(context, game_dir, assets) if f is not None]
+            if not found_files:
+                return {"CANCELLED"}
+
+            any_skipped = len(found_files) < len(self.assets)
+
+        # Outside of the operator logger, the import operator reports its own messages
+        errors = _import_game_asset_files(found_files)
+        for error in errors:
+            self.report({"ERROR"}, error)
+
+        if len(found_files) == 1:
+            imported = f"'{found_files[0].asset}'"
+        else:
+            imported = f"{len(found_files)} assets"
+        self.report(
+            {"WARNING"} if errors or any_skipped else {"INFO"},
+            f"Imported {imported} in {time.time() - start_time:.2f} seconds",
+        )
         return {"FINISHED"}

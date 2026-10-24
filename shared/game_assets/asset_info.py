@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Literal
 
 import bpy
-from bpy.types import Object
+from bpy.types import AssetRepresentation, Object
 from mathutils import Quaternion, Vector
 
 from ...sollumz_properties import ArchetypeType, SollumType
@@ -48,15 +48,25 @@ def _asset_key(obj: Object) -> str:
 
 def try_get_asset_metadata_archetype_info(obj: Object, *, cache: AssetInfoCache | None = None) -> AssetArchetypeInfo | None:
     """Return the archetype information for ``obj``. Pre-baked metadata is consulted first (assets linked from the
-    shared asset library); if absent, the scene YTYPs are scanned for an archetype matching ``obj`` by name (Blender's
-    ``.001`` duplicate suffix is stripped). Returns ``None`` if no archetype information can be resolved.
+    shared asset library); if absent or malformed, the scene YTYPs are scanned for an archetype matching ``obj`` by name
+    (Blender's ``.001`` duplicate suffix is stripped). Returns ``None`` if no archetype information can be resolved.
     """
-    info_str = _try_get_asset_metadata_str(obj, ASSET_KEY_ARCHETYPE_INFO)
-    if info_str:
-        return _parse_archetype_info(info_str)
+    info = try_parse_archetype_info(_try_get_asset_metadata_str(obj, ASSET_KEY_ARCHETYPE_INFO))
+    if info is not None:
+        return info
 
     info, _ = _resolve_via_scene_ytyps(obj, cache)
     return info
+
+
+def try_get_asset_representation_archetype_info(asset: AssetRepresentation | None) -> AssetArchetypeInfo | None:
+    """Return the archetype information of an asset in the Asset Browser, if it is an object or collection (MLOs) from a
+    game asset library. Returns ``None`` otherwise.
+    """
+    if asset is None or asset.id_type not in {"OBJECT", "COLLECTION"}:
+        return None
+
+    return try_parse_archetype_info(asset.metadata.get(ASSET_KEY_ARCHETYPE_INFO, None))
 
 
 def try_get_archetype_info_by_name(archetype_name: str, *, cache: AssetInfoCache | None = None) -> AssetArchetypeInfo | None:
@@ -128,17 +138,24 @@ def _try_get_asset_metadata_str(obj: Object, key: str) -> str | None:
     return info_str
 
 
-def _parse_archetype_info(info_str: str) -> AssetArchetypeInfo:
-    info_dict = json.loads(info_str)
-    return AssetArchetypeInfo(
-        ytyp=info_dict.get("ytyp", ""),
-        type=info_dict.get("type", ""),
-        lod_dist=info_dict.get("lod_dist", -1.0),
-        bb_min=Vector(info_dict.get("bb_min", (0.0, 0.0, 0.0))),
-        bb_max=Vector(info_dict.get("bb_max", (0.0, 0.0, 0.0))),
-        num_extensions=info_dict.get("num_extensions", 0),
-        mlo_num_exit_portals=info_dict.get("mlo_num_exit_portals", 0),
-    )
+def try_parse_archetype_info(info_str: str | None) -> AssetArchetypeInfo | None:
+    """Parse archetype information metadata. Returns ``None`` if missing or malformed."""
+    if not info_str:
+        return None
+
+    try:
+        info_dict = json.loads(info_str)
+        return AssetArchetypeInfo(
+            ytyp=info_dict.get("ytyp", ""),
+            type=info_dict.get("type", ""),
+            lod_dist=info_dict.get("lod_dist", -1.0),
+            bb_min=Vector(info_dict.get("bb_min", (0.0, 0.0, 0.0))),
+            bb_max=Vector(info_dict.get("bb_max", (0.0, 0.0, 0.0))),
+            num_extensions=info_dict.get("num_extensions", 0),
+            mlo_num_exit_portals=info_dict.get("mlo_num_exit_portals", 0),
+        )
+    except (ValueError, TypeError, AttributeError):
+        return None
 
 
 def _resolve_via_scene_ytyps(

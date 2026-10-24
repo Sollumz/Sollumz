@@ -925,14 +925,7 @@ class SOLLUMZ_OT_prefs_external_skeleton_path_add_mp_freemode(Operator):
             return {"FINISHED"}
 
     def invoke(self, context, event):
-        if not self.directory and (game_dir := get_game_directory(context)) is not None:
-            self.directory = str(game_dir)
-
-        if self.directory:
-            return self.execute(context)
-
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
+        return invoke_with_game_directory(self, context)
 
 
 class SOLLUMZ_MT_prefs_external_skeleton_paths_context_menu(Menu):
@@ -1702,6 +1695,19 @@ def save_game_directory(directory: str | os.PathLike, context: Optional[bpy.type
     directory = os.fspath(directory)
     if prefs.game_directory != directory:
         prefs.game_directory = directory  # the update callback writes the preferences file
+
+
+def invoke_with_game_directory(operator: Operator, context: bpy.types.Context) -> set[str]:
+    """Execute `operator` with the GTA V installation directory saved in the preferences, or ask for it with the file
+    browser if not saved. The operator needs a `directory` property."""
+    if not operator.directory and (game_dir := get_game_directory(context)) is not None:
+        operator.directory = str(game_dir)
+
+    if operator.directory:
+        return operator.execute(context)
+
+    context.window_manager.fileselect_add(operator)
+    return {"RUNNING_MODAL"}
 
 
 def _save_preferences():

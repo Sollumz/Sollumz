@@ -959,7 +959,10 @@ class PanelVisibility:
         if getattr(panel, "sz_panel_no_visibility_toggle", False):
             return False
 
-        if getattr(panel, "bl_space_type", None) == "FILE_BROWSER":
+        if (
+            getattr(panel, "bl_space_type", None) == "FILE_BROWSER" and
+            getattr(panel, "bl_parent_id", None) == "FILE_PT_operator"
+        ):
             # The import/export settings panels
             return False
 

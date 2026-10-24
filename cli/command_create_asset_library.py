@@ -10,7 +10,7 @@ from szio.gta5 import (
 )
 from szio.jenkhash import name_to_hash
 from ..shared.game_assets.asset_info import ASSET_KEY_ARCHETYPE_INFO
-from ..shared.game_assets.game_files import GameFiles
+from ..shared.game_assets.game_files import GameFiles, find_file_in_index
 
 CMD_ID = "sz_create_asset_library"
 
@@ -38,14 +38,6 @@ def import_props_from_ytyp(directory: Path, typ_file: Path, catalog_id: str, cac
     #     stem = f.name[: -sum(map(len, exts))] if exts else f.name
     #     stem_hash = name_to_hash(stem)
     #     file_index[(stem_hash, exts)] = f
-
-    def _file_index_lookup(filename_hash: int, ext: str) -> VPath | None:
-        # Prefer the binary file, fall back to the CWXML file with the same name
-        p = (
-            file_index.get((ext,), {}).get(filename_hash, None)
-            or file_index.get((ext, ".xml"), {}).get(filename_hash, None)
-        )
-        return VPath(p[-1]) if p else None
 
     files = []
     def _add_file_to_import(filepath: VPath):
@@ -80,11 +72,11 @@ def import_props_from_ytyp(directory: Path, typ_file: Path, catalog_id: str, cac
         if arch.texture_dictionary:
             txd_hash = name_to_hash(arch.texture_dictionary)
             if txd_hash not in found_txd:
-                txd_filepath = _file_index_lookup(txd_hash, ".ytd")
+                txd_filepath = find_file_in_index(file_index, txd_hash, ".ytd")
                 _add_file_to_import(txd_filepath)
                 found_txd.add(txd_hash)
 
-        asset_filepath = _file_index_lookup(asset_filename_hash, asset_ext)
+        asset_filepath = find_file_in_index(file_index, asset_filename_hash, asset_ext)
         _add_file_to_import(asset_filepath)
 
     bpy.ops.sollumz.import_assets(

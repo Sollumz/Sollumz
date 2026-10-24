@@ -64,6 +64,7 @@ def _make_panels() -> SimpleNamespace:
         bl_label = "File Browser"
         bl_space_type = "FILE_BROWSER"
         bl_region_type = "TOOL_PROPS"
+        bl_parent_id = "FILE_PT_operator"
 
     class SOLLUMZ_TEST_PT_popover(_ViewPanel, Panel):
         bl_idname = "SOLLUMZ_TEST_PT_popover"

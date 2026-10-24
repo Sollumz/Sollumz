@@ -1,3 +1,4 @@
+import re
 import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
@@ -187,7 +188,7 @@ def build_library(
     long. Yields the delay until next unit of work should be executed.
     Main work is done by Blender subprocesses, importing assets to the corresponding .blend.
     """
-    from .game_files import GameFiles
+    from .game_files import ASSET_FILE_EXTENSIONS, GameFiles, get_game_file_index
 
     catalog_filepath = output_directory / "blender_assets.cats.txt"
     if not catalog_filepath.exists():
@@ -203,11 +204,13 @@ def build_library(
     interior_cmds = []
 
     gf = GameFiles(source_directory)
-    file_index = gf.read_asset_filelist([
-        (".ytyp",), (".ydr",), (".yft",), (".ydd",), (".ytd",),
-        (".ytyp", ".xml"), (".ydr", ".xml"), (".yft", ".xml"), (".ydd", ".xml"), (".ytd", ".xml"),
-    ])
-    file_index_by_hash = GameFiles.index_by_name_hash(file_index)
+    is_game_installation = gf.is_game_installation()
+    if is_game_installation:
+        # Scanning a game installation takes a while, use the index saved by previous builds or imports from the game
+        # installation
+        file_index_by_hash = get_game_file_index(source_directory)
+    else:
+        file_index_by_hash = GameFiles.index_by_name_hash(gf.read_asset_filelist(ASSET_FILE_EXTENSIONS))
     from itertools import chain
     import tempfile
     import pickle
@@ -220,7 +223,7 @@ def build_library(
         with open(file_index_by_hash_cache_path, "wb") as fp:
             pickle.dump(file_index_by_hash, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-        if gf.is_game_installation():
+        if is_game_installation:
             # game directory
             skip_typs = (
                 # bad .ytyps
@@ -277,13 +280,16 @@ def build_library(
                 "x64f.rpf/levels/gta5/destruction/interior/des_tvsmash.rpf/des_tvsmash.ytyp",
             )
 
-            for typ_file_name, typ_file_paths in chain(file_index.get((".ytyp",), {}).items(), file_index.get((".ytyp", ".xml"), {}).items()):
+            for typ_file_paths in chain(
+                file_index_by_hash.get((".ytyp",), {}).values(),
+                file_index_by_hash.get((".ytyp", ".xml"), {}).values(),
+            ):
                 typ_file_path = typ_file_paths[-1]  # pick most recent .ytyp
 
                 if any(typ_file_path.endswith(skip_typ) for skip_typ in skip_typs):
                     continue
 
-                typ_name = typ_file_name.split(".", maxsplit=1)[0]
+                typ_name = typ_file_path.rsplit("/", maxsplit=1)[-1].split(".", maxsplit=1)[0]
 
                 if typ_pattern is not None and not typ_pattern.search(typ_name):
                     continue
