@@ -1,5 +1,5 @@
 """Tests for importing game assets from the game installation: finding the files of the archetypes of the game asset
-library and importing them from the Asset Browser."""
+library, importing them from the Asset Browser, and replacing the library objects linked to map entities with them."""
 
 import io
 import json
@@ -9,7 +9,9 @@ from types import SimpleNamespace
 
 import bpy
 import pytest
+from mathutils import Vector
 from szio import VPath
+from szio.jenkhash import name_to_hash
 
 from ..shared.game_assets import game_files
 from ..shared.game_assets.asset_info import ASSET_KEY_ARCHETYPE_INFO
@@ -20,10 +22,15 @@ from ..shared.game_assets.game_files import (
     get_game_file_index,
 )
 from ..shared.game_assets.operators import SOLLUMZ_OT_import_library_asset_from_game_installation
+from ..sollumz_helper import duplicate_object_with_children
 from ..sollumz_preferences import get_addon_preferences, get_game_directory, save_game_directory
+from ..shared.multiselection import SelectMode
 from ..sollumz_properties import SollumType
-from ..tools.blenderhelper import remove_number_suffix
+from ..tools.blenderhelper import create_empty_object, remove_number_suffix
+from ..ymap_next.context import active_group
+from ..ymap_next.properties.map import get_maps
 from .shared import asset_path, log_capture, requires_szio_native
+from .test_import_export import DEFAULT_EXPORT_SETTINGS
 
 ASSET_NAME = "model_with_simple_bounds"
 YTYP_NAME = "test_props"
@@ -31,6 +38,9 @@ DLC_NAME = "testdlc"
 ASSET_PATH_IN_GAME = f"update/x64/dlcpacks/{DLC_NAME}/dlc.rpf/models/{ASSET_NAME}.ydr"
 TXD_PATH_IN_GAME = "x64test.rpf/textures/txd.ytd"
 
+DWD_NAME = "dwd_props"
+DWD_ASSET_NAMES = ("dwd_prop_a", "dwd_prop_b")
+DWD_YTYP_NAME = "test_dwd_props"
 
 
 def _archetype_xml(name: str, asset_type: str, texture_dictionary: str = "", drawable_dictionary: str = "") -> str:
@@ -136,8 +146,57 @@ def game_dir(tmp_path, monkeypatch):
     )
 
 
+def _build_ydd(out_dir: Path) -> bytes:
+    """A drawable dictionary with a drawable for each of `DWD_ASSET_NAMES`, copies of a test model."""
+    bpy.ops.wm.read_homefile()
+    ydr_path = asset_path("gen8", f"{ASSET_NAME}.ydr")
+    assert bpy.ops.sollumz.import_assets(directory=str(ydr_path.parent), files=[{"name": ydr_path.name}]) == {
+        "FINISHED"
+    }
+    drawable = bpy.data.objects[ASSET_NAME]
+    dictionary = create_empty_object(SollumType.DRAWABLE_DICTIONARY, DWD_NAME)
+    for name, obj in zip(DWD_ASSET_NAMES, (drawable, duplicate_object_with_children(drawable))):
+        obj.name = name
+        obj.parent = dictionary
+
+    for obj in bpy.context.selected_objects:
+        obj.select_set(False)
+    dictionary.select_set(True)
+    out_dir.mkdir()
+    res = bpy.ops.sollumz.export_assets(
+        directory=str(out_dir),
+        direct_export=True,
+        use_custom_settings=True,
+        **DEFAULT_EXPORT_SETTINGS | {"target_formats": {"NATIVE"}, "target_versions": {"GEN8"}},
+    )
+    assert res == {"FINISHED"}
+    return (out_dir / f"{DWD_NAME}.ydd").read_bytes()
+
+
+@pytest.fixture()
+def dwd_game_dir(tmp_path, monkeypatch):
+    """A fake game installation directory with a drawable dictionary used by the archetypes `DWD_ASSET_NAMES`."""
+    yield from _fake_game_dir(
+        tmp_path,
+        monkeypatch,
+        {
+            "x64test.rpf": {
+                f"models/{DWD_NAME}.ydd": _build_ydd(tmp_path / "ydd"),
+                f"maps/{DWD_YTYP_NAME}.ytyp.xml": _ytyp_xml(
+                    DWD_YTYP_NAME,
+                    *(_archetype_xml(n, "DRAWABLEDICTIONARY", drawable_dictionary=DWD_NAME) for n in DWD_ASSET_NAMES),
+                ),
+            }
+        },
+    )
+
+
 def _drawables() -> list[bpy.types.Object]:
     return [o for o in bpy.data.objects if o.sollum_type == SollumType.DRAWABLE]
+
+
+def _drawable_dictionaries() -> list[bpy.types.Object]:
+    return [o for o in bpy.data.objects if o.sollum_type == SollumType.DRAWABLE_DICTIONARY]
 
 
 @requires_szio_native
@@ -328,3 +387,162 @@ def test_import_library_assets_from_game_installation_game_directory(context, ga
     assert len(fileselect_calls) == 1
     assert Path(op.directory) == game_dir
     assert len(_drawables()) == 1
+
+
+def _add_library_asset_objects(
+    library_dir: Path, name: str, num_objects: int, append: bool = False, ytyp: str = YTYP_NAME
+) -> list[bpy.types.Object]:
+    """Create a game asset library .blend with an object for the archetype `name`, and return objects of it added to
+    the scene: library overrides, like the objects linked from the asset library to entities, or appended copies, like
+    the objects dropped from the Asset Browser with the Append or Pack import methods."""
+    obj = bpy.data.objects.new(name, bpy.data.meshes.new(name))
+    obj[ASSET_KEY_ARCHETYPE_INFO] = json.dumps({"ytyp": ytyp, "type": "BASE"})
+    # A new file each time, a library already linked cannot be written again
+    library_path = library_dir / f"_assets.{ytyp}.{len(bpy.data.libraries)}.blend"
+    bpy.data.libraries.write(str(library_path), {obj})
+    bpy.data.objects.remove(obj)
+
+    with bpy.data.libraries.load(str(library_path), link=not append) as (_, data_dst):
+        data_dst.objects = [name]
+
+    objs = []
+    for _ in range(num_objects):
+        if append:
+            new_obj = data_dst.objects[0] if not objs else data_dst.objects[0].copy()
+        else:
+            new_obj = data_dst.objects[0].override_create()
+        bpy.context.scene.collection.objects.link(new_obj)
+        objs.append(new_obj)
+    return objs
+
+
+@requires_szio_native
+def test_map_import_entity_objects_from_game_installation(game_dir, tmp_path, prefs_temp_file):
+    bpy.ops.wm.read_homefile()
+    library_objs = _add_library_asset_objects(tmp_path, ASSET_NAME, num_objects=2)
+    locations = [Vector((1.0, 2.0, 3.0)), Vector((-4.0, 5.0, 0.0))]
+    group = get_maps(bpy.context, create_if_missing=True).new_group()
+    for library_obj, location in zip(library_objs, locations):
+        library_obj.location = location
+        entity = group.new_entity()
+        entity.archetype_name = ASSET_NAME
+        entity.linked_object = library_obj
+    group.entities.select(0)
+    group.entities.select(1, SelectMode.EXTEND)
+    # Only the second library object is selected and active
+    for obj in bpy.context.selected_objects:
+        obj.select_set(False)
+    library_objs[1].select_set(True)
+    view_layer = bpy.context.view_layer
+    view_layer.objects.active = library_objs[1]
+    assert set(bpy.context.selected_objects) == {library_objs[1]}
+
+    result = bpy.ops.sollumz.map_import_entity_objects_from_game_installation(directory=str(game_dir))
+
+    assert result == {"FINISHED"}
+    objs = [e.linked_object for e in active_group(bpy.context).entities]
+    # The imported model replaces the first library object, and a copy of it the second one
+    assert objs[0] is not None and objs[1] is not None and objs[0] != objs[1]
+    # The first keeps the archetype name, without suffix, now that the library objects with that name are removed
+    assert objs[0].name == ASSET_NAME
+    for obj, location in zip(objs, locations):
+        assert obj.sollum_type == SollumType.DRAWABLE
+        assert remove_number_suffix(obj.name) == ASSET_NAME
+        assert obj.location == location
+        # Full import, with collisions
+        assert any(c.sollum_type == SollumType.BOUND_BOX for c in obj.children_recursive)
+        assert obj.name in bpy.context.scene.collection.objects
+    # The library objects are removed
+    assert not any(o.override_library is not None for o in bpy.data.objects)
+    # The selection is kept, with the new object in place of the library object
+    assert set(bpy.context.selected_objects) == {objs[1]}
+    assert view_layer.objects.active == objs[1]
+
+
+@requires_szio_native
+@pytest.mark.parametrize("append", (False, True))
+def test_import_objects_from_game_installation(game_dir, tmp_path, prefs_temp_file, append):
+    bpy.ops.wm.read_homefile()
+    library_objs = _add_library_asset_objects(tmp_path, ASSET_NAME, num_objects=2, append=append)
+    library_names = {obj.name for obj in library_objs}
+    # Only the first library object is linked to an entity
+    group = get_maps(bpy.context, create_if_missing=True).new_group()
+    entity = group.new_entity()
+    entity.archetype_name = ASSET_NAME
+    entity.linked_object = library_objs[0]
+
+    # An object without archetype metadata is not a game asset object, even if a .ytyp in the scene has its archetype
+    scene_ytyp = bpy.context.scene.ytyps.add()
+    scene_ytyp.name = "scene_props"
+    scene_ytyp.new_archetype().name = "scene_prop"
+    other_obj = bpy.data.objects.new("scene_prop", None)
+    bpy.context.scene.collection.objects.link(other_obj)
+    for obj in bpy.context.selected_objects:
+        obj.select_set(False)
+    other_obj.select_set(True)
+    bpy.context.view_layer.objects.active = other_obj
+    assert not bpy.ops.sollumz.import_objects_from_game_installation.poll()
+
+    # Selected along with the library objects, it is ignored
+    for obj in library_objs:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = library_objs[0]
+    result = bpy.ops.sollumz.import_objects_from_game_installation(directory=str(game_dir))
+
+    assert result == {"FINISHED"}
+    new_objs = set(bpy.context.selected_objects) - {other_obj}
+    assert len(new_objs) == 2
+    assert all(obj.sollum_type == SollumType.DRAWABLE for obj in new_objs)
+    # The entity is linked to the object that replaces its library object
+    entity = active_group(bpy.context).entities[0]
+    assert entity.linked_object in new_objs
+    assert bpy.context.view_layer.objects.active == entity.linked_object
+    # The library objects are removed
+    assert not any(o.override_library is not None for o in bpy.data.objects)
+    assert not any(o.name in library_names for o in bpy.data.objects if o not in new_objs and o.library is None)
+
+
+@requires_szio_native
+def test_map_import_entity_objects_from_drawable_dictionary(dwd_game_dir, tmp_path, prefs_temp_file):
+    bpy.ops.wm.read_homefile()
+    get_maps(bpy.context, create_if_missing=True).new_group()
+    prop_a, prop_b = DWD_ASSET_NAMES
+
+    def _import_entity_objects(*names: str, location: Vector = Vector()) -> list[bpy.types.Object]:
+        """Add an entity linked to a library object at `location` for each archetype, and replace the library objects
+        of these entities with their models. Returns the new linked objects."""
+        group = active_group(bpy.context)
+        first_index = len(group.entities)
+        for name in names:
+            library_obj = _add_library_asset_objects(tmp_path, name, num_objects=1, ytyp=DWD_YTYP_NAME)[0]
+            library_obj.location = location
+            entity = group.new_entity()
+            entity.archetype_name = name
+            entity.linked_object = library_obj
+        group.entities.select(first_index)
+        group.entities.select(len(group.entities) - 1, SelectMode.EXTEND)
+
+        result = bpy.ops.sollumz.map_import_entity_objects_from_game_installation(directory=str(dwd_game_dir))
+
+        assert result == {"FINISHED"}
+        return [e.linked_object for e in active_group(bpy.context).entities][first_index:]
+
+    # The whole drawable dictionary is imported, and the entity is linked to its drawable, which stays in it
+    (obj_a,) = _import_entity_objects(prop_a, location=Vector((1.0, 2.0, 3.0)))
+    (dictionary,) = _drawable_dictionaries()
+    assert obj_a.parent == dictionary
+    assert len(dictionary.children) == len(DWD_ASSET_NAMES)
+    # Binary drawable dictionaries only have the hashes of the drawable names
+    assert name_to_hash(remove_number_suffix(obj_a.name)) == name_to_hash(prop_a)
+    bpy.context.view_layer.update()
+    assert obj_a.matrix_world.translation == Vector((1.0, 2.0, 3.0))
+
+    # The drawable of the dictionary not linked to any entity is used, instead of importing the dictionary again
+    (obj_b,) = _import_entity_objects(prop_b)
+    assert obj_b.parent == dictionary
+    assert len(_drawable_dictionaries()) == 1
+
+    # Both drawables are used now, so the dictionary is imported again, once for both archetypes
+    obj_a2, obj_b2 = _import_entity_objects(prop_a, prop_b)
+    assert len(_drawable_dictionaries()) == 2
+    assert obj_a2.parent is not None and obj_a2.parent == obj_b2.parent and obj_a2.parent != dictionary

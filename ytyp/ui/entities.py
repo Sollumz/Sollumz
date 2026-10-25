@@ -5,6 +5,7 @@ from ..properties.mlo import MloEntityProperties
 from ..utils import get_selected_ytyp, get_selected_archetype, get_selected_entity
 from .extensions import ExtensionsListHelper, ExtensionsPanelHelper
 from .mlo import MloChildTabPanel
+from ...shared.game_assets.ui import draw_entity_linked_object
 from ...shared.multiselection import (
     MultiSelectCollection,
     MultiSelectUIListMixin,
@@ -12,6 +13,7 @@ from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
 )
 from ..operators import ytyp as ytyp_ops
+from ..operators.entity import SOLLUMZ_OT_mlo_import_entity_objects_from_game_installation
 from ..gta5.presets.mlo_entity import SOLLUMZ_PT_mlo_entity_presets
 from ..gta5.presets.extension import HOST_MLO_ENTITY
 
@@ -191,9 +193,12 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(MloEntityChildTabPanel, bpy.types.Panel):
         row.alignment = "RIGHT"
         SOLLUMZ_PT_mlo_entity_presets.draw_panel_header(row)
 
-        row = layout.row()
-        row.enabled = not has_multiple_selection
-        row.prop(active, "linked_object")
+        draw_entity_linked_object(
+            layout,
+            active,
+            SOLLUMZ_OT_mlo_import_entity_objects_from_game_installation.bl_idname,
+            enabled=not has_multiple_selection,
+        )
 
         layout.separator()
 

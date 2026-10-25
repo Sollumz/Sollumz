@@ -93,22 +93,32 @@ def duplicate_object_with_children(obj, hierarchy: ObjectHierarchySnapshot | Non
     """Duplicates `obj` and its whole hierarchy, linking the copies to the current scene. Pass `hierarchy` when
     duplicating many objects to avoid rebuilding it for each one.
     """
-    objs = get_object_with_children_recursive(obj, hierarchy)
+    new_objs = copy_object_hierarchy(get_object_with_children_recursive(obj, hierarchy))
+    for new_obj in new_objs:
+        bpy.context.scene.collection.objects.link(new_obj)
+    return new_objs[0]
+
+
+def copy_object_hierarchy(objs: list[bpy.types.Object]) -> list[bpy.types.Object]:
+    """Copy the objects of a hierarchy, root first (e.g. from `get_object_with_children_recursive`), keeping the parent
+    relations and constraint targets between them. The copied root has no parent. Returns the copies, in the same order,
+    without linking them to any collection.
+    """
     new_objs = []
     for o in objs:
         new_obj = o.copy()
         new_obj.animation_data_clear()
         new_objs.append(new_obj)
+    copies = dict(zip(objs, new_objs))
     new_objs[0].parent = None
-    for i in range(1, len(objs)):
-        if objs[i].parent:
-            new_objs[i].parent = new_objs[objs.index(objs[i].parent)]
+    for o, new_obj in zip(objs[1:], new_objs[1:]):
+        if o.parent:
+            new_obj.parent = copies[o.parent]
     for new_obj in new_objs:
-        bpy.context.scene.collection.objects.link(new_obj)
         for constraint in new_obj.constraints:
-            if hasattr(constraint, "target") and constraint.target in objs:
-                constraint.target = new_objs[objs.index(constraint.target)]
-    return new_objs[0]
+            if hasattr(constraint, "target") and constraint.target in copies:
+                constraint.target = copies[constraint.target]
+    return new_objs
 
 
 def find_sollumz_parent(obj: bpy.types.Object, parent_type: Optional[SollumType] = None) -> bpy.types.Object | None:

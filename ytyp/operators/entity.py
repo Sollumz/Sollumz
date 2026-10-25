@@ -1,6 +1,7 @@
 import bpy
 from typing import Optional
 from mathutils import Vector
+from ...shared.game_assets.operators import EntityObjectsFromGameInstallationOperatorBase
 from ...sollumz_operators import SOLLUMZ_OT_base, SearchEnumHelper
 from ...tools.blenderhelper import remove_number_suffix
 from ...shared.multiselection import SelectMode
@@ -164,3 +165,18 @@ class SOLLUMZ_OT_search_entity_rooms(SearchEnumHelper, bpy.types.Operator):
 
     def get_data_block(self, context):
         return get_selected_archetype(context).entities.selection
+
+
+class SOLLUMZ_OT_mlo_import_entity_objects_from_game_installation(
+    EntityObjectsFromGameInstallationOperatorBase, bpy.types.Operator
+):
+    bl_idname = "sollumz.mlo_import_entity_objects_from_game_installation"
+    bl_description = (
+        "Replace the objects linked to the selected entities, from the game asset library, with the import of their "
+        "models from the game installation with all their data (LODs, collisions, lights, etc.)"
+    )
+
+    @classmethod
+    def get_entities(cls, context):
+        archetype = get_selected_archetype(context)
+        return archetype.entities.selected_items if archetype is not None else []

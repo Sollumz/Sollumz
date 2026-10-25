@@ -6,6 +6,7 @@ from bpy.types import (
 
 from ...icons import icon
 from ...meta import DEV_MODE
+from ...shared.game_assets.ui import draw_entity_linked_object
 from ...shared.multiselection import (
     MultiSelectUIFlagsPanel,
     MultiSelectUIListMixin,
@@ -179,9 +180,12 @@ class SOLLUMZ_PT_map_entity_properties(MapEntityChildTabPanel, Panel):
         if DEV_MODE:
             layout.prop(active, "uuid_str")
         layout.prop(selection.owner, selection.propnames.map_data_name, icon_value=icon("map_container"))
-        row = layout.row()
-        row.enabled = not has_multiple_selection
-        row.prop(active, "linked_object")
+        draw_entity_linked_object(
+            layout,
+            active,
+            instancing_ops.SOLLUMZ_OT_map_import_entity_objects_from_game_installation.bl_idname,
+            enabled=not has_multiple_selection,
+        )
 
         layout.separator()
 

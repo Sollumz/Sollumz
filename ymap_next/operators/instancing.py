@@ -1,6 +1,7 @@
 from bpy.props import EnumProperty
 from bpy.types import Operator
 
+from ...shared.game_assets.operators import EntityObjectsFromGameInstallationOperatorBase
 from ...sollumz_preferences import get_addon_preferences
 from ..context import active_group
 from ..instancing import instance_map_entities, uninstance_map_entities
@@ -99,3 +100,18 @@ class SOLLUMZ_OT_map_remove_entity_instances(Operator):
 
         self.report({"INFO"}, f"Removed {num_removed} entity instance(s)")
         return {"FINISHED"}
+
+
+class SOLLUMZ_OT_map_import_entity_objects_from_game_installation(
+    EntityObjectsFromGameInstallationOperatorBase, Operator
+):
+    bl_idname = "sollumz.map_import_entity_objects_from_game_installation"
+    bl_description = (
+        "Replace the objects linked to the selected entities, from the game asset library, with the import of their "
+        "models from the game installation with all their data (LODs, collisions, lights, etc.)"
+    )
+
+    @classmethod
+    def get_entities(cls, context):
+        group = active_group(context)
+        return group.entities.selected_items if group is not None else []

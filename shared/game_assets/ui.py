@@ -4,6 +4,7 @@ from bpy.types import (
 )
 
 from ...icons import icon_manager
+from ...sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL
 from . import operators as ops
 from .asset_info import AssetArchetypeInfo
 
@@ -26,6 +27,22 @@ class SOLLUMZ_PT_asset_library_panel(Panel):
         layout.use_property_decorate = False
 
         ops.temporary_ui(layout)
+
+
+def draw_entity_linked_object(layout, entity, import_operator: str, enabled: bool = True):
+    """Draw the linked object of a map or MLO entity, like a property split row. When it is an object from a game asset
+    library, a button to replace it with the import from the game installation follows it."""
+    split = layout.split(factor=0.4)
+    row = split.row()
+    row.alignment = "RIGHT"
+    row.enabled = enabled
+    row.label(text="Linked Object")
+    row = split.row(align=True)
+    sub = row.row(align=True)
+    sub.enabled = enabled
+    sub.prop(entity, "linked_object", text="")
+    if ops.get_object_game_asset(entity.linked_object) is not None:
+        row.operator(import_operator, text="", icon="IMPORT")
 
 
 def _draw_info(layout, label: str, value: str):
@@ -73,6 +90,30 @@ class SOLLUMZ_PT_game_asset_info(Panel):
         )
 
 
+class SOLLUMZ_PT_object_game_asset_info(Panel):
+    """Panel in the object properties showing the game asset the object is from"""
+
+    bl_label = "Game Asset"
+    bl_idname = "SOLLUMZ_PT_object_game_asset_info"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_parent_id = SOLLUMZ_PT_OBJECT_PANEL.bl_idname
+    bl_order = 999
+
+    @classmethod
+    def poll(cls, context):
+        return ops.get_object_game_asset(context.active_object) is not None
+
+    def draw(self, context):
+        layout = self.layout
+
+        _draw_archetype_info(layout, ops.get_object_game_asset(context.active_object))
+
+        layout.separator()
+        layout.operator(ops.SOLLUMZ_OT_import_objects_from_game_installation.bl_idname, icon="IMPORT")
+
+
 def _draw_asset_browser_context_menu(self, context):
     if next(ops.iter_selected_game_assets(context), None) is None:
         return
@@ -89,9 +130,19 @@ def _draw_asset_browser_context_menu(self, context):
     )
 
 
+def _draw_object_context_menu(self, context):
+    layout = self.layout
+    layout.separator()
+    col = layout.column()
+    col.operator_context = "INVOKE_DEFAULT"
+    col.operator(ops.SOLLUMZ_OT_import_objects_from_game_installation.bl_idname, icon="IMPORT")
+
+
 def register():
     bpy.types.ASSETBROWSER_MT_context_menu.append(_draw_asset_browser_context_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.append(_draw_object_context_menu)
 
 
 def unregister():
     bpy.types.ASSETBROWSER_MT_context_menu.remove(_draw_asset_browser_context_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(_draw_object_context_menu)

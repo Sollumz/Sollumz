@@ -2,8 +2,9 @@ import os
 import functools
 import posixpath
 import time
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import bpy
@@ -16,9 +17,11 @@ from bpy.props import (
 )
 from bpy.types import (
     AssetRepresentation,
+    Object,
     Operator,
     PropertyGroup,
 )
+from mathutils import Matrix
 from szio.jenkhash import name_to_hash
 
 from ... import logger
@@ -30,10 +33,14 @@ from ...sollumz_preferences import (
     invoke_with_game_directory,
     save_game_directory,
 )
+from ...sollumz_helper import copy_object_hierarchy
 from ...sollumz_operators import SOLLUMZ_OT_import_assets
-from ...tools.blenderhelper import remove_number_suffix
+from ...sollumz_properties import SollumType
+from ...tools.blenderhelper import get_object_with_children_recursive, remove_number_suffix
+from ..object_hierarchy import ObjectHierarchySnapshot
 from .asset_info import (
     AssetArchetypeInfo,
+    try_get_asset_metadata_archetype_info,
     try_get_asset_representation_archetype_info,
 )
 from .game_files import ArchetypeFiles, find_game_asset_files, is_game_installation
@@ -278,6 +285,11 @@ def iter_selected_game_assets(context) -> Iterator[tuple[AssetRepresentation, As
             yield asset, archetype_info
 
 
+def get_object_game_asset(obj: Object | None) -> AssetArchetypeInfo | None:
+    """If `obj` is an object from a game asset library, return its archetype information, otherwise `None`."""
+    return try_get_asset_metadata_archetype_info(obj, resolve_scene_ytyps=False)
+
+
 def _validated_game_directory(operator: Operator, context) -> Path | None:
     """The GTA V installation directory selected in `operator`, which is saved in the preferences. Logs an error and
     returns `None` if it is not a game installation.
@@ -483,3 +495,335 @@ class SOLLUMZ_OT_import_library_asset_from_game_installation(GameDirectoryOperat
             f"Imported {imported} in {time.time() - start_time:.2f} seconds",
         )
         return {"FINISHED"}
+
+
+@dataclass(slots=True)
+class _EntityObjectsReplacement:
+    """The game asset library objects linked to the entities of an archetype, to replace with the import of the
+    archetype from the game installation."""
+
+    asset_name: str
+    ytyp_name: str
+    objects: dict[Object, PropertyGroup | None] = field(default_factory=dict)
+    """The library objects to replace, with the entity linked to them, `None` if not linked to an entity."""
+    files: ArchetypeFiles | None = None
+    """The game files of the archetype, `None` if not found or not needed."""
+    model: Object | None = None
+    """The model of the archetype, if reused from the scene instead of imported: an unused drawable of a drawable
+    dictionary."""
+
+
+def _collect_entity_objects_replacements(
+    objects: Iterable[Object], all_entities: Iterable
+) -> list[_EntityObjectsReplacement]:
+    """Group the game asset library objects of `objects` by archetype, each with the entity of `all_entities` linked to
+    it, so it links to the object that replaces it. Other objects are ignored.
+    """
+    replacements: dict[int, _EntityObjectsReplacement] = {}
+    replacements_by_object: dict[Object, _EntityObjectsReplacement] = {}
+    for obj in objects:
+        if obj in replacements_by_object or (archetype_info := get_object_game_asset(obj)) is None:
+            continue
+
+        asset_name = remove_number_suffix(obj.name).lower()
+        if archetype_info.type == "MLO":
+            logger.warning(f"Importing interiors from game installation is not supported, skipping '{asset_name}'.")
+            continue
+
+        replacement = replacements.setdefault(
+            name_to_hash(asset_name), _EntityObjectsReplacement(asset_name, archetype_info.ytyp)
+        )
+        replacement.objects[obj] = None
+        replacements_by_object[obj] = replacement
+
+    for entity in all_entities:
+        obj = entity.linked_object
+        if (replacement := replacements_by_object.get(obj, None)) is not None:
+            replacement.objects[obj] = entity
+
+    return list(replacements.values())
+
+
+def _iter_all_entities(context) -> Iterator:
+    """All the map and MLO entities in the scene."""
+    from ...ymap_next.properties.map import get_maps
+
+    if (maps := get_maps(context)) is not None:
+        for group in maps.groups:
+            yield from group.entities
+    for ytyp in context.scene.ytyps:
+        for archetype in ytyp.archetypes:
+            yield from archetype.entities
+
+
+def _find_unused_dictionary_drawables(context, replacements: Iterable[_EntityObjectsReplacement]):
+    """Set the model of the replacements whose archetype is a drawable of a drawable dictionary in the scene that is not
+    linked to any entity, so it is used instead of importing the drawable dictionary again."""
+    replacements_by_name = {name_to_hash(r.asset_name): r for r in replacements}
+    linked_objects = {e.linked_object for e in _iter_all_entities(context)}
+    for obj in context.scene.objects:
+        if (
+            obj.sollum_type != SollumType.DRAWABLE
+            or obj.parent is None
+            or obj.parent.sollum_type != SollumType.DRAWABLE_DICTIONARY
+            or obj in linked_objects
+        ):
+            continue
+
+        replacement = replacements_by_name.get(name_to_hash(remove_number_suffix(obj.name)), None)
+        if replacement is not None and replacement.model is None:
+            replacement.model = obj
+
+
+def _replace_entity_objects(
+    replacements: Sequence[_EntityObjectsReplacement], new_objects: Sequence[Object]
+) -> tuple[dict[Object, Object], list[Object]]:
+    """Replace the library objects with the model of their archetype. The first library object of each archetype is
+    replaced by the imported original object, and the rest by copies of it.
+
+    Returns the replaced library objects mapped to the objects that replace them, and the objects to remove, the library
+    objects.
+    """
+    from ...ydr.shader_materials import apply_tint_preview_index
+
+    # The imported model of each archetype is the drawable or fragment with its name, at the root or in a drawable
+    # dictionary
+    imported_models = {}
+    for obj in new_objects:
+        if obj.sollum_type not in {SollumType.DRAWABLE, SollumType.FRAGMENT}:
+            continue
+        if obj.parent is not None and obj.parent.sollum_type != SollumType.DRAWABLE_DICTIONARY:
+            continue
+        imported_models.setdefault(name_to_hash(remove_number_suffix(obj.name)), obj)
+
+    hierarchy = ObjectHierarchySnapshot.for_blend()
+    objects_to_remove = []
+    replaced_objects = {}
+    for replacement in replacements:
+        model = replacement.model
+        if model is None:
+            if replacement.files is None:
+                continue
+
+            model = imported_models.get(name_to_hash(replacement.asset_name), None)
+            if model is None:
+                logger.error(f"Could not find the imported model of '{replacement.asset_name}'.")
+                continue
+
+        model_objects = get_object_with_children_recursive(model, hierarchy)
+        for i, (library_obj, entity) in enumerate(replacement.objects.items()):
+            objects_to_remove.extend(get_object_with_children_recursive(library_obj, hierarchy))
+            replacement_objects = model_objects if i == 0 else copy_object_hierarchy(model_objects)
+            new_root = replacement_objects[0]
+            _replace_object(library_obj, replacement_objects)
+            if entity is not None:
+                entity.linked_object = new_root
+                if entity.tint_value != 0:
+                    apply_tint_preview_index(new_root, entity.tint_value)
+            replaced_objects[library_obj] = new_root
+
+    return replaced_objects, list(set(objects_to_remove))
+
+
+def _remove_free_number_suffixes(objects: Iterable[Object]):
+    """Remove the `.001`-like suffix of the objects whose name without it is not used by any other object. The imported
+    objects get the suffix because the library objects they replace had the same name until they were removed."""
+    for obj in objects:
+        name = remove_number_suffix(obj.name)
+        if name == obj.name:
+            continue
+
+        # Linked objects don't count, they don't share names with the objects of this .blend
+        existing = bpy.data.objects.get(name, None)
+        if existing is None or existing.library is not None:
+            obj.name = name
+
+
+def _select_objects(context, selected_objects: set[Object], active_object: Object | None):
+    # Not iterating `view_layer.objects`, the objects just linked to the scene are not in it until the view layer is
+    # synced. `context.selected_objects` and `select_set` sync it
+    for obj in context.selected_objects:
+        if obj not in selected_objects:
+            obj.select_set(False)
+    for obj in selected_objects:
+        try:
+            obj.select_set(True)
+        except RuntimeError:
+            # Not in the view layer, e.g. in an excluded collection
+            pass
+    context.view_layer.objects.active = active_object
+
+
+def _replace_object(old_obj: Object, new_objects: Sequence[Object]):
+    """Put the hierarchy `new_objects` (root first) in place of `old_obj`: in the same collections, with the same parent
+    and transform, and with the references to `old_obj`, such as the light effect constraints of MLO entities, changed
+    to the new root. A drawable of a drawable dictionary stays in the dictionary, so it can still be exported, and only
+    its transform is changed.
+    """
+    new_root = new_objects[0]
+    collections = old_obj.users_collection
+    for collection in collections:
+        collection.objects.unlink(old_obj)
+
+    if (parent := new_root.parent) is not None and parent.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+        parent_matrix = _unevaluated_matrix_world(parent) @ new_root.matrix_parent_inverse
+        new_root.matrix_basis = parent_matrix.inverted_safe() @ _unevaluated_matrix_world(old_obj)
+    else:
+        for obj in new_objects:
+            for collection in obj.users_collection:
+                collection.objects.unlink(obj)
+            for collection in collections:
+                collection.objects.link(obj)
+
+        new_root.parent = old_obj.parent
+        new_root.matrix_parent_inverse = old_obj.matrix_parent_inverse.copy()
+        new_root.matrix_basis = old_obj.matrix_basis.copy()
+
+    old_obj.user_remap(new_root)
+
+
+def _unevaluated_matrix_world(obj: Object) -> Matrix:
+    """World matrix of `obj` from its parents and local transforms, ignoring constraints. Not `matrix_world`, it is not
+    up to date in objects that are not evaluated, e.g. in hidden collections.
+    """
+    matrix = obj.matrix_basis
+    while obj.parent is not None:
+        matrix = obj.parent.matrix_basis @ obj.matrix_parent_inverse @ matrix
+        obj = obj.parent
+    return matrix
+
+
+class GameAssetObjectsFromGameInstallationOperatorBase(GameDirectoryOperatorMixin):
+    """Base of the operators that replace game asset library objects with the import of their archetypes from the game
+    installation. Subclasses implement `get_objects` and `get_all_entities`.
+    """
+
+    bl_label = "Import from Game Installation"
+    bl_options = {"UNDO"}
+
+    no_objects_message = "No selected object is from a game asset library"
+
+    @classmethod
+    def get_objects(cls, context) -> Iterable[Object]:
+        """The objects to replace."""
+        raise NotImplementedError
+
+    @classmethod
+    def get_all_entities(cls, context) -> Iterable:
+        """The entities to link to the objects that replace the objects they are linked to. An object is linked to at
+        most one entity."""
+        raise NotImplementedError
+
+    @classmethod
+    def poll(cls, context):
+        if not IS_SZIO_NATIVE_AVAILABLE:
+            cls.poll_message_set(PYMATERIA_REQUIRED_MSG)
+            return False
+
+        any_game_asset = False
+        for obj in cls.get_objects(context):
+            if (archetype_info := get_object_game_asset(obj)) is None:
+                continue
+            if archetype_info.type != "MLO":
+                return True
+            any_game_asset = True
+
+        if any_game_asset:
+            cls.poll_message_set("Importing interiors from game installation is not supported")
+        else:
+            cls.poll_message_set(cls.no_objects_message)
+        return False
+
+    def execute(self, context):
+        start_time = time.time()
+        with logger.use_operator_logger(self):
+            if (game_dir := _validated_game_directory(self, context)) is None:
+                return {"CANCELLED"}
+
+            replacements = _collect_entity_objects_replacements(
+                self.get_objects(context), self.get_all_entities(context)
+            )
+            if not replacements:
+                logger.error(f"{self.no_objects_message}.")
+                return {"CANCELLED"}
+
+            _find_unused_dictionary_drawables(context, replacements)
+            to_import = [r for r in replacements if r.model is None]
+            found_files = _find_game_asset_files_batch(
+                context, game_dir, ((r.asset_name, r.ytyp_name) for r in to_import)
+            )
+            for replacement, files in zip(to_import, found_files):
+                replacement.files = files
+
+            if all(replacement.model is None and replacement.files is None for replacement in replacements):
+                return {"CANCELLED"}
+
+        # Keep the object selection, with the new objects in place of the library objects they replace. Taken before the
+        # import, which can change the active object
+        selected_objects = set(context.selected_objects)
+        active_object = context.view_layer.objects.active
+
+        # Outside of the operator logger, the import operator reports its own messages
+        objects_before = set(bpy.data.objects)
+        errors = _import_game_asset_files(r.files for r in replacements if r.files is not None)
+        new_objects = [obj for obj in bpy.data.objects if obj not in objects_before]
+        for error in errors:
+            self.report({"ERROR"}, error)
+
+        with logger.use_operator_logger(self):
+            replaced_objects, objects_to_remove = _replace_entity_objects(replacements, new_objects)
+            _select_objects(
+                context,
+                {replaced_objects.get(obj, obj) for obj in selected_objects},
+                replaced_objects.get(active_object, active_object),
+            )
+            bpy.data.batch_remove(objects_to_remove)
+            _remove_free_number_suffixes(replaced_objects.values())
+
+        num_replaced = len(replaced_objects)
+        num_to_replace = sum(len(replacement.objects) for replacement in replacements)
+        self.report(
+            {"WARNING"} if errors or num_replaced < num_to_replace else {"INFO"},
+            f"Replaced {num_replaced} object(s) in {time.time() - start_time:.2f} seconds",
+        )
+        return {"FINISHED"}
+
+
+class EntityObjectsFromGameInstallationOperatorBase(GameAssetObjectsFromGameInstallationOperatorBase):
+    """Base of the operators that replace the game asset library objects linked to the selected entities. Subclasses
+    implement `get_entities`."""
+
+    no_objects_message = "No selected entity is linked to an object from a game asset library"
+
+    @classmethod
+    def get_entities(cls, context) -> Sequence:
+        """The selected entities."""
+        raise NotImplementedError
+
+    @classmethod
+    def get_objects(cls, context):
+        return (e.linked_object for e in cls.get_entities(context) if e.linked_object is not None)
+
+    @classmethod
+    def get_all_entities(cls, context):
+        return cls.get_entities(context)
+
+
+class SOLLUMZ_OT_import_objects_from_game_installation(GameAssetObjectsFromGameInstallationOperatorBase, Operator):
+    bl_idname = "sollumz.import_objects_from_game_installation"
+    bl_description = (
+        "Replace the selected objects from the game asset library with the import of their models from the game "
+        "installation with all their data (LODs, collisions, lights, etc.). The map and MLO entities linked to them "
+        "are linked to the new objects"
+    )
+
+    @classmethod
+    def get_objects(cls, context):
+        objects = list(context.selected_objects)
+        if (active := context.active_object) is not None and active not in objects:
+            objects.append(active)
+        return objects
+
+    @classmethod
+    def get_all_entities(cls, context):
+        return _iter_all_entities(context)

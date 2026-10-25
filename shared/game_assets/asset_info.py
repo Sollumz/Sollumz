@@ -46,13 +46,19 @@ def _asset_key(obj: Object) -> str:
     return remove_number_suffix(obj.name).lower()
 
 
-def try_get_asset_metadata_archetype_info(obj: Object, *, cache: AssetInfoCache | None = None) -> AssetArchetypeInfo | None:
+def try_get_asset_metadata_archetype_info(
+    obj: Object | None, *, cache: AssetInfoCache | None = None, resolve_scene_ytyps: bool = True
+) -> AssetArchetypeInfo | None:
     """Return the archetype information for ``obj``. Pre-baked metadata is consulted first (assets linked from the
-    shared asset library); if absent or malformed, the scene YTYPs are scanned for an archetype matching ``obj`` by name
-    (Blender's ``.001`` duplicate suffix is stripped). Returns ``None`` if no archetype information can be resolved.
+    shared asset library); if absent or malformed and ``resolve_scene_ytyps`` is set, the scene YTYPs are scanned for an
+    archetype matching ``obj`` by name (Blender's ``.001`` duplicate suffix is stripped). Returns ``None`` if no
+    archetype information can be resolved.
     """
+    if obj is None:
+        return None
+
     info = try_parse_archetype_info(_try_get_asset_metadata_str(obj, ASSET_KEY_ARCHETYPE_INFO))
-    if info is not None:
+    if info is not None or not resolve_scene_ytyps:
         return info
 
     info, _ = _resolve_via_scene_ytyps(obj, cache)
@@ -78,11 +84,14 @@ def try_get_archetype_info_by_name(archetype_name: str, *, cache: AssetInfoCache
     return info
 
 
-def try_get_asset_metadata_lights(obj: Object, *, cache: AssetInfoCache | None = None) -> list | None:
+def try_get_asset_metadata_lights(obj: Object | None, *, cache: AssetInfoCache | None = None) -> list | None:
     """Return the asset's lights as a list of dicts (same shape as `serialize_lights`). For in-blend assets the lights
     are read from the canonical drawable referenced by the matching scene YTYP archetype's ``asset`` pointer, not from
     ``obj`` itself, since map entities may be duplicates that no longer carry the full data.
     """
+    if obj is None:
+        return None
+
     key = _asset_key(obj)
     if cache is not None and key in cache._lights:
         return cache._lights[key]
@@ -94,8 +103,11 @@ def try_get_asset_metadata_lights(obj: Object, *, cache: AssetInfoCache | None =
     return result
 
 
-def try_get_asset_metadata_collisions(obj: Object, *, cache: AssetInfoCache | None = None) -> dict | None:
+def try_get_asset_metadata_collisions(obj: Object | None, *, cache: AssetInfoCache | None = None) -> dict | None:
     """Return ``{"bb_min": (x, y, z), "bb_max": (x, y, z)}`` for the asset's collision composite, or ``None``."""
+    if obj is None:
+        return None
+
     key = _asset_key(obj)
     if cache is not None and key in cache._collisions:
         return cache._collisions[key]
@@ -107,8 +119,11 @@ def try_get_asset_metadata_collisions(obj: Object, *, cache: AssetInfoCache | No
     return result
 
 
-def try_get_asset_metadata_skeleton(obj: Object, *, cache: AssetInfoCache | None = None) -> dict | None:
+def try_get_asset_metadata_skeleton(obj: Object | None, *, cache: AssetInfoCache | None = None) -> dict | None:
     """Return the asset's skeleton as a dict ``{"bones": [{"tag": ..., "position": ..., ...}, ...]}`` or ``None``."""
+    if obj is None:
+        return None
+
     key = _asset_key(obj)
     if cache is not None and key in cache._skeleton:
         return cache._skeleton[key]
