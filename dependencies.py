@@ -130,6 +130,11 @@ def has_online_access() -> bool:
 _needs_restart = False
 
 
+def missing_optional_dependencies() -> list[Dependency]:
+    state = dependencies_available_state()
+    return [d for d in DEPENDENCIES_OPTIONAL if d.supported and state[d.name] != DependencyState.INSTALLED]
+
+
 def has_required_dependencies() -> bool:
     return (
         not _needs_restart
@@ -306,10 +311,10 @@ _minimal_classes = []
 
 
 def register_minimal():
-    """When missing required dependencies, only this will be registered instead of the whole add-on."""
-
-    if has_required_dependencies():
-        return
+    """Registers the dependency installation operator. When missing required dependencies, a minimal UI to run it is
+    registered too, instead of the whole add-on. Otherwise, the add-on preferences provide access to it, so optional
+    dependencies can still be installed later on.
+    """
 
     # Defines these classes here as in regular usage these won't be used at all, more hidden this way.
     class SOLLUMZ_OT_install_dependencies(Operator):
@@ -364,7 +369,9 @@ def register_minimal():
             _draw_wrapped_text(
                 context,
                 main_col,
-                "These dependencies are needed for Sollumz to work correctly.",
+                "These dependencies are needed for Sollumz to work correctly."
+                if not has_required_dependencies()
+                else "Required dependencies are already installed but will be reinstalled as well.",
                 width=550,
                 width_percent=1.0,
                 dim=False,
@@ -521,13 +528,14 @@ def register_minimal():
                 if has_icon:
                     icon = "BLANK1"
 
-    _minimal_classes.extend(
-        [
-            SollumzDepsMinimalAddonPreferences,
-            SOLLUMZ_OT_install_dependencies,
-            SOLLUMZ_PT_deps_minimal,
-        ]
-    )
+    _minimal_classes.append(SOLLUMZ_OT_install_dependencies)
+    if not has_required_dependencies():
+        _minimal_classes.extend(
+            [
+                SollumzDepsMinimalAddonPreferences,
+                SOLLUMZ_PT_deps_minimal,
+            ]
+        )
 
     for cls in _minimal_classes:
         bpy.utils.register_class(cls)
@@ -536,3 +544,5 @@ def register_minimal():
 def unregister_minimal():
     for cls in reversed(_minimal_classes):
         bpy.utils.unregister_class(cls)
+
+    _minimal_classes.clear()
