@@ -143,6 +143,14 @@ def isolate_toggle_channel(context: Context, ch: Channel, extend: bool):
     mesh.attributes.active_color = isolated_attr
 
 
+def isolate_exit(context: Context):
+    """Stop isolating channels, if any. Applies the isolated channels to the base attribute and makes it active."""
+    channels = isolate_get_state(context).channels
+    if channels:
+        # Toggling any isolated channel without extending deselects all of them
+        isolate_toggle_channel(context, next(iter(channels)), extend=False)
+
+
 class SOLLUMZ_OT_vertex_paint_isolate_toggle_channel(Operator):
     bl_idname = "sollumz.vertex_paint_isolate_toggle_channel"
     bl_label = "Isolate Channel"

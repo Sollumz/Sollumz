@@ -7,6 +7,7 @@ from ..editor_tools.vertex_paint.utils import (
     vertex_paint_unified_settings,
     vertex_paint_unified_toggles,
 )
+from .shared import log_capture
 
 
 @pytest.mark.parametrize(
@@ -84,6 +85,71 @@ def test_ops_terrain_paint_alpha_remove(alpha, unified_color, unified_strength, 
     assert_allclose(color, (0.0, 0.0, 0.0))
     assert brush.blend == "ERASE_ALPHA"
     assert strength == alpha
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_terrain_paint_switches_active_color_attribute(plane_object):
+    m = plane_object.data
+    m.attributes.new("Color 1", "BYTE_COLOR", "CORNER")
+    m.attributes.new("Color 2", "BYTE_COLOR", "CORNER")
+    m.attributes.active_color_name = "Color 1"
+
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    for texture_index in (1, 2, 3, 4):
+        m.attributes.active_color_name = "Color 1"
+        bpy.ops.sollumz.vertex_paint_terrain_texture(texture=texture_index)
+        assert m.attributes.active_color_name == "Color 2"
+
+    bpy.ops.sollumz.vertex_paint_terrain_alpha(alpha=1.0)
+    assert m.attributes.active_color_name == "Color 1"
+
+    bpy.ops.sollumz.vertex_paint_terrain_alpha(alpha=-1.0)
+    assert m.attributes.active_color_name == "Color 1"
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_terrain_paint_applies_isolated_channel_when_switching_color_attribute(plane_object):
+    m = plane_object.data
+    m.attributes.new("Color 1", "BYTE_COLOR", "CORNER")
+    m.attributes.new("Color 2", "BYTE_COLOR", "CORNER")
+    m.attributes.active_color_name = "Color 2"
+    m.attributes.active_color.data[0].color_srgb = 0.9, 0.7, 0.5, 0.3
+
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    # Isolation of the target attribute is kept
+    bpy.ops.sollumz.vertex_paint_isolate_toggle_channel(channel=2)
+    bpy.ops.sollumz.vertex_paint_isolate_toggle_channel(channel=1, extend=True)
+    isolated_name = m.attributes.active_color_name
+    assert isolated_name != "Color 2"
+    bpy.ops.sollumz.vertex_paint_terrain_texture(texture=1)
+    assert m.attributes.active_color_name == isolated_name
+
+    # Isolation of another attribute is exited and what was painted on all isolated channels is not lost
+    m.attributes.active_color.data[0].color_srgb = 0.0, 0.2, 0.1, 0.0
+    bpy.ops.sollumz.vertex_paint_terrain_alpha(alpha=1.0)
+    assert m.attributes.active_color_name == "Color 1"
+    assert len(m.color_attributes) == 2
+    assert_allclose(m.color_attributes["Color 2"].data[0].color_srgb, (0.9, 0.2, 0.1, 0.3), atol=COLOR_ATOL)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def test_ops_terrain_paint_missing_color_attribute_keeps_active(plane_object):
+    m = plane_object.data
+    m.attributes.new("Color 1", "BYTE_COLOR", "CORNER")
+    m.attributes.active_color_name = "Color 1"
+
+    bpy.ops.object.mode_set(mode="VERTEX_PAINT")
+
+    with log_capture() as logs:
+        assert bpy.ops.sollumz.vertex_paint_terrain_texture(texture=1) == {"FINISHED"}
+    logs.assert_warning(match="no 'Color 2'")
+    assert m.attributes.active_color_name == "Color 1"
+    assert len(m.color_attributes) == 1
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
