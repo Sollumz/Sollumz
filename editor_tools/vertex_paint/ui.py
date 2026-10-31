@@ -267,6 +267,16 @@ class SOLLUMZ_MT_vertex_painter_pie_menu(Menu):
         subcol.operator(SOLLUMZ_OT_vertex_paint_terrain_texture.bl_idname, text="Texture 3").texture = 3
         subcol.operator(SOLLUMZ_OT_vertex_paint_terrain_texture.bl_idname, text="Texture 4").texture = 4
 
+        alpha = context.window_manager.sz_ui_vertex_paint_terrain_alpha
+        subcol = col.column(align=True)
+        subcol.scale_x = 1.0
+        subcol.scale_y = 1.6
+        subcol.operator(SOLLUMZ_OT_vertex_paint_terrain_alpha.bl_idname, text="Alpha").alpha = alpha
+        subcolcol = subcol.column(align=True)
+        subcolcol.scale_x = 1.0
+        subcolcol.scale_y = 0.65
+        subcolcol.prop(context.window_manager, "sz_ui_vertex_paint_terrain_alpha", text="")
+
         prow.separator()
 
         col = prow.column()
