@@ -53,15 +53,15 @@ DEPENDENCIES = (
         "Allows direct binary assets import/export and automatic vehicle shattermap generation using the Materia library.",
         False,
         "https://static.cfx.re/whl/",
-        "0.2.0",
+        "0.2.1",
         (
             {
                 # win amd64
-                (3, 10): "335469ddc3df95475eec2d3d5eec490294e77b3eb644267e68c21645fe948e69",
-                (3, 11): "e476d7a96984861c72b15780b981d7f8be0bb75e449032e63910d24595e0ac1d",
-                (3, 12): "d3eedb90c6c5d6475f8283f0a67ecdb830699d16d25623e132f94a86bb74fa17",
-                (3, 13): "64f881613c57835c84cf0cd1bc1c4d6e2aa3bac927886d90ccf623e523b365d5",
-                (3, 14): "84bf34ca88456597ce5181d45da9e6d57f28d91cc4fb20790c875ff370d98902",
+                (3, 10): "9a05cc0ef9201fa23d976b76c1f0574b8638538f3454369350c40c554fa27451",
+                (3, 11): "ea04a825be9c947d99f99ae25e1a5f0d24838b83d8e22a791807418cbf150598",
+                (3, 12): "a6ebb55923356ec8cf413d013741eff41fe91f44427650efc1da96a84583d2a2",
+                (3, 13): "c3dcc4e6c83b6bdcc930e5594b6da7753dd9a1e87573e8db472e363de5a2d5a6",
+                (3, 14): "e74b91d150125644db53c414a7740c0e4ed74fa811ff1c45a492a08368075798",
             }.get(sys.version_info[:2], "unknown"),
         ),
     ),
