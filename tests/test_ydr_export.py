@@ -13,6 +13,19 @@ def _export_ydr(drawable_obj: bpy.types.Object):
         return export_ydr(drawable_obj)
 
 
+def test_export_standalone_drawable_includes_wheel_mesh(plane_object):
+    plane_object.data.materials.append(create_shader("default.sps"))
+    plane_object.data.color_attributes.new("Color 1", "BYTE_COLOR", "CORNER")
+    mesh_add_missing_uv_maps(plane_object.data)
+    drawable_obj = convert_obj_to_drawable(plane_object)
+    # Set by YFT import on vehicle wheel meshes, only meaningful inside a fragment
+    plane_object.sollumz_is_physics_child_mesh = True
+
+    bundle = _export_ydr(drawable_obj)
+
+    assert bundle.main_asset.models, "Model flagged as wheel mesh should not be skipped outside a fragment"
+
+
 def test_export_no_missing_color_attrs_warning_after_rename_by_order(plane_object):
     mesh = plane_object.data
     mesh.materials.append(create_shader("default.sps"))

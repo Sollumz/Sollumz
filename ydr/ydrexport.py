@@ -146,7 +146,7 @@ def create_drawable_asset(
         armature_obj = None
         original_pose = None
 
-    drawable.models = create_models(drawable, drawable_obj, materials, armature_obj, hi=hi, char_cloth=char_cloth)
+    drawable.models = create_models(drawable, drawable_obj, materials, armature_obj, hi=hi, char_cloth=char_cloth, is_frag=is_frag)
     if not is_frag:
         drawable.lights = export_lights(drawable_obj)
         drawable.bounds = create_embedded_bounds_asset(drawable_obj)
@@ -164,8 +164,9 @@ def create_models(
     armature_obj: Object | None,
     hi: bool,
     char_cloth: CharacterCloth | None,
+    is_frag: bool,
 ) -> dict[IOLodLevel, list[Model]]:
-    model_objs = get_model_objs(drawable_obj)
+    model_objs = get_model_objs(drawable_obj, is_frag)
 
     if armature_obj is not None:
         bones = armature_obj.data.bones
@@ -200,12 +201,12 @@ def create_models(
     return models
 
 
-def get_model_objs(drawable_obj: Object) -> list[Object]:
+def get_model_objs(drawable_obj: Object, is_frag: bool) -> list[Object]:
     """Get all non-skinned Drawable Model objects under ``drawable_obj``."""
     from .cloth import is_cloth_mesh_object
     return [
         obj for obj in ObjectHierarchySnapshot.for_scene().get_children(drawable_obj)
-        if obj.sollum_type == SollumType.DRAWABLE_MODEL and not obj.sollumz_is_physics_child_mesh
+        if obj.sollum_type == SollumType.DRAWABLE_MODEL and (not is_frag or not obj.sollumz_is_physics_child_mesh)
         and not is_cloth_mesh_object(obj)
     ]
 
