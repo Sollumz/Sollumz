@@ -301,6 +301,7 @@ def mesh_rename_uv_maps_by_order(mesh: bpy.types.Mesh) -> dict[str, int]:
         renamed_uvs[attr.name] = new_uv_index
         attr.name = get_uv_map_name(new_uv_index)
 
+    mesh.update_tag()
     return renamed_uvs
 
 
@@ -339,6 +340,7 @@ def mesh_rename_color_attrs_by_order(mesh: bpy.types.Mesh) -> dict[str, int]:
         renamed_colors[attr.name] = new_color_index
         attr.name = get_color_attr_name(new_color_index)
 
+    mesh.update_tag()
     return renamed_colors
 
 
@@ -354,6 +356,7 @@ def mesh_add_missing_uv_maps(mesh: bpy.types.Mesh) -> list[int]:
         create_uv_attr(mesh, uvmap)
         new_uvs.append(uvmap)
 
+    mesh.update_tag()
     return new_uvs
 
 
@@ -369,6 +372,7 @@ def mesh_add_missing_color_attrs(mesh: bpy.types.Mesh) -> list[int]:
         create_color_attr(mesh, color)
         new_colors.append(color)
 
+    mesh.update_tag()
     return new_colors
 
 
