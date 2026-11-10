@@ -405,6 +405,12 @@ def _add_library_asset_objects(
     with bpy.data.libraries.load(str(library_path), link=not append) as (_, data_dst):
         data_dst.objects = [name]
 
+    # Only directly linked IDs can be overridden. Since Blender 5.3, objects just linked and not used by local data yet
+    # are marked as indirectly linked, so link it to the scene while creating the overrides.
+    temp_linked = data_dst.objects[0].is_library_indirect
+    if temp_linked:
+        bpy.context.scene.collection.objects.link(data_dst.objects[0])
+
     objs = []
     for _ in range(num_objects):
         if append:
@@ -413,6 +419,9 @@ def _add_library_asset_objects(
             new_obj = data_dst.objects[0].override_create()
         bpy.context.scene.collection.objects.link(new_obj)
         objs.append(new_obj)
+
+    if temp_linked:
+        bpy.context.scene.collection.objects.unlink(data_dst.objects[0])
     return objs
 
 

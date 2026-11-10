@@ -116,6 +116,12 @@ def batch_create_objects_from_library(
             if not per_instance_transforms:
                 continue
 
+            # Only directly linked IDs can be overridden. Since Blender 5.3, objects just linked and not used by local
+            # data yet are marked as indirectly linked, so link `obj` to the scene while creating the overrides.
+            temp_linked = obj.is_library_indirect
+            if temp_linked:
+                scene.collection.objects.link(obj)
+
             for obj_id, loc, rot, scl in per_instance_transforms:
                 obj_override = obj.override_create()
                 obj_override.location = loc
@@ -124,6 +130,9 @@ def batch_create_objects_from_library(
                 scene.collection.objects.link(obj_override)
                 object_linked_cb(obj_override, obj_id)
                 num_linked += 1
+
+            if temp_linked:
+                scene.collection.objects.unlink(obj)
 
     return num_linked, num_missing
 
