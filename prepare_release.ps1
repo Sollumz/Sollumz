@@ -68,10 +68,16 @@ if ((Get-Command "git-cliff" -ErrorAction SilentlyContinue) -eq $null)
 }
 else
 {
-  & git-cliff --current -c cliff.toml -o RELEASE_NOTES.md
+  # Range ending at the literal HEAD (the release commit), not `--current`: with any other range end git-cliff asks the
+  # GitHub API for the commits at that SHA, which 404s because the release commit is not pushed yet
+  $prevTag = & git describe --tags --abbrev=0 --match "v[0-9]*" "v$Version^"
+  & git-cliff -c cliff.toml -o RELEASE_NOTES.md "$prevTag..HEAD"
+  if ($LASTEXITCODE -ne 0)
+  {
+    Write-Warning "git-cliff failed, 'RELEASE_NOTES.md' is incomplete."
+  }
 
   # Append the szio changes between the versions pinned by the previous release and this one
-  $prevTag = & git describe --tags --abbrev=0 --match "v[0-9]*" "v$Version^"
   $szioOld = Get-SzioVersion $prevTag
   $szioNew = Get-SzioVersion "v$Version"
   if ($szioOld -and $szioNew -and $szioOld -ne $szioNew)
