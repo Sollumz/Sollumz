@@ -233,7 +233,7 @@ def mount_dependencies():
         if site_packages.is_dir():
             site_packages = str(site_packages)
             if site_packages not in sys.path:
-                sys.path.append(site_packages)
+                sys.path.insert(0, site_packages)
 
     _add_site_packages()
     state = dependencies_available_state()
