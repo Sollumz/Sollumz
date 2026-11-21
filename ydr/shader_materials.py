@@ -574,6 +574,7 @@ def _param_or(shader: ShaderDef, name: str, default: "expr.Floaty") -> "expr.Flo
     from ..shared.shader_expr.builtins import float_param
     return float_param(name) if shader.has_parameter(name) else default
 
+
 VEHICLE_SPECULAR_CONSTANTS = {
     "vehicle_mesh": (0.6, 460.0, 1.0),
     "vehicle_mesh_enveff": (0.4, 512.0, 1.0),
@@ -627,7 +628,7 @@ def _specular_params(shader: ShaderDef):
 
 
 def gta_specular_expr(shader: ShaderDef, spec_tex_name: Optional[str]):
-    from ..shared.shader_expr.builtins import tex, uv, vec, param, maxf, saturate, mix_color
+    from ..shared.shader_expr.builtins import tex, uv, vec, param, saturate, mix_color
     from ..shared.shader_expr.expr import ColorBlend
 
     params = _specular_params(shader)
@@ -800,6 +801,7 @@ def gta_simple_parallax_offset_expr(shader: ShaderDef, uv_index: int) -> "expr.V
 
     k = scale_bias * (height - 0.5)
     return vec(tan_view.x * k, tan_view.y * k, 0.0)
+
 
 TERRAIN_LAYER_BLEND_NODE = "TerrainLayerBlend"
 
@@ -1410,6 +1412,8 @@ def create_basic_shader_nodes(b: ShaderBuilder):
     use_diff2 = True if texture2 else False
     use_tint = True if tintpal else False
 
+    # Some shaders have TextureSamplerDiffPal but don't actually use it, so we only create palette
+    # shader nodes on the specific shaders that use it
     use_palette = diffpal is not None and filename in ShaderManager.palette_shaders
 
     use_decal = shader.is_alpha or shader.is_decal or shader.is_cutout
