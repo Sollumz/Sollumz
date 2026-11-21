@@ -566,8 +566,8 @@ def _spec_map_is_packed(shader: ShaderDef) -> bool:
 
 
 def _spec_map_is_diffuse(shader: ShaderDef) -> bool:
-    """Shaders built with USE_DIFFUSE_AS_SPEC derive the specular map from the diffuse texture."""
-    return shader.has_parameter("SpecDesaturateIntensity")
+    # diffspec shaders derive the specular map from the diffuse texture
+    return "_diffspec" in shader.base_name
 
 
 def _param_or(shader: ShaderDef, name: str, default: "expr.Floaty") -> "expr.Floaty":
