@@ -3,7 +3,8 @@ import bpy
 import itertools
 import random
 from .test_fixtures import BLENDER_LANGUAGES, SOLLUMZ_SHADERS, SOLLUMZ_COLLISION_MATERIALS
-from ..ydr.shader_materials import create_shader
+from szio.gta5.shader import ShaderManager
+from ..ydr.shader_materials import create_shader, _specular_params
 from ..ydr.operators.materials import MaterialConverter
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..ynv.ynvimport import get_material as ynv_get_material
@@ -86,6 +87,15 @@ def test_diff_palette_tints_diffuse(shader):
 
     # ...and the index range gate must floor, not round, the alpha
     assert any(n.type == "MATH" and n.operation == "FLOOR" for n in mat.node_tree.nodes)
+
+
+def test_shaders_with_a_spec_map_always_get_specular():
+    missing = [
+        s.base_name for s in ShaderManager.shaders()
+        if s.has_parameter("SpecSampler") and _specular_params(s) is None
+    ]
+
+    assert not missing, f"Shaders with a spec map but no specular values, add them to VEHICLE_SPECULAR_CONSTANTS: {missing}"
 
 
 def test_ops_update_tint_shader_correctly_syncs_attribute_names(plane_object):
